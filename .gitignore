@@ -1,0 +1,56 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+dist/
+build/
+.venv/
+venv/
+.env
+.python-version
+.pytest_cache/
+.ruff_cache/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# IDE / OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Secrets
+.kaggle/
+**/kaggle.json
+*.pem
+
+# Data & heavy artifacts (keep manifests only)
+data/raw/**
+!data/raw/README.md
+data/cache/
+data/processed/
+*.dcm
+*.npz
+*.nii
+*.nii.gz
+*.pt
+*.pth
+*.ckpt
+*.bin
+*.onnx
+outputs/checkpoints/
+outputs/logs/
+outputs/submissions/
+!outputs/experiments/.gitkeep
+!data/folds/.gitkeep
+!data/folds/*.csv
+!data/folds/*.parquet
+
+# Local experiment noise
+wandb/
+mlruns/
+runs/
+tmp/
