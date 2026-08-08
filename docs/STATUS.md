@@ -36,6 +36,11 @@ Last updated: 2026-08-08
 2. Prototype weak labels on all 4407 reports; audit accuracy on the 58 expert studies
 3. On Kaggle: run DICOM spot-check + start resized cache build for baseline training
 
+## Repo
+- Private GitHub: https://github.com/Girish011/RSNA_Knee_Abnormality_Detection_Model
+- Other laptop: `git clone git@github.com:Girish011/RSNA_Knee_Abnormality_Detection_Model.git` then recreate `.venv`, Kaggle token, and `./scripts/download_metadata.sh`
+
 ## Session log
 - 2026-08-08: Foundation scaffold.
 - 2026-08-08: Fixed auth script for `access_token`; downloaded CSVs; froze folds_v1; local audit shows 58/4407 expert labels.
+- 2026-08-08: Initial commit pushed to private GitHub for multi-laptop continuity.
