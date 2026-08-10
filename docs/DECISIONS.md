@@ -41,3 +41,8 @@ Format: date | decision | why | rejected
 - **Decision:** Treat report weak supervision as first-class (not optional); expert 58 studies are fine-tune / audit set.
 - **Why:** Only **58 / 4407** studies have expert labels; all reports non-empty; multilingual (e.g. Spanish in sample).
 - **Rejected:** Expert-only training as the main path.
+
+## 2026-08-09 — Weak labels EN+ES v1
+- **Decision:** Ship keyword weak labels with Spanish synonyms (LCA, Derrame, etc.); keep high precision / lower recall; confidence threshold 0.5.
+- **Why:** English-only missed common ES reports (macro F1 ~0.33 → ~0.44 on expert audit).
+- **Rejected:** Jumping straight to paid LLM labeling before a measurable keyword baseline.

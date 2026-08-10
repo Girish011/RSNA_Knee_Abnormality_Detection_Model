@@ -1,46 +1,36 @@
 # STATUS
 
-Last updated: 2026-08-08
+Last updated: 2026-08-09
 
 ## Phase
-**Data audit (metadata)** — CSV metadata on disk; `folds_v1` frozen. Next: weak-label prototype + Kaggle DICOM cache/baseline.
+**Weak supervision v1** — EN+ES report extractor audited on 58 expert studies. Next: Kaggle DICOM cache + DINOv2-S baseline.
 
-## Dataset facts (from local CSVs)
-- Studies: **4407**
-- Series rows: **24371**
-- Expert-labeled studies: **only ~58** (all 12 labels present together) → reports are the main supervision source
-- Test example CSV: 3 studies (full test ~1300 on submit)
-- Competition slug: `rsna-knee-abnormality-detection` (entered=True)
+## Dataset facts
+- Studies: **4407** | Series: **24371** | Expert-labeled: **58**
+- Weak labels v1: `data/processed/weak_labels_v1.csv` (local, gitignored)
+- Audit: `docs/audit/weak_label_vs_expert.csv` — macro F1 **~0.44**, precision **~0.69**, recall **~0.34** (conservative by design)
+- Folds: `data/folds/folds_v1.csv`
 
 ## Best scores
 | Split | Macro AUC | Notes |
 |---|---|---|
-| OOF | — | no training yet |
+| OOF | — | no image training yet |
 | Public LB | — | no submission yet |
-| Efficiency (est.) | — | no runtime yet |
-
-## Active configs
-- Main candidate: `configs/baseline_dinov2_s.yaml`
-- Efficiency candidate: `configs/efficiency_student.yaml`
-- Folds: `data/folds/folds_v1.csv` (882/882/881/881/881)
 
 ## Blockers
-1. ~~Identity verification~~ done
-2. ~~API auth~~ done via `~/.kaggle/access_token`
-3. ~~Metadata download~~ done (~9 MB, not 569 GB)
-4. Full DICOMs remain on Kaggle — need cache notebook next
-5. **Security:** API token was pasted into terminal/chat earlier — **revoke & regenerate** on Kaggle settings
+1. Full DICOMs on Kaggle only — need cache notebook
+2. Prefer revoke/regenerate Kaggle token if still the exposed one
+3. Weak labels still weak on PF OA / Fracture / Medial OA recall — iterate after baseline
 
 ## Next 3 actions
-1. Revoke exposed Kaggle token and write a new one to `~/.kaggle/access_token`
-2. Prototype weak labels on all 4407 reports; audit accuracy on the 58 expert studies
-3. On Kaggle: run DICOM spot-check + start resized cache build for baseline training
+1. Bundle DINOv2-S weights as Kaggle Model/Dataset
+2. Build resized series cache on Kaggle (`notebooks/02_build_cache`)
+3. Train/submit DINOv2-S baseline (`configs/baseline_dinov2_s.yaml`)
 
 ## Repo
-- Private GitHub: https://github.com/Girish011/RSNA_Knee_Abnormality_Detection_Model
-- Other laptop: `git clone git@github.com:Girish011/RSNA_Knee_Abnormality_Detection_Model.git` then recreate `.venv`, Kaggle token, and `./scripts/download_metadata.sh`
+- Private GitHub backup: https://github.com/Girish011/RSNA_Knee_Abnormality_Detection_Model
+- Active machine: this Mac
 
 ## Session log
-- 2026-08-08: Foundation scaffold.
-- 2026-08-08: Fixed auth script for `access_token`; downloaded CSVs; froze folds_v1; local audit shows 58/4407 expert labels.
-- 2026-08-08: Initial commit pushed to private GitHub for multi-laptop continuity.
+- 2026-08-08: Scaffold, metadata, folds_v1, private GitHub.
+- 2026-08-09: Continue on this Mac; keep transfer artifacts (useful). Weak labels EN+ES; macro F1 0.33→0.44 vs expert.

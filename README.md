@@ -6,7 +6,7 @@ Study-level multilabel MRI classifier wrapping **Meta DINOv2**, with report-deri
 
 ## Hard rules
 - Inference is **image + series metadata only** (no reports at test time).
-- Repo docs are the memory across sessions — see `docs/STATUS.md`.
+- Repo docs are the memory across sessions - see `docs/STATUS.md`.
 - Do not chase public LB without an OOF win.
 
 ## Quick start
@@ -38,5 +38,5 @@ Before any new chat session, read:
 
 ## Blockers
 - Complete Kaggle identity verification
-- Attach competition data on Kaggle (569 GB does not fit on this Mac — ~129 GB free)
+- Attach competition data on Kaggle (569 GB does not fit on this Mac - ~129 GB free)
 - Bundle DINOv2 weights as a public Kaggle Model/Dataset for offline submit
