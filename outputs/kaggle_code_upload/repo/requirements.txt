@@ -1,0 +1,10 @@
+# Core (Kaggle-friendly pin range). Prefer pyproject.toml for local editable installs.
+numpy>=1.26
+pandas>=2.1
+scikit-learn>=1.4
+pyyaml>=6.0
+tqdm>=4.66
+pydicom>=2.4
+pillow>=10.0
+opencv-python-headless>=4.8
+# Install torch/torchvision from the Kaggle image or matching CUDA/MPS wheels separately.

@@ -32,6 +32,7 @@ data/raw/**
 !data/raw/README.md
 data/cache/
 data/processed/
+data/external/
 *.dcm
 *.npz
 *.nii
