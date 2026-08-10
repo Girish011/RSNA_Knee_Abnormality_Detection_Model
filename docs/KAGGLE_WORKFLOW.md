@@ -60,6 +60,8 @@ Then we can freeze folds + prototype weak labels **without any DICOMs**.
 | `10_train_baseline` | DINOv2-S train | Cache preferred |
 | `90_submit_main` | offline `submission.csv` | Yes (test) |
 
+See also [`docs/KAGGLE_BASELINE.md`](KAGGLE_BASELINE.md) for the end-to-end baseline runbook and upload zips.
+
 ## D. What never lives on the Mac
 - Full `train_series/` (~hundreds of GB)
 - Full model training on MPS for the whole dataset (prototype only)
