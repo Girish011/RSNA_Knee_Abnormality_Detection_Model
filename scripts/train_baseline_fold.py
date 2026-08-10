@@ -5,7 +5,13 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from pathlib import Path
+
+_ROOT = Path(__file__).resolve().parents[1]
+_SRC = _ROOT / "src"
+if _SRC.exists() and str(_SRC) not in sys.path:
+    sys.path.insert(0, str(_SRC))
 
 import numpy as np
 import pandas as pd
@@ -29,6 +35,7 @@ def main() -> None:
     parser.add_argument("--weights", type=Path, default=None)
     parser.add_argument("--fold", type=int, default=0)
     parser.add_argument("--epochs", type=int, default=None)
+    parser.add_argument("--freeze-epochs", type=int, default=None, help="Keep backbone frozen for this many epochs (default: config)")
     parser.add_argument("--out-dir", type=Path, required=True)
     parser.add_argument("--device", default=None)
     parser.add_argument("--expert-only", action="store_true", help="Train only on 58 expert studies")
@@ -39,8 +46,14 @@ def main() -> None:
 
     cfg = yaml.safe_load(args.config.read_text())
     epochs = args.epochs or int(cfg["train"]["epochs"])
+    freeze_epochs = (
+        args.freeze_epochs
+        if args.freeze_epochs is not None
+        else int(cfg["model"].get("freeze_backbone_epochs", 1))
+    )
     lr = float(cfg["train"]["lr"])
     batch_size = int(cfg["train"]["batch_size"])
+    print(f"epochs={epochs} freeze_epochs={freeze_epochs} lr={lr}")
 
     device = torch.device(
         args.device
@@ -97,11 +110,11 @@ def main() -> None:
     history = []
 
     for epoch in range(epochs):
-        if epoch == int(cfg["model"].get("freeze_backbone_epochs", 1)):
+        if epoch == freeze_epochs:
             for p in model.encoder.parameters():
                 p.requires_grad = True
-            opt = torch.optim.AdamW(model.parameters(), lr=lr * 0.5, weight_decay=0.05)
-            print("unfroze backbone")
+            opt = torch.optim.AdamW(model.parameters(), lr=lr * 0.1, weight_decay=0.05)
+            print("unfroze backbone (lr x0.1)")
 
         model.train()
         losses = []

@@ -1,35 +1,25 @@
 # STATUS
 
-Last updated: 2026-08-10
+Last updated: 2026-08-11
 
 ## Phase
-**Baseline prep** — cache/train scripts + DINOv2-S weights downloaded. Awaiting Kaggle Dataset uploads + cache build.
-
-## Dataset facts
-- Studies: **4407** | Expert-labeled: **58** | Folds: `data/folds/folds_v1.csv`
-- Weak labels v1 audited (macro F1 ~0.44)
-- DINOv2-S weights local: `data/external/dinov2/dinov2_vits14_pretrain.pth` (84MB, gitignored)
-- Upload packs: `outputs/kaggle_code_upload/rsna-knee-code.zip`, `dinov2-vits14-rsna-knee.zip`
+**Baseline improving** — fold0 frozen-backbone 5ep val macro AUC **0.764** (up from 0.685). Still below public LB ~0.94; no submit yet.
 
 ## Best scores
 | Split | Macro AUC | Notes |
 |---|---|---|
-| OOF | — | waiting on Kaggle cache |
-| Public LB | — | no submission yet |
+| Val fold0 | **0.764** | frozen DINOv2-S, 5 epochs, weak+expert labels |
+| Prior fold0 | 0.685 | 3ep; unfreeze collapsed later epochs |
+| Public LB | — | do not submit until multi-fold OOF is stronger |
+| Public LB top | ~0.942 | reference only |
 
-## Blockers
-1. Need you to upload the two zips as Kaggle Datasets (browser)
-2. Run `02_build_cache.ipynb` on Kaggle (smoke LIMIT=50 then full)
-3. Then `10_train_baseline.ipynb` GPU
+## Train curve (fold0, frozen)
+0.701 → 0.727 → 0.739 → 0.748 → **0.764** (monotonic — good sign)
 
 ## Next 3 actions
-1. Upload `rsna-knee-code` + `dinov2-vits14-rsna-knee` datasets on Kaggle
-2. Build `rsna-knee-cache-v1` via notebook 02
-3. Train fold-0 smoke baseline; log OOF in experiments.md
-
-## Repo
-- https://github.com/Girish011/RSNA_Knee_Abnormality_Detection_Model
+1. Save Version named e.g. `baseline-dinov2s-fold0-frozen-auc0764`
+2. Train folds **1–4** with the same frozen recipe (or overnight Save & Run All loop)
+3. After 5-fold OOF, decide: submit probe only if OOF ≳ 0.78–0.80; else improve weak labels / DINOv2-B / resolution
 
 ## Session log
-- 2026-08-08/09: Scaffold, metadata, folds, weak labels EN+ES.
-- 2026-08-10: Commit/push weak labels; added cache builder, cached dataset, train_baseline_fold, Kaggle notebooks/runbook; fetched DINOv2-S; packaged upload zips.
+- Unfreeze hurt; freeze-only 5ep reached 0.764.

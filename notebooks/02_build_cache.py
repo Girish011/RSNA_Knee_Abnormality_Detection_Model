@@ -1,8 +1,5 @@
-# Build resized series cache on Kaggle (write to /kaggle/working then save as Dataset).
-# Prefer running as a Kaggle notebook with long runtime; do not re-decode 570GB every train.
+# 02 — Build resized study cache
 
-from pathlib import Path
+Attach: competition data + `rsna-knee-code` dataset.
 
-print("See src/rsna_knee/data/cache.py::write_series_cache")
-print("Wire study/series loops here after audit confirms paths and transfer syntaxes.")
-print("Output manifest should record image_size, n_slices, code git sha, and count.")
+Start with `LIMIT = 50`, then set `LIMIT = 0` for all studies.

@@ -21,7 +21,7 @@ data:
 
 model:
   backbone: dinov2_vits14
-  freeze_backbone_epochs: 1
+  freeze_backbone_epochs: 5
   dropout: 0.1
   pretrained: true
 

@@ -13,6 +13,20 @@ Append one row (or block) per run. Never delete history.
 - artifact: `data/processed/weak_labels_v1.csv`, `docs/audit/weak_label_vs_expert.csv`
 - conclusion: keep as noisy pretrain signal; still need more languages + better OA phrases; do not trust as sole supervision
 
+### 2026-08-11 — baseline_dinov2_s fold0 smoke (Kaggle T4)
+- config: `configs/baseline_dinov2_s.yaml`
+- data: cache_v1 (3×12×224), weak_labels_v1, folds_v1
+- train/val: 1953 / 496 (2449 studies with any label)
+- epochs: 3; freeze_backbone_epochs=1 then unfreeze
+- val macro_auc: **0.685 (ep0)** → 0.614 (ep1) → 0.554 (ep2)
+- conclusion: pipeline works; unfreeze+LR too aggressive / weak-label noise. Next: keep backbone frozen longer, lower LR, optional expert fine-tune. Do not submit yet vs LB ~0.94.
+
+### 2026-08-11 — baseline_dinov2_s fold0 frozen 5ep
+- same data/cache; backbone **frozen all epochs**; lr 3e-4 head-only
+- val macro_auc by epoch: 0.701 → 0.727 → 0.739 → 0.748 → **0.764**
+- artifacts: `/kaggle/working/baseline_dinov2_s/fold0_best.pt` (+ oof csv/npy)
+- conclusion: **keep** — clear gain over 0.685. Next: folds 1–4 same recipe; still no LB probe until multi-fold OOF.
+
 
 ## Template
 ```text
