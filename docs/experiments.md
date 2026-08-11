@@ -33,6 +33,14 @@ Append one row (or block) per run. Never delete history.
 - mean folds1–4: **0.707**; mean folds0–4 with prior fold0 0.764: **~0.719**
 - conclusion: reproducible ~0.72 ceiling for this setup. Next lever is labels + bigger backbone, not more identical folds. No submit.
 
+### 2026-08-11 — weak_labels_v2 (code + audit)
+- config: `src/rsna_knee/text/weak_labels.py` (FR/DE/PT/NL + EN/ES)
+- expert audit (58): macro F1 **0.428**, prec **0.722**, rec **0.342** (similar to v1 ~0.44; expert set not FR-heavy)
+- coverage: studies with any label **2449 → 2749**; positives +252 net (Effusion +212, Baker's +77, ACL +34; OA slightly fewer)
+- artifacts: `data/processed/weak_labels_v2.csv`, `docs/audit/weak_label_v2_vs_expert.csv`, `docs/RANK1_ROADMAP.md`
+- train path: `configs/main_dinov2_b.yaml`, trainer `pos_weight` + `unfreeze_lr_mult`, notebooks 10/30
+- conclusion: ship for Kaggle A/B vs frozen-S mean **0.719**; no LB until OOF lift.
+
 
 ## Template
 ```text

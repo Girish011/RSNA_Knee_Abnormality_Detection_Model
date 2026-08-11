@@ -90,6 +90,10 @@ def test_weak_label_acl_positive_and_negation():
     assert neg.value == 0
     chronic = extract_label_from_report("Remote ACL tear with chronic changes.", "ACL")
     assert chronic.value == 0
+    fr = extract_label_from_report("Rupture complète du LCA avec épanchement.", "ACL")
+    assert fr.value == 1
+    fr_eff = extract_label_from_report("Important épanchement articulaire.", "Effusion")
+    assert fr_eff.value == 1
 
 
 def test_write_submission_schema(tmp_path):

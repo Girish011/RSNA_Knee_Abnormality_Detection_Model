@@ -46,3 +46,13 @@ Format: date | decision | why | rejected
 - **Decision:** Ship keyword weak labels with Spanish synonyms (LCA, Derrame, etc.); keep high precision / lower recall; confidence threshold 0.5.
 - **Why:** English-only missed common ES reports (macro F1 ~0.33 → ~0.44 on expert audit).
 - **Rejected:** Jumping straight to paid LLM labeling before a measurable keyword baseline.
+
+## 2026-08-11 — Weak labels multilingual v2
+- **Decision:** Extend keyword extractor to FR/DE/PT/NL (+ EN/ES); keep precision-first; expert override; artifact `weak_labels_v2.csv`.
+- **Why:** French is the largest report language; v1 EN+ES likely capped frozen-S OOF ~0.72.
+- **Rejected:** LLM labeling as next step before measuring keyword multilingual lift on same backbone/cache.
+
+## 2026-08-11 — Staged unfreeze + pos_weight
+- **Decision:** Freeze backbone several epochs; unfreeze at `lr × 0.05–0.1`; BCE `pos_weight` ≥ 1.5 for rare positives.
+- **Why:** Full-LR unfreeze collapsed fold0 (0.685→0.55); rare labels dominate macro AUC risk.
+- **Rejected:** Aggressive end-to-end fine-tune from epoch 0/1.

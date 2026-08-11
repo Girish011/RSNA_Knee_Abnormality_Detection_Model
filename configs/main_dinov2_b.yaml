@@ -1,19 +1,17 @@
 experiment:
-  id: main_dinov2_b
+  id: main_dinov2_b_v2
   track: main
-  notes: "DINOv2-base multiseries main model; weak labels + expert fine-tune"
+  notes: "DINOv2-B + weak_labels_v2 (FR/ES/EN/DE) + freeze-then-gentle-unfreeze + pos_weight"
 
 paths:
-  train_csv: /kaggle/input/rsna-knee-abnormality-detection/train.csv
-  train_series_csv: /kaggle/input/rsna-knee-abnormality-detection/train_series.csv
-  series_root: /kaggle/input/rsna-knee-abnormality-detection/train_series
+  train_csv: /kaggle/input/competitions/rsna-knee-abnormality-detection/train.csv
   folds: data/folds/folds_v1.csv
-  weak_labels: data/processed/weak_labels_v1.csv
-  output_dir: outputs/experiments/main_dinov2_b
+  weak_labels: data/processed/weak_labels_v2.csv
+  output_dir: outputs/experiments/main_dinov2_b_v2
   backbone_weights: null
 
 data:
-  max_series: 5
+  max_series: 4
   n_slices: 16
   image_size: 224
   center_bias: true
@@ -21,7 +19,7 @@ data:
 
 model:
   backbone: dinov2_vitb14
-  freeze_backbone_epochs: 1
+  freeze_backbone_epochs: 4
   dropout: 0.15
   pretrained: true
 
@@ -32,15 +30,12 @@ train:
   batch_size: 1
   lr: 1.5e-4
   weight_decay: 0.05
+  unfreeze_lr_mult: 0.05
   amp: true
   num_workers: 2
-  curriculum:
-    - phase: weak_pretrain
-      epochs: 4
-    - phase: expert_finetune
-      epochs: 4
 
 loss:
   type: masked_bce
   use_confidence: true
+  pos_weight: 2.0
   min_weak_confidence: 0.5

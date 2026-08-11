@@ -4,12 +4,10 @@ experiment:
   notes: "DINOv2-small study-level baseline; image-only inference"
 
 paths:
-  train_csv: /kaggle/input/rsna-knee-abnormality-detection/train.csv
-  train_series_csv: /kaggle/input/rsna-knee-abnormality-detection/train_series.csv
-  series_root: /kaggle/input/rsna-knee-abnormality-detection/train_series
+  train_csv: /kaggle/input/competitions/rsna-knee-abnormality-detection/train.csv
   folds: data/folds/folds_v1.csv
-  output_dir: outputs/experiments/baseline_dinov2_s
-  # Bundle Meta DINOv2 weights as a public Kaggle Model/Dataset for offline submit.
+  weak_labels: data/processed/weak_labels_v2.csv
+  output_dir: outputs/experiments/baseline_dinov2_s_v2
   backbone_weights: null
 
 data:
@@ -32,9 +30,11 @@ train:
   batch_size: 2
   lr: 3.0e-4
   weight_decay: 0.05
+  unfreeze_lr_mult: 0.1
   amp: true
   num_workers: 2
 
 loss:
   type: masked_bce
   use_confidence: true
+  pos_weight: 1.5

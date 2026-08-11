@@ -18,37 +18,49 @@ rsync -a \
   "${ROOT}/" "${OUT}/repo/"
 
 mkdir -p "${OUT}/repo/data/processed"
-if [[ -f "${ROOT}/data/processed/weak_labels_v1.csv" ]]; then
-  ROOT="${ROOT}" python - <<'PY'
+ROOT="${ROOT}" python3 - <<'PY'
 import os
-import pandas as pd
 from pathlib import Path
-root = Path(os.environ["ROOT"])
-df = pd.read_csv(root / "data/processed/weak_labels_v1.csv")
-cols = [c for c in df.columns if c != "Report"]
-out = root / "outputs/kaggle_code_upload/repo/data/processed/weak_labels_v1.csv"
-out.parent.mkdir(parents=True, exist_ok=True)
-df[cols].to_csv(out, index=False)
-print("packed weak labels", len(df), "cols", len(cols))
-PY
-fi
+import pandas as pd
 
-# Also stage dinov2 weights alongside for separate dataset upload convenience
+root = Path(os.environ["ROOT"])
+dst = root / "outputs/kaggle_code_upload/repo/data/processed"
+dst.mkdir(parents=True, exist_ok=True)
+for name in ("weak_labels_v1.csv", "weak_labels_v2.csv"):
+    src = root / "data/processed" / name
+    if not src.exists():
+        print("skip missing", name)
+        continue
+    df = pd.read_csv(src)
+    cols = [c for c in df.columns if c != "Report"]
+    out = dst / name
+    df[cols].to_csv(out, index=False)
+    print("packed", name, len(df), "cols", len(cols))
+PY
+
+# Stage dinov2 weights for separate dataset uploads
+mkdir -p "${OUT}/dinov2_s" "${OUT}/dinov2_b"
 if [[ -f "${ROOT}/data/external/dinov2/dinov2_vits14_pretrain.pth" ]]; then
-  mkdir -p "${OUT}/dinov2"
-  cp "${ROOT}/data/external/dinov2/dinov2_vits14_pretrain.pth" "${OUT}/dinov2/"
+  cp "${ROOT}/data/external/dinov2/dinov2_vits14_pretrain.pth" "${OUT}/dinov2_s/"
+fi
+if [[ -f "${ROOT}/data/external/dinov2/dinov2_vitb14_pretrain.pth" ]]; then
+  cp "${ROOT}/data/external/dinov2/dinov2_vitb14_pretrain.pth" "${OUT}/dinov2_b/"
 fi
 
 (
   cd "${OUT}"
-  rm -f rsna-knee-code.zip dinov2-vits14-rsna-knee.zip
+  rm -f rsna-knee-code.zip dinov2-vits14-rsna-knee.zip dinov2-vitb14-rsna-knee.zip
   (cd repo && zip -qr ../rsna-knee-code.zip .)
-  if [[ -d dinov2 ]]; then
-    (cd dinov2 && zip -qr ../dinov2-vits14-rsna-knee.zip .)
+  if [[ -f dinov2_s/dinov2_vits14_pretrain.pth ]]; then
+    (cd dinov2_s && zip -qr ../dinov2-vits14-rsna-knee.zip .)
+  fi
+  if [[ -f dinov2_b/dinov2_vitb14_pretrain.pth ]]; then
+    (cd dinov2_b && zip -qr ../dinov2-vitb14-rsna-knee.zip .)
   fi
 )
 
 ls -lh "${OUT}"/*.zip
-echo "Upload zips at https://www.kaggle.com/datasets → New Dataset"
-echo "  rsna-knee-code.zip"
-echo "  dinov2-vits14-rsna-knee.zip"
+echo "Upload zips at https://www.kaggle.com/datasets → New Dataset / New Version"
+echo "  rsna-knee-code.zip  (update private code dataset)"
+echo "  dinov2-vits14-rsna-knee.zip  (public)"
+echo "  dinov2-vitb14-rsna-knee.zip  (public — required for B runs)"

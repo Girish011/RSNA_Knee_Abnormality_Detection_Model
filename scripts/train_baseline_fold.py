@@ -21,7 +21,7 @@ from rsna_knee.constants import LABEL_COLS, NUM_LABELS
 from rsna_knee.data.cached_dataset import CachedStudyDataset, attach_folds, merge_weak_labels
 from rsna_knee.data.dataset import collate_studies
 from rsna_knee.metrics import macro_auc, summarize_metrics
-from rsna_knee.models.baseline import create_baseline_model
+from rsna_knee.models.multiseries import create_multiseries_model
 from rsna_knee.training.loss import masked_bce_with_logits
 
 
@@ -36,6 +36,8 @@ def main() -> None:
     parser.add_argument("--fold", type=int, default=0)
     parser.add_argument("--epochs", type=int, default=None)
     parser.add_argument("--freeze-epochs", type=int, default=None, help="Keep backbone frozen for this many epochs (default: config)")
+    parser.add_argument("--pos-weight", type=float, default=None, help="Upweight positives in BCE (default: config or 1.0)")
+    parser.add_argument("--unfreeze-lr-mult", type=float, default=None, help="LR multiplier after unfreeze (default: 0.1)")
     parser.add_argument("--out-dir", type=Path, required=True)
     parser.add_argument("--device", default=None)
     parser.add_argument("--expert-only", action="store_true", help="Train only on 58 expert studies")
@@ -53,8 +55,21 @@ def main() -> None:
     )
     lr = float(cfg["train"]["lr"])
     batch_size = int(cfg["train"]["batch_size"])
-    print(f"epochs={epochs} freeze_epochs={freeze_epochs} lr={lr}")
-
+    pos_weight = (
+        args.pos_weight
+        if args.pos_weight is not None
+        else float(cfg.get("loss", {}).get("pos_weight", 1.0))
+    )
+    unfreeze_lr_mult = (
+        args.unfreeze_lr_mult
+        if args.unfreeze_lr_mult is not None
+        else float(cfg.get("train", {}).get("unfreeze_lr_mult", 0.1))
+    )
+    backbone = str(cfg["model"].get("backbone", "dinov2_vits14"))
+    print(
+        f"backbone={backbone} epochs={epochs} freeze_epochs={freeze_epochs} "
+        f"lr={lr} pos_weight={pos_weight} unfreeze_lr_mult={unfreeze_lr_mult}"
+    )
     device = torch.device(
         args.device
         or ("cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
@@ -101,7 +116,13 @@ def main() -> None:
     va_loader = DataLoader(va_ds, batch_size=batch_size, shuffle=False, collate_fn=collate_studies, num_workers=0)
 
     weights = str(args.weights) if args.weights else None
-    model = create_baseline_model(weights_path=weights, freeze_backbone=True, pretrained=weights is None)
+    model = create_multiseries_model(
+        backbone,
+        weights_path=weights,
+        freeze_backbone=True,
+        pretrained=weights is None,
+        dropout=float(cfg["model"].get("dropout", 0.1)),
+    )
     model.to(device)
     opt = torch.optim.AdamW(filter(lambda p: p.requires_grad, model.parameters()), lr=lr, weight_decay=0.05)
 
@@ -113,8 +134,8 @@ def main() -> None:
         if epoch == freeze_epochs:
             for p in model.encoder.parameters():
                 p.requires_grad = True
-            opt = torch.optim.AdamW(model.parameters(), lr=lr * 0.1, weight_decay=0.05)
-            print("unfroze backbone (lr x0.1)")
+            opt = torch.optim.AdamW(model.parameters(), lr=lr * unfreeze_lr_mult, weight_decay=0.05)
+            print(f"unfroze backbone (lr x{unfreeze_lr_mult})")
 
         model.train()
         losses = []
@@ -133,6 +154,7 @@ def main() -> None:
                 batch["labels"].to(device),
                 batch["label_mask"].to(device),
                 batch["label_confidence"].to(device),
+                pos_weight=pos_weight,
             )
             loss.backward()
             opt.step()

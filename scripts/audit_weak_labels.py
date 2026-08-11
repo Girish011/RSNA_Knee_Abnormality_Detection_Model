@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Audit weak-label extractor vs expert-labeled subset; export weak_labels_v1."""
+"""Audit weak-label extractor vs expert-labeled subset; export weak_labels_v2."""
 
 from __future__ import annotations
 
@@ -41,15 +41,26 @@ def main() -> None:
     audit = pd.DataFrame(rows)
     out = Path("docs/audit")
     out.mkdir(parents=True, exist_ok=True)
-    audit.to_csv(out / "weak_label_vs_expert.csv", index=False)
+    audit.to_csv(out / "weak_label_v2_vs_expert.csv", index=False)
     print(audit.to_string(index=False))
     print(f"macro f1={audit['f1'].mean():.3f} prec={audit['prec'].mean():.3f} rec={audit['rec'].mean():.3f}")
 
     full = apply_weak_labels(train, min_confidence=0.5, expert_override=True)
     Path("data/processed").mkdir(parents=True, exist_ok=True)
     keep = ["StudyInstanceUID", "Report"] + LABEL_COLS + [f"{c}__conf" for c in LABEL_COLS]
-    full[keep].to_csv("data/processed/weak_labels_v1.csv", index=False)
-    print("wrote data/processed/weak_labels_v1.csv")
+    full[keep].to_csv("data/processed/weak_labels_v2.csv", index=False)
+    print("wrote data/processed/weak_labels_v2.csv")
+
+    # Coverage: how many studies get ≥1 supervised label
+    mask_cols = LABEL_COLS
+    n_any = int((full[mask_cols].notna().any(axis=1)).sum())
+    n_fr_proxy = int(
+        full["Report"]
+        .astype(str)
+        .str.contains(r"\b(?:le|la|les|des|une|du|au)\b", case=False, regex=True)
+        .sum()
+    )
+    print(f"studies with any label: {n_any}/{len(full)}; rough FR-like reports: {n_fr_proxy}")
 
 
 if __name__ == "__main__":
