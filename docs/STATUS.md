@@ -35,3 +35,4 @@ Last updated: 2026-08-11
 ## Session log
 - Fold0–4 frozen S + v1 → mean ~0.719
 - Shipped v2 labels + B config + pos_weight trainer + RANK1 roadmap
+- Kaggle train failed offline: `torch.hub` needed GitHub — fixed by vendoring `third_party/dinov2` + local hub load

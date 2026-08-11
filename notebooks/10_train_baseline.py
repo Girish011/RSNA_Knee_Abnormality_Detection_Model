@@ -1,5 +1,6 @@
 # Kaggle GPU — DINOv2-S 5-fold with weak_labels_v2 (label A/B vs ~0.719)
 # Attach: competition + rsna-knee-code + dinov2-vits14 (public) + rsna-knee-cache-v1
+# Internet: OFF is OK if code dataset includes third_party/dinov2 (offline hub).
 # Save Version name: baseline-dinov2s-5fold-weak-v2
 
 from pathlib import Path
@@ -11,15 +12,20 @@ COMP = Path("/kaggle/input/competitions/rsna-knee-abnormality-detection")
 CODE = Path("/kaggle/input/datasets/girishbose/rsna-knee-code")
 WEIGHTS = Path("/kaggle/input/datasets/girishbose/dinov2-vits14-rsna-knee/dinov2_vits14_pretrain.pth")
 CACHE = Path("/kaggle/input/notebooks/girishbose/rsna-knee-cache-v1/cache_v1")
-REPO = CODE  # package layout: repo root at dataset root
+REPO = CODE
 SRC = REPO / "src"
 os.environ["PYTHONPATH"] = str(SRC)
 os.environ["PYTHONUNBUFFERED"] = "1"
+os.environ["DINOV2_REPO"] = str(REPO / "third_party" / "dinov2")
 sys.path.insert(0, str(SRC))
 
 assert COMP.exists(), COMP
 assert WEIGHTS.exists(), WEIGHTS
 assert CACHE.exists(), CACHE
+assert (REPO / "third_party" / "dinov2" / "hubconf.py").exists(), (
+    "Re-upload rsna-knee-code with third_party/dinov2 (offline hub). "
+    "Or temporarily enable Internet and re-run."
+)
 weak = REPO / "data/processed/weak_labels_v2.csv"
 folds = REPO / "data/folds/folds_v1.csv"
 cfg = REPO / "configs/baseline_dinov2_s.yaml"
@@ -46,5 +52,8 @@ for fold in range(5):
         "--out-dir", str(out),
     ]
     print("RUN", " ".join(cmd), flush=True)
-    subprocess.check_call(cmd, env={**os.environ, "PYTHONPATH": str(SRC)})
+    subprocess.check_call(
+        cmd,
+        env={**os.environ, "PYTHONPATH": str(SRC), "DINOV2_REPO": os.environ["DINOV2_REPO"]},
+    )
 print("done", out_root)
