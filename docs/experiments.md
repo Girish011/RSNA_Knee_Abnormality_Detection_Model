@@ -27,6 +27,12 @@ Append one row (or block) per run. Never delete history.
 - artifacts: `/kaggle/working/baseline_dinov2_s/fold0_best.pt` (+ oof csv/npy)
 - conclusion: **keep** — clear gain over 0.685. Next: folds 1–4 same recipe; still no LB probe until multi-fold OOF.
 
+### 2026-08-11 — baseline_dinov2_s folds 1–4 frozen 5ep
+- same recipe as fold0 (frozen backbone, weak+expert, cache_v1)
+- best val: f1 **0.732**, f2 **0.725**, f3 **0.697**, f4 **0.675**
+- mean folds1–4: **0.707**; mean folds0–4 with prior fold0 0.764: **~0.719**
+- conclusion: reproducible ~0.72 ceiling for this setup. Next lever is labels + bigger backbone, not more identical folds. No submit.
+
 
 ## Template
 ```text

@@ -3,23 +3,32 @@
 Last updated: 2026-08-11
 
 ## Phase
-**Baseline improving** — fold0 frozen-backbone 5ep val macro AUC **0.764** (up from 0.685). Still below public LB ~0.94; no submit yet.
+**5-fold frozen DINOv2-S baseline done** — mean val macro AUC **~0.72**. Too low to submit vs public LB ~0.94. Next: improve labels/model, not LB probes.
 
 ## Best scores
-| Split | Macro AUC | Notes |
-|---|---|---|
-| Val fold0 | **0.764** | frozen DINOv2-S, 5 epochs, weak+expert labels |
-| Prior fold0 | 0.685 | 3ep; unfreeze collapsed later epochs |
-| Public LB | — | do not submit until multi-fold OOF is stronger |
-| Public LB top | ~0.942 | reference only |
+| Fold | Best val macro AUC |
+|---|---|
+| 0 | **0.764** |
+| 1 | 0.732 |
+| 2 | 0.725 |
+| 3 | 0.697 |
+| 4 | 0.675 |
+| **Mean (0–4)** | **~0.719** |
+| Public LB top | ~0.942 |
 
-## Train curve (fold0, frozen)
-0.701 → 0.727 → 0.739 → 0.748 → **0.764** (monotonic — good sign)
+## Read of results
+- Pipeline is stable (all folds train, loss falls).
+- Fold spread is wide (0.675–0.764) → weak-label noise + limited expert signal.
+- Frozen ViT-S + 3×12×224 cache is a floor, not a winning recipe.
 
 ## Next 3 actions
-1. Save Version named e.g. `baseline-dinov2s-fold0-frozen-auc0764`
-2. Train folds **1–4** with the same frozen recipe (or overnight Save & Run All loop)
-3. After 5-fold OOF, decide: submit probe only if OOF ≳ 0.78–0.80; else improve weak labels / DINOv2-B / resolution
+1. **Save Version** now: `baseline-dinov2s-5fold-frozen-mean072` (keep all `fold*/fold*_best.pt`)
+2. Improve supervision: stronger multilingual weak labels + expert-only fine-tune stage
+3. Scale model: DINOv2-B and/or more slices/series — only then consider first public submit
+
+## Do not
+- Submit this ~0.72 model yet (wastes daily quota)
+- Unfreeze backbone aggressively (already shown to collapse)
 
 ## Session log
-- Unfreeze hurt; freeze-only 5ep reached 0.764.
+- Fold0 frozen 5ep → 0.764; folds 1–4 complete (mean ~0.707 without fold0; ~0.719 with).
