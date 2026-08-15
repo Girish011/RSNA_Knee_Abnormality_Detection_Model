@@ -47,12 +47,27 @@ Format: date | decision | why | rejected
 - **Why:** English-only missed common ES reports (macro F1 ~0.33 → ~0.44 on expert audit).
 - **Rejected:** Jumping straight to paid LLM labeling before a measurable keyword baseline.
 
-## 2026-08-11 — Weak labels multilingual v2
-- **Decision:** Extend keyword extractor to FR/DE/PT/NL (+ EN/ES); keep precision-first; expert override; artifact `weak_labels_v2.csv`.
-- **Why:** French is the largest report language; v1 EN+ES likely capped frozen-S OOF ~0.72.
-- **Rejected:** LLM labeling as next step before measuring keyword multilingual lift on same backbone/cache.
+## 2026-08-11 — Kill weak_labels_v2 for main train
+- **Decision:** Train on `weak_labels_v1` until a new label recipe beats fold0 ablate.
+- **Why:** Matched fold0 ablate (`pos_weight=1`): v1 **0.725** > v2 **0.718**; earlier v2+pw1.5 was 0.707.
+- **Rejected:** Shipping multilingual v2 as default; full 5-fold on v2.
 
-## 2026-08-11 — Staged unfreeze + pos_weight
-- **Decision:** Freeze backbone several epochs; unfreeze at `lr × 0.05–0.1`; BCE `pos_weight` ≥ 1.5 for rare positives.
-- **Why:** Full-LR unfreeze collapsed fold0 (0.685→0.55); rare labels dominate macro AUC risk.
-- **Rejected:** Aggressive end-to-end fine-tune from epoch 0/1.
+## 2026-08-15 — Report labels v3 via multilingual zero-shot NLI (train-only)
+- **Decision:** Generate `weak_labels_v3.csv` with public mDeBERTa-XNLI + v1 fallback + expert override; never use text at inference.
+- **Why:** Keyword v2 and expert head-FT failed; FR-heavy reports need a multilingual reader, not more image tweaks.
+- **Rejected:** Paid LLM as the first v3 path; training a text model on 58 experts only.
+
+## 2026-08-15 — Kill expert-only head fine-tune as default
+- **Decision:** Do not ship expert head-FT; keep frozen-B (or S) weak_v1 checkpoints.
+- **Why:** B FT: 0.7591 → 0.7601 then drop to 0.745 on 45 gold studies.
+- **Rejected:** Longer expert FT / unfreezing last blocks on this tiny set.
+
+## 2026-08-15 — Keep cache_v1 (3×12); kill cache_v2 as default
+- **Decision:** Train on `cache_v1` until a new cache recipe beats fold0 0.764.
+- **Why:** Frozen S on 4×16 cache_v2 peaked at **0.738** (below 0.764 / 0.759).
+- **Rejected:** 5-fold or B-first on cache_v2 after a losing S smoke.
+
+## 2026-08-12 — No backbone unfreeze until frozen-B wins
+- **Decision:** Default train recipe keeps DINOv2 backbone frozen for all epochs; unfreeze only as a deliberate later experiment with tiny LR / last-block-only.
+- **Why:** B fold0 freeze→×0.05 LR unfreeze collapsed 0.729→0.615 (same as early S).
+- **Rejected:** Staged unfreeze as the default main-track schedule.

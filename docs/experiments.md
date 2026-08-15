@@ -41,6 +41,51 @@ Append one row (or block) per run. Never delete history.
 - train path: `configs/main_dinov2_b.yaml`, trainer `pos_weight` + `unfreeze_lr_mult`, notebooks 10/30
 - conclusion: ship for Kaggle A/B vs frozen-S mean **0.719**; no LB until OOF lift.
 
+### 2026-08-11 — baseline_dinov2_s + weak_v2 fold0 (partial 5-fold)
+- same cache/backbone/freeze-5ep; **weak_labels_v2**; confounds: `pos_weight=1.5` (new vs v1 run)
+- studies with any label: 2749; fold0 train/val 2192/557
+- fold0 val: 0.649 → 0.652 → 0.695 → 0.698 → **0.707** best
+- fold1 (partial): 0.676 → 0.685 → 0.687 @ ep2 (still running)
+- vs v1 fold0 **0.764** → clear fold0 regression
+- conclusion: **provisional kill on v2-as-shipped** pending full mean; next isolate `pos_weight=1` vs label noise. No submit.
+
+### 2026-08-11 — baseline_dinov2_s folds1–4 re-run (weak_v1, confirm)
+- **Not weak_v2**: `studies with any label 2449`; out `baseline_dinov2_s/fold*`
+- best: f1 **0.732**, f2 **0.725**, f3 **0.697**, f4 **0.675**; mean 1–4 **0.707**
+- matches prior folds1–4 within noise; with fold0 0.764 → still **~0.719**
+- note: log lines duplicated (likely 2 GPUs / double cell) — same scores twice
+- conclusion: **keep** as confirmed floor; do not re-run again. Pivot to label/pos_weight ablation or B.
+
+### 2026-08-11 — fold0 ablate v1 vs v2 (`pos_weight=1.0`)
+- frozen S 5ep, cache_v1, local `third_party/dinov2`
+- `v1_pw1`: 2449 labels → best **0.725** (ep: 0.682→0.700→0.704→0.704→0.725)
+- `v2_pw1`: 2749 labels → best **0.718** (ep: 0.657→0.698→0.700→**0.718**→0.713)
+- vs historical v1 fold0 **0.764** (ablate v1 under-shot; still beats v2)
+- conclusion: **kill weak_v2** for training; noise > coverage. Next = DINOv2-B or richer cache on **v1**.
+
+### 2026-08-12 — main_dinov2_b fold0 weak_v1 (freeze 4 → unfreeze)
+- cache_v1, weak_v1, pos_weight=1.0, lr 1.5e-4, unfreeze_lr_mult=0.05
+- val: 0.667 → 0.708 → 0.723 → **0.729** (ep3) → unfreeze → **0.615** (ep4)
+- conclusion: **keep ep3 checkpoint only**; unfreeze still destroys signal. Next: full-freeze B 8ep. No submit.
+
+### 2026-08-12 — main_dinov2_b fold0 weak_v1 (fully frozen 8ep)
+- cache_v1, weak_v1, pos_weight=1.0, backbone frozen all 8 epochs
+- val: 0.693 → 0.722 → 0.727 → 0.744 → 0.741 → 0.746 → 0.749 → **0.759**
+- runtime: ~12,156 s on Kaggle T4x2 notebook (single process on one GPU)
+- conclusion: **best B result so far**, but still below frozen-S fold0 **0.764**. Bigger backbone alone is not enough on `cache_v1`; next try richer cache, not more unfreeze.
+
+### 2026-08-15 — baseline_dinov2_s fold0 cache_v2 (4×16, frozen, weak_v1)
+- cache_v2 used (path True); 2449 labels; freeze 5ep; pos_weight=1.0
+- val: 0.687 → 0.709 → 0.712 → **0.738** → 0.727
+- vs cache_v1 S fold0 **0.764** and frozen B **0.759**
+- conclusion: **kill cache_v2 as default**. Extra series/slices did not help. No 5-fold on v2. Next: expert fine-tune or better labels on cache_v1.
+
+### 2026-08-15 — expert head-FT frozen B fold0
+- init: `main_dinov2_b_v1_frozen/fold0/fold0_best.pt` (ckpt_auc **0.7591**)
+- train: 45 expert studies (fold≠0); val: full fold0 496; lr 3e-5; backbone frozen
+- before FT **0.7591**; ep0 **0.7601**; then 0.760→…→**0.745**
+- conclusion: **kill**. +0.001 is noise; later epochs overfit 45 studies. Keep original B ckpt. Next: better weak labels (LLM), not more head-FT.
+
 
 ## Template
 ```text

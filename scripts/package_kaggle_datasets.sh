@@ -26,7 +26,7 @@ import pandas as pd
 root = Path(os.environ["ROOT"])
 dst = root / "outputs/kaggle_code_upload/repo/data/processed"
 dst.mkdir(parents=True, exist_ok=True)
-for name in ("weak_labels_v1.csv", "weak_labels_v2.csv"):
+for name in ("weak_labels_v1.csv", "weak_labels_v2.csv", "weak_labels_v3.csv"):
     src = root / "data/processed" / name
     if not src.exists():
         print("skip missing", name)
