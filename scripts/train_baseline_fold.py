@@ -17,12 +17,12 @@ import numpy as np
 import pandas as pd
 import yaml
 
-from rsna_knee.constants import LABEL_COLS, NUM_LABELS
+from rsna_knee.constants import LABEL_COLS
 from rsna_knee.data.cached_dataset import CachedStudyDataset, attach_folds, merge_weak_labels
 from rsna_knee.data.dataset import collate_studies
-from rsna_knee.metrics import macro_auc, summarize_metrics
+from rsna_knee.metrics import summarize_metrics
 from rsna_knee.models.multiseries import create_multiseries_model
-from rsna_knee.training.loss import masked_bce_with_logits
+from rsna_knee.training.loss import masked_multilabel_loss
 
 
 def main() -> None:
@@ -66,9 +66,14 @@ def main() -> None:
         else float(cfg.get("train", {}).get("unfreeze_lr_mult", 0.1))
     )
     backbone = str(cfg["model"].get("backbone", "dinov2_vits14"))
+    loss_cfg = cfg.get("loss", {})
+    loss_mode = str(loss_cfg.get("mode", "bce"))
+    label_smoothing = float(loss_cfg.get("label_smoothing", 0.0))
+    gce_q = float(loss_cfg.get("gce_q", 0.7))
     print(
         f"backbone={backbone} epochs={epochs} freeze_epochs={freeze_epochs} "
-        f"lr={lr} pos_weight={pos_weight} unfreeze_lr_mult={unfreeze_lr_mult}"
+        f"lr={lr} pos_weight={pos_weight} unfreeze_lr_mult={unfreeze_lr_mult} "
+        f"loss_mode={loss_mode} label_smoothing={label_smoothing}"
     )
     device = torch.device(
         args.device
@@ -149,12 +154,15 @@ def main() -> None:
                 batch["series_mask"].to(device),
                 batch["slice_mask"].to(device),
             )
-            loss = masked_bce_with_logits(
+            loss = masked_multilabel_loss(
                 logits,
                 batch["labels"].to(device),
                 batch["label_mask"].to(device),
                 batch["label_confidence"].to(device),
+                mode=loss_mode,
                 pos_weight=pos_weight,
+                label_smoothing=label_smoothing,
+                gce_q=gce_q,
             )
             loss.backward()
             opt.step()

@@ -1,0 +1,49 @@
+experiment:
+  id: labels_v3_robust_b
+  track: main
+  notes: >
+    Noisy-teacher lever: weak_labels_v3 (multilingual zero-shot NLI, ensembled
+    hypotheses) + GCE robust loss + light label smoothing. Backbone stays frozen
+    (settled 2026-08-12 no-unfreeze decision). A/B vs frozen-B weak_v1 0.759 using
+    scripts/oof_report.py with the pre-registered 0.005 margin. Do not submit until
+    the full 5-fold OOF clears the rule.
+
+paths:
+  train_csv: /kaggle/input/competitions/rsna-knee-abnormality-detection/train.csv
+  folds: data/folds/folds_v1.csv
+  weak_labels: data/processed/weak_labels_v3.csv
+  output_dir: outputs/experiments/labels_v3_robust_b
+  backbone_weights: null
+
+data:
+  max_series: 3
+  n_slices: 12
+  image_size: 224
+  center_bias: true
+  require_plane_coverage: true
+
+model:
+  backbone: dinov2_vitb14
+  freeze_backbone_epochs: 8   # frozen all epochs (== epochs); no unfreeze
+  dropout: 0.15
+  pretrained: true
+
+train:
+  n_folds: 5
+  seed: 42
+  epochs: 8
+  batch_size: 1
+  lr: 1.5e-4
+  weight_decay: 0.05
+  unfreeze_lr_mult: 0.05      # unused while frozen; kept for parity
+  amp: true
+  num_workers: 2
+
+loss:
+  type: masked_bce
+  mode: gce                   # robust to noisy report-derived teacher (bce|gce|sce)
+  gce_q: 0.7
+  label_smoothing: 0.05
+  use_confidence: true
+  pos_weight: 1.0
+  min_weak_confidence: 0.5
