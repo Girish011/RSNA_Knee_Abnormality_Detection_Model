@@ -94,6 +94,17 @@ Append one row (or block) per run. Never delete history.
 - planned A/B (pre-registered): frozen-B weak_v3 + GCE + smoothing vs frozen-B weak_v1 0.759; keep only if full 5-fold OOF delta ≥ 0.005 and candidate bootstrap CI clears the baseline mean.
 - conclusion: iterate — ship tooling, then measure on Kaggle before any submit.
 
+### 2026-08-24 — v6b constrained-Qwen labels PASS the gate (verified vs 58 gold)
+- source: reconstructed from Kaggle `girishbose/weak-labels-v6-constrained-qwen` outputs (skeleton + raw fills) + real `train.csv`.
+- v6 baseline (reproduced exactly): combined 58-expert prec **0.6826**, rec 0.7178, parse **1.0**, coverage 30,216 → FAIL (prec < 0.69).
+- per-label drag: MCL combined prec **0.381** (LLM-fill MCL prec **0.231**); Contusion 0.591, Lateral OA 0.60; rest strong.
+- rule (pre-registered): drop LLM fills where fill-precision < 0.5 → **{MCL}**.
+- v6b result: combined prec **0.7029**, rec **0.690**, parse **1.0**, coverage **27,698**, fill_pos 110, fill_prec 0.715 → **PASS**.
+- candidate: `weak_labels_v6b_candidate.csv` — 4,307/4,407 studies, 11,539 positives, 28,044 known cells; uploaded as `girishbose/rsna-knee-weak-v6b`.
+- code: `src/rsna_knee/text/fill_policy.py` (+ `tests/test_fill_policy.py`), 28 tests pass.
+- training: launched `girishbose/train-b-fold0-weak-v6b` (frozen-B fold0, A/B vs weak_v1 0.759). Result pending (~3.4h).
+- conclusion: iterate — first supervision recipe to clear the gate; verdict depends on the fold0 A/B vs 0.759.
+
 ## Template
 ```text
 ### exp-XXX — YYYY-MM-DD

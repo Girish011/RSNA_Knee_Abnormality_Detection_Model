@@ -72,6 +72,12 @@ Format: date | decision | why | rejected
 - **Why:** Competition confirmed live (2026 RSNA Knee Abnormality Detection AI Challenge; deadline 2026-10-22, winners in Nov — no writeups yet). Public signal from a top-15 team (LB 0.937): the hidden test is **graded by expert radiologists reading the images** while our train labels are noisy report-derived; "you are never optimising the thing you are scored on." They report bigger backbones / more ensemble members / TTA / extra pretraining "all measured, all worth roughly zero," the LB is noise-limited in the 3rd decimal, and the discipline that mattered was pre-registering the decision rule and reading multiple folds. Remaining open lever: "how you learn from a noisy teacher."
 - **Rejected:** Spending GPU budget on architecture/TTA/ensemble scaling before exhausting label-quality and noisy-loss levers; trusting single-fold deltas.
 
+## 2026-08-24 — v6b: per-label LLM-fill reliability gate (drop MCL)
+- **Decision:** When combining constrained-Qwen fills with the keyword skeleton, drop LLM fills for any label whose measured 58-expert fill-precision is < 0.5 (pre-registered), keeping the keyword skeleton for that label. On v6 this is exactly MCL and lifts combined precision 0.6826 → 0.7029 (passes the 0.69 gate) with recall 0.690 and parse 1.0.
+- **Why:** MCL LLM fills are consistently poisonous (v5 prec 0.27, v6 prec 0.231); reports describe MCL inconsistently. This is the minimal principled intervention, not a scan for the best label. First supervision recipe to pass the gate after v4/v5/v6.
+- **Rejected:** Relaxing the 0.69/0.98 gates; hand-picking labels; dropping additional labels (Contusion/Lateral OA) — unnecessary and costs recall/coverage.
+- **Note:** GitHub repo is a stale mirror; the authoritative code is the `girishbose/rsna-knee-code` Kaggle dataset. Fold this rule into its `consensus_labels.py`.
+
 ## 2026-08-24 — Robust losses + pre-registered OOF rule (tooling)
 - **Decision:** Add opt-in robust multilabel losses (GCE, Symmetric CE, two-sided label smoothing, per-label pos_weight) defaulting to exact BCE parity; add `rsna_knee.evaluation` + `scripts/oof_report.py` for full 5-fold OOF macro AUC with study-level bootstrap CIs and a keep/kill/inconclusive rule (default margin 0.005). Extract the v3 label layering into unit-tested `merge_pseudo_labels` and ensemble multiple NLI hypotheses per label.
 - **Why:** Directly operationalizes the two levers above; all logic unit-tested (BCE-mode == legacy loss; end-to-end CPU model step).
