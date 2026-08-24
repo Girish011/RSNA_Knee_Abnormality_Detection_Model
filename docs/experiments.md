@@ -87,6 +87,13 @@ Append one row (or block) per run. Never delete history.
 - conclusion: **kill**. +0.001 is noise; later epochs overfit 45 studies. Keep original B ckpt. Next: better weak labels (LLM), not more head-FT.
 
 
+### 2026-08-24 — Noisy-teacher tooling (code-only; no training run yet)
+- code: robust losses (`masked_multilabel_loss`: bce|gce|sce, label smoothing, per-label pos_weight), `rsna_knee.evaluation` + `scripts/oof_report.py` (full-OOF macro AUC + study-level bootstrap CI + keep/kill rule), ensembled NLI hypotheses + tested `merge_pseudo_labels`, `configs/labels_v3_robust.yaml`, notebook 14 now imports the package.
+- validation: 26 unit tests pass locally (CPU torch). BCE mode is numerically identical to the legacy loss; GCE is provably less perturbed by a flipped label; a tiny end-to-end model forward/backward runs on CPU. OOF A/B CLI verified on synthetic overlapping data (baseline 0.711 vs candidate 0.869 → KEEP with separated CIs).
+- **no competition scores claimed** — training needs Kaggle GPU + the 569 GB DICOM data.
+- planned A/B (pre-registered): frozen-B weak_v3 + GCE + smoothing vs frozen-B weak_v1 0.759; keep only if full 5-fold OOF delta ≥ 0.005 and candidate bootstrap CI clears the baseline mean.
+- conclusion: iterate — ship tooling, then measure on Kaggle before any submit.
+
 ## Template
 ```text
 ### exp-XXX — YYYY-MM-DD
