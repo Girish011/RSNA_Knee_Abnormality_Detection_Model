@@ -11,9 +11,13 @@ Connected to Kaggle with the real competition data + your active kernels. Key fa
 - **Training launched (Kaggle GPU):** `girishbose/train-b-fold0-weak-v6b` — frozen DINOv2-B fold0, identical to notebook 30 except `--weak-csv` = v6b. Gate: must beat frozen-B weak_v1 **0.759**.
 - Policy encoded here as `src/rsna_knee/text/fill_policy.py` (+ tests). To reproduce the recipe in the real pipeline: build the v6 skeleton+raw as in `notebooks/21_consensus_labels.py`, then apply `unreliable_fill_labels`/`drop_fills` before `combine_skeleton_and_fills`.
 
+### Result so far
+- **fold0 v6b = 0.7700 > frozen-B weak_v1 0.759** (+0.011), monotonic, no collapse. First recipe to clear both the label gate and the fold0 baseline.
+- Caveat: val is scored vs each run's own labels (v6b labels differ/cover more), so favorable but not a fully clean A/B; per-fold gold cross-check is tiny (13 experts → 0.672, noisy). Vetted signal = the passed label gate.
+
 ### Next actions
-1. Watch `girishbose/train-b-fold0-weak-v6b`. If fold0 > **0.759** by a real margin → run fold1 (gate vs 0.732) before any submit.
-2. If it does not beat 0.759, the labels improved but the frozen-B head can't exploit them → next lever is the head/training on v6b, not more label recipes.
+1. **fold1 A/B running** (`girishbose/train-b-fold1-weak-v6b`, gate vs untouched **0.732**). If it also beats → credible, transferable label win → proceed to 5-fold, then submit calc.
+2. If fold1 does NOT beat 0.732, treat fold0 as a non-transferring outlier (as before) — do not submit; investigate label noise per fold.
 3. Fold the MCL-drop rule into `consensus_labels.py` in the real code dataset so v6b regenerates deterministically.
 
 ## Phase

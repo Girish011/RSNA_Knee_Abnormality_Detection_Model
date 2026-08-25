@@ -102,8 +102,11 @@ Append one row (or block) per run. Never delete history.
 - v6b result: combined prec **0.7029**, rec **0.690**, parse **1.0**, coverage **27,698**, fill_pos 110, fill_prec 0.715 → **PASS**.
 - candidate: `weak_labels_v6b_candidate.csv` — 4,307/4,407 studies, 11,539 positives, 28,044 known cells; uploaded as `girishbose/rsna-knee-weak-v6b`.
 - code: `src/rsna_knee/text/fill_policy.py` (+ `tests/test_fill_policy.py`), 28 tests pass.
-- training: launched `girishbose/train-b-fold0-weak-v6b` (frozen-B fold0, A/B vs weak_v1 0.759). Result pending (~3.4h).
-- conclusion: iterate — first supervision recipe to clear the gate; verdict depends on the fold0 A/B vs 0.759.
+- training: `girishbose/train-b-fold0-weak-v6b` COMPLETE (frozen-B fold0; first launch died on a Kaggle GPU/env mismatch — fixed by pinning `machine_shape=NvidiaTeslaT4` + the known-good `docker_image`).
+- result: fold0 val macro_auc by epoch 0.726→0.733→0.749→0.751→0.751→0.757→**0.770**(ep6)→0.763. BEST **0.7700 > frozen-B weak_v1 0.759** (+0.011). Clean monotonic train, no collapse.
+- caveat (honest): val AUC is scored against each run's own weak labels, and v6b labels differ from v1 (v6b covers 4307 vs 2749 studies), so 0.770-vs-0.759 is favorable but not a fully clean A/B. Per-fold gold cross-check is tiny (only 13 experts in fold0 val → macro 0.672, high variance) so not decisive on its own. The vetted gold signal is the passed label gate.
+- next: fold1 A/B launched (`girishbose/train-b-fold1-weak-v6b`, gate vs untouched **0.732**) to confirm the fold0 win transfers before any 5-fold/submit.
+- conclusion: iterate — first supervision recipe to clear the label gate AND beat the frozen-B fold0 baseline; hold submit until fold1 confirms.
 
 ## Template
 ```text
