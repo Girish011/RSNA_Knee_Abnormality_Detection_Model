@@ -111,7 +111,10 @@ Append one row (or block) per run. Never delete history.
 - folds 2,3 COMPLETE: fold2 **0.7626**, fold3 **0.7661** (vs v6b labels). fold4 running.
 - **DECISIVE gold read (4-fold OOF, 46/58 experts):** macro AUC **vs expert gold = 0.7124**; vs v6b weak labels = 0.7543 (confounded). This is the first meaningful gold-OOF estimate in the project.
 - per-label vs gold: strong Medial OA 0.893, Effusion 0.854, Baker's 0.785, Lat Meniscus 0.764; **weak ACL 0.552, Contusion 0.559, Fracture 0.597, MCL 0.663, PF OA 0.696**.
-- conclusion: KEEP v6b as the labels (beat label gate + fold0 0.770/fold1 0.739), BUT **do NOT submit**: gold-OOF ~0.71 is not "far above 0.72" (HANDOFF bar) and is far from the ~0.94 top. The remaining gap is concentrated in ACL/Contusion/Fracture — next levers must target those labels' image signal (cache/plane routing/aug), not more global label recipes.
+- FULL 5-fold complete: f2 0.763, f3 0.766, f4 0.736.
+- **FINAL full 5-fold OOF (all 58 experts): vs gold = 0.6895; vs v6b weak labels = 0.7508.**
+- per-label vs gold: **ACL 0.501 (chance), Fracture 0.556, MCL 0.601, Contusion 0.611**, Synovitis 0.700, MedMen 0.709, PFOA 0.712, LatOA 0.714, Baker's 0.726, LatMen 0.733, Effusion 0.850, MedialOA 0.860.
+- conclusion: KEEP v6b labels (legit gated win), **DO NOT submit** — true gold-OOF 0.69 < 0.72 floor and far from ~0.94. Bottleneck is now image signal, esp. **ACL at chance (0.50)** while OA/Effusion work → the model is blind to ACL despite clean labels. Next lever = image pipeline (sagittal coverage / cache / plane routing) targeting ACL/Fracture/Contusion, NOT more label recipes.
 
 ## Template
 ```text

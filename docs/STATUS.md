@@ -15,19 +15,19 @@ Connected to Kaggle with the real competition data + your active kernels. Key fa
 - fold0 v6b **0.7700** > 0.759 (+0.011); fold1 v6b **0.7387** > 0.732 (+0.007). Monotonic, no collapse.
 - Caveat: val scored vs each run's own labels (v6b covers 4307 vs 2749), so favorable but not a fully clean A/B; per-fold gold cross-check is tiny. Vetted signal = passed label gate (prec 0.703/rec 0.690).
 
-### DECISIVE gold read (4-fold OOF, 46/58 experts)
-- **OOF vs expert gold = 0.7124** (first real gold estimate). vs v6b weak labels 0.7543 (confounded).
-- Fold scores (vs v6b labels): f0 0.770, f1 0.739, f2 0.763, f3 0.766, f4 running.
-- Weak per-label vs gold: **ACL 0.552, Contusion 0.559, Fracture 0.597, MCL 0.663, PF OA 0.696**; strong Medial OA 0.893, Effusion 0.854, Baker's 0.785.
+### DECISIVE full 5-fold OOF (all 58 experts) — 2026-08-26
+- **OOF vs expert gold = 0.6895** (all 58). vs v6b weak labels 0.7508 (confounded; overstates by ~0.06).
+- Fold scores (vs v6b labels): f0 0.770, f1 0.739, f2 0.763, f3 0.766, f4 0.736.
+- Per-label vs gold: **ACL 0.501 (CHANCE), Fracture 0.556, MCL 0.601, Contusion 0.611**, Synovitis 0.700, Med Men 0.709, PF OA 0.712, Lat OA 0.714, Baker's 0.726, Lat Men 0.733, **Effusion 0.850, Medial OA 0.860**.
 
-### Verdict: KEEP v6b labels, but DO NOT SUBMIT
-Gold-OOF ~0.71 is not "far above 0.72" (the submit bar) and is far from ~0.94. v6b is a legitimate gated label win, but supervision alone did not close the gap. The gap is concentrated in specific labels.
+### Verdict: v6b labels KEPT; DO NOT SUBMIT (gold-OOF 0.69 < 0.72 floor, vs ~0.94 top)
+v6b was a legitimate, fully-gated supervision win (beat label gate + all 5 folds vs weak labels), but the true gold-OOF is **0.69** — the supervision lever alone did not close the gap. The bottleneck is now clearly **image signal for specific labels**, above all **ACL at chance (0.50)** while Medial OA/Effusion work — so the model is blind to ACL despite clean labels. This is an image-pipeline problem, not labels.
 
-### Next levers (target the weak labels' image signal, not global recipes)
-1. Finish fold4 → recompute gold-OOF on all 58 (expect ~0.71, will confirm).
-2. **ACL/Fracture/Contusion are near-chance** despite decent positives → these need better image signal: revisit cache (sagittal coverage for ACL, higher res, more slices for subtle fracture/contusion), per-label plane routing, or targeted augmentation. This is now allowed as a scoped experiment since the supervision lever is exhausted for now.
-3. Fold the MCL-drop rule into `consensus_labels.py` in the real code dataset so v6b regenerates deterministically.
-4. Do not burn a submit/final until gold-OOF is well above 0.72.
+### Next lever (image side; scope change from supervision)
+1. **Diagnose ACL=0.50 first (cheap):** the frozen DINOv2 3×12×224 cache likely never presents the ACL — sagittal-plane coverage + mid-slice sampling. Check series selection/slice sampling for sagittal PD/T2 before any retrain.
+2. Then a scoped cache/plane experiment targeting ACL+Fracture+Contusion (sagittal coverage, higher res, more slices) — the only labels with real macro headroom.
+3. Fold the MCL-drop rule into `consensus_labels.py` so v6b regenerates deterministically.
+4. No submit/final until gold-OOF is well above 0.72.
 
 ## Phase
 **Noisy-teacher lever, measured with discipline.** Competition is live (RSNA 2026 Knee; deadline 2026-10-22). Hidden test is expert-radiologist-graded on images while train labels are noisy report-derived — so OOF ~0.76 vs public ~0.94 is partly a *label/measurement* gap, not just capacity. External top-15 signal: bigger backbone / more ensemble / TTA / extra pretraining ≈ 0; LB noise-limited in 3rd decimal. Focus: (1) v3 NLI labels, (2) robust losses, (3) pre-registered multi-fold OOF. Do not submit until the full 5-fold OOF clears the rule.
