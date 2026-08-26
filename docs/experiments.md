@@ -108,7 +108,10 @@ Append one row (or block) per run. Never delete history.
 - fold1 A/B (`girishbose/train-b-fold1-weak-v6b`) COMPLETE: epochs 0.718→0.726→0.728→0.734→0.734→0.735→0.732→**0.739**. BEST **0.7387 > untouched fold1 0.732** (+0.007). Win TRANSFERS.
 - 5-fold: folds 2,3,4 launched to complete the OOF (`train-b-fold{2,3,4}-weak-v6b`). Kaggle caps 2 concurrent GPU sessions → f2+f3 run first, f4 after a slot frees.
 - next decisive eval: aggregate all 5 folds' OOF and score vs ALL 58 expert gold (unconfounded, n=58 not 13) + full weak-label OOF, then decide submit.
-- conclusion: KEEP — v6b is the first recipe to clear the label gate and beat BOTH fold0 (0.770 vs 0.759) and fold1 (0.739 vs 0.732). Proceeding to full 5-fold before any submit.
+- folds 2,3 COMPLETE: fold2 **0.7626**, fold3 **0.7661** (vs v6b labels). fold4 running.
+- **DECISIVE gold read (4-fold OOF, 46/58 experts):** macro AUC **vs expert gold = 0.7124**; vs v6b weak labels = 0.7543 (confounded). This is the first meaningful gold-OOF estimate in the project.
+- per-label vs gold: strong Medial OA 0.893, Effusion 0.854, Baker's 0.785, Lat Meniscus 0.764; **weak ACL 0.552, Contusion 0.559, Fracture 0.597, MCL 0.663, PF OA 0.696**.
+- conclusion: KEEP v6b as the labels (beat label gate + fold0 0.770/fold1 0.739), BUT **do NOT submit**: gold-OOF ~0.71 is not "far above 0.72" (HANDOFF bar) and is far from the ~0.94 top. The remaining gap is concentrated in ACL/Contusion/Fracture — next levers must target those labels' image signal (cache/plane routing/aug), not more global label recipes.
 
 ## Template
 ```text
