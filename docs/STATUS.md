@@ -11,14 +11,15 @@ Connected to Kaggle with the real competition data + your active kernels. Key fa
 - **Training launched (Kaggle GPU):** `girishbose/train-b-fold0-weak-v6b` — frozen DINOv2-B fold0, identical to notebook 30 except `--weak-csv` = v6b. Gate: must beat frozen-B weak_v1 **0.759**.
 - Policy encoded here as `src/rsna_knee/text/fill_policy.py` (+ tests). To reproduce the recipe in the real pipeline: build the v6 skeleton+raw as in `notebooks/21_consensus_labels.py`, then apply `unreliable_fill_labels`/`drop_fills` before `combine_skeleton_and_fills`.
 
-### Result so far
-- **fold0 v6b = 0.7700 > frozen-B weak_v1 0.759** (+0.011), monotonic, no collapse. First recipe to clear both the label gate and the fold0 baseline.
-- Caveat: val is scored vs each run's own labels (v6b labels differ/cover more), so favorable but not a fully clean A/B; per-fold gold cross-check is tiny (13 experts → 0.672, noisy). Vetted signal = the passed label gate.
+### Result so far — v6b beats BOTH folds (win transfers)
+- fold0 v6b **0.7700** > 0.759 (+0.011); fold1 v6b **0.7387** > 0.732 (+0.007). Monotonic, no collapse.
+- Caveat: val scored vs each run's own labels (v6b covers 4307 vs 2749), so favorable but not a fully clean A/B; per-fold gold cross-check is tiny. Vetted signal = passed label gate (prec 0.703/rec 0.690).
 
 ### Next actions
-1. **fold1 A/B running** (`girishbose/train-b-fold1-weak-v6b`, gate vs untouched **0.732**). If it also beats → credible, transferable label win → proceed to 5-fold, then submit calc.
-2. If fold1 does NOT beat 0.732, treat fold0 as a non-transferring outlier (as before) — do not submit; investigate label noise per fold.
-3. Fold the MCL-drop rule into `consensus_labels.py` in the real code dataset so v6b regenerates deterministically.
+1. **5-fold in progress:** folds 2,3,4 launched (`train-b-fold{2,3,4}-weak-v6b`). Kaggle caps 2 concurrent GPU sessions → f2+f3 running, f4 launches when a slot frees.
+2. When all 5 done: aggregate OOF, score vs ALL 58 gold (unconfounded) + full weak-label OOF. That is the decisive, honest number vs the ~0.94 hidden-test bar.
+3. Only if the full OOF holds up: build the code-competition submission notebook (images+metadata only, ≤9h, internet off) and do the efficiency-final calc. Do NOT submit before then.
+4. Fold the MCL-drop rule into `consensus_labels.py` in the real code dataset so v6b regenerates deterministically.
 
 ## Phase
 **Noisy-teacher lever, measured with discipline.** Competition is live (RSNA 2026 Knee; deadline 2026-10-22). Hidden test is expert-radiologist-graded on images while train labels are noisy report-derived — so OOF ~0.76 vs public ~0.94 is partly a *label/measurement* gap, not just capacity. External top-15 signal: bigger backbone / more ensemble / TTA / extra pretraining ≈ 0; LB noise-limited in 3rd decimal. Focus: (1) v3 NLI labels, (2) robust losses, (3) pre-registered multi-fold OOF. Do not submit until the full 5-fold OOF clears the rule.

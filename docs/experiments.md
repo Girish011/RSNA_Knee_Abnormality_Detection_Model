@@ -105,8 +105,10 @@ Append one row (or block) per run. Never delete history.
 - training: `girishbose/train-b-fold0-weak-v6b` COMPLETE (frozen-B fold0; first launch died on a Kaggle GPU/env mismatch — fixed by pinning `machine_shape=NvidiaTeslaT4` + the known-good `docker_image`).
 - result: fold0 val macro_auc by epoch 0.726→0.733→0.749→0.751→0.751→0.757→**0.770**(ep6)→0.763. BEST **0.7700 > frozen-B weak_v1 0.759** (+0.011). Clean monotonic train, no collapse.
 - caveat (honest): val AUC is scored against each run's own weak labels, and v6b labels differ from v1 (v6b covers 4307 vs 2749 studies), so 0.770-vs-0.759 is favorable but not a fully clean A/B. Per-fold gold cross-check is tiny (only 13 experts in fold0 val → macro 0.672, high variance) so not decisive on its own. The vetted gold signal is the passed label gate.
-- next: fold1 A/B launched (`girishbose/train-b-fold1-weak-v6b`, gate vs untouched **0.732**) to confirm the fold0 win transfers before any 5-fold/submit.
-- conclusion: iterate — first supervision recipe to clear the label gate AND beat the frozen-B fold0 baseline; hold submit until fold1 confirms.
+- fold1 A/B (`girishbose/train-b-fold1-weak-v6b`) COMPLETE: epochs 0.718→0.726→0.728→0.734→0.734→0.735→0.732→**0.739**. BEST **0.7387 > untouched fold1 0.732** (+0.007). Win TRANSFERS.
+- 5-fold: folds 2,3,4 launched to complete the OOF (`train-b-fold{2,3,4}-weak-v6b`). Kaggle caps 2 concurrent GPU sessions → f2+f3 run first, f4 after a slot frees.
+- next decisive eval: aggregate all 5 folds' OOF and score vs ALL 58 expert gold (unconfounded, n=58 not 13) + full weak-label OOF, then decide submit.
+- conclusion: KEEP — v6b is the first recipe to clear the label gate and beat BOTH fold0 (0.770 vs 0.759) and fold1 (0.739 vs 0.732). Proceeding to full 5-fold before any submit.
 
 ## Template
 ```text
