@@ -23,8 +23,14 @@ Connected to Kaggle with the real competition data + your active kernels. Key fa
 ### Verdict: v6b labels KEPT; DO NOT SUBMIT (gold-OOF 0.69 < 0.72 floor, vs ~0.94 top)
 v6b was a legitimate, fully-gated supervision win (beat label gate + all 5 folds vs weak labels), but the true gold-OOF is **0.69** — the supervision lever alone did not close the gap. The bottleneck is now clearly **image signal for specific labels**, above all **ACL at chance (0.50)** while Medial OA/Effusion work — so the model is blind to ACL despite clean labels. This is an image-pipeline problem, not labels.
 
-### Next lever (image side; scope change from supervision)
-1. **Diagnose ACL=0.50 first (cheap):** the frozen DINOv2 3×12×224 cache likely never presents the ACL — sagittal-plane coverage + mid-slice sampling. Check series selection/slice sampling for sagittal PD/T2 before any retrain.
+### ACL diagnostic in progress (label vs image)
+- Ruled OUT missing data: **100% of studies have a sagittal series** (train_series.csv). So ACL=0.50 is not missing-plane.
+- Found: v6 **ACL LLM-fill precision was exactly 0.50** (coin-flip) → ~half the added ACL positives are wrong. v6b kept them (rule was strictly <0.5).
+- **v6c** = drop LLM fills with precision <0.55 → {MCL, ACL, Lateral OA}, keep keyword skeleton. Gate PASSES (prec 0.724, rec 0.634, coverage 23,143). ACL positives 657→291 (cleaner). Uploaded `girishbose/rsna-knee-weak-v6c`.
+- **Running:** `train-b-fold{0,1}-weak-v6c`. Decides: if ACL gold-AUC rises off 0.50 → it was label noise; if it stays ~0.50 → frozen DINOv2 can't see ACL (image lever needed).
+
+### Next lever (image side; only if v6c does NOT fix ACL)
+1. Higher-res / more-slice cache with guaranteed sagittal ACL mid-slices; per-label plane routing.
 2. Then a scoped cache/plane experiment targeting ACL+Fracture+Contusion (sagittal coverage, higher res, more slices) — the only labels with real macro headroom.
 3. Fold the MCL-drop rule into `consensus_labels.py` so v6b regenerates deterministically.
 4. No submit/final until gold-OOF is well above 0.72.
