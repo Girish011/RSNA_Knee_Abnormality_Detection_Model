@@ -116,6 +116,12 @@ Append one row (or block) per run. Never delete history.
 - per-label vs gold: **ACL 0.501 (chance), Fracture 0.556, MCL 0.601, Contusion 0.611**, Synovitis 0.700, MedMen 0.709, PFOA 0.712, LatOA 0.714, Baker's 0.726, LatMen 0.733, Effusion 0.850, MedialOA 0.860.
 - conclusion: KEEP v6b labels (legit gated win), **DO NOT submit** — true gold-OOF 0.69 < 0.72 floor and far from ~0.94. Bottleneck is now image signal, esp. **ACL at chance (0.50)** while OA/Effusion work → the model is blind to ACL despite clean labels. Next lever = image pipeline (sagittal coverage / cache / plane routing) targeting ACL/Fracture/Contusion, NOT more label recipes.
 
+### 2026-08-26 — v6c (drop ACL/MCL/LatOA coin-flip LLM fills) FIXES ACL
+- rule: drop LLM fills with 58-expert fill-precision < 0.55 → {MCL, ACL, Lateral OA}; keep keyword skeleton. Gate PASSES (prec 0.724, rec 0.634, coverage 23,143). Uploaded `girishbose/rsna-knee-weak-v6c`.
+- v6c fold0 0.768 / fold1 0.749 (vs its own labels). Kernels `train-b-fold{0,1}-weak-v6c`.
+- **gold read (fold0+1, 24 experts): v6c 0.7358 vs v6b 0.6894 (+0.046)**. ACL **0.452→0.770 (+0.319)**, MCL 0.381→0.698, Med Men +0.121, Medial OA +0.118, Synovitis +0.107, Baker's +0.159; regressions Effusion -0.230, Lateral OA -0.159 (likely n=24 variance).
+- conclusion: ACL/MCL were label-noise (coin-flip fills), not image-blind — v6c is the strongest lever yet. Rolling v6c to full 5-fold (`train-b-fold{2,3,4}-weak-v6c`) to confirm full-58 gold OOF > v6b 0.6895 before adopting v6c as the labels.
+
 ## Template
 ```text
 ### exp-XXX — YYYY-MM-DD

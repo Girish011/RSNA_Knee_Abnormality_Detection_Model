@@ -23,7 +23,12 @@ Connected to Kaggle with the real competition data + your active kernels. Key fa
 ### Verdict: v6b labels KEPT; DO NOT SUBMIT (gold-OOF 0.69 < 0.72 floor, vs ~0.94 top)
 v6b was a legitimate, fully-gated supervision win (beat label gate + all 5 folds vs weak labels), but the true gold-OOF is **0.69** — the supervision lever alone did not close the gap. The bottleneck is now clearly **image signal for specific labels**, above all **ACL at chance (0.50)** while Medial OA/Effusion work — so the model is blind to ACL despite clean labels. This is an image-pipeline problem, not labels.
 
-### ACL diagnostic in progress (label vs image)
+### ANSWER: ACL was label noise, and v6c fixes it (2026-08-26)
+- v6c fold0+1 vs v6b fold0+1 on 24 gold experts: macro **0.6894 → 0.7358**. **ACL 0.452 → 0.770 (+0.319)**, MCL 0.381→0.698, Med Men +0.121, Medial OA +0.118. (Effusion dipped 0.90→0.67 — likely n=24 variance; confirm on full 5-fold.)
+- So ACL/MCL were **poisoned by coin-flip LLM fills**, NOT image-blind. Cleaning them (keyword-only) recovers detection. This is the strongest lever found.
+- v6c fold scores vs its own labels: f0 0.768, f1 0.749. Rolling to full 5-fold (`train-b-fold{2,3,4}-weak-v6c`) to confirm full-58 gold OOF beats v6b's 0.6895.
+
+### (resolved) ACL diagnostic — label vs image
 - Ruled OUT missing data: **100% of studies have a sagittal series** (train_series.csv). So ACL=0.50 is not missing-plane.
 - Found: v6 **ACL LLM-fill precision was exactly 0.50** (coin-flip) → ~half the added ACL positives are wrong. v6b kept them (rule was strictly <0.5).
 - **v6c** = drop LLM fills with precision <0.55 → {MCL, ACL, Lateral OA}, keep keyword skeleton. Gate PASSES (prec 0.724, rec 0.634, coverage 23,143). ACL positives 657→291 (cleaner). Uploaded `girishbose/rsna-knee-weak-v6c`.
