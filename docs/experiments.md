@@ -137,6 +137,12 @@ Append one row (or block) per run. Never delete history.
 - **v7 vs Qwen cross-check: 88.2% agreement on Turkish (2107 cells), 76.8% on Greek (482).** Two independent methods concur → both capture real signal; the agreement cells are high-precision.
 - conclusion: v7 is a validated independent multilingual labeler. Its highest-value use is a **v7∩Qwen consensus** (label where both agree, else abstain) for high-precision TR/EL supervision — not v7 alone. Blocker remains measurement: 6+3 TR/EL gold can't validate model impact → need an external ruler (MRNet/KneeMRI) before trusting a retrain delta.
 
+### 2026-08-27 — v8 train fold0+1 COMPLETE (interim; full-58 pending)
+- kernels: `train-b-fold{0,1}-weak-v8` COMPLETE; fold2+3 RUNNING.
+- weak-val (confounded): f0 **0.7853** / f1 **0.7827** vs v6c 0.7683 / 0.7493 (+0.017 / +0.033).
+- gold fold0+1 (n=24, noisy): v6c 0.7358 → v8 **0.7459** (+0.010). Per-label swings large (MCL −0.17, LatOA +0.14) — expected noise at this n.
+- conclusion: iterate — **do not keep/kill**; wait for folds 2–4 + full-58 gold vs 0.7023 (±0.005 rule). Projected LB ≈ OOF − 0.02.
+
 ### 2026-08-27 — In-domain cross-check + v8 candidate (additive TR/EL consensus)
 - LB API confirm: submission 55818692 publicScore **0.682**.
 - Cross-check (`scripts/crosscheck_labels.py`, soft lo/hi 0.2/0.7): yunus **91.2%** agree, dread 80.9% (MCL 38%), barun pseudo unusable (≈0.5 mass).

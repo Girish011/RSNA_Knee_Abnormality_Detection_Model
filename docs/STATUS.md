@@ -8,8 +8,14 @@ Last updated: 2026-08-27 (LB 0.682 confirmed; cross-check + v8 candidate uploade
   - vs **yunus**: **91.2%** agree where both commit (best external teacher signal)
   - vs **dread**: 80.9%; MCL agree only 38% (we much more positive)
   - vs **barun** `pseudo_*`: useless (mass at 0.5); hard cols = 58 gold only
-- **v8 candidate built + uploaded:** `girishbose/rsna-knee-weak-v8` = v6c ⊕ additive (v7∩Qwen) on TR/EL. +495 known cells (mostly ACL/MCL/LatOA gap-fills). v7∩Qwen agree 85.1%. **Not yet trained** — next = frozen-B 5-fold → full-58 gold vs 0.7023.
+- **v8 candidate built + uploaded:** `girishbose/rsna-knee-weak-v8` = v6c ⊕ additive (v7∩Qwen) on TR/EL. +495 known cells (mostly ACL/MCL/LatOA gap-fills). v7∩Qwen agree 85.1%.
 - **SECURITY:** token was pasted in chat again — **rotate** after this session.
+
+### v8 train progress (live)
+- fold0 COMPLETE: weak-val **0.7853** (v6c was 0.7683) 
+- fold1 COMPLETE: weak-val **0.7827** (v6c was 0.7493)
+- fold0+1 gold (n=24, **noisy**): v6c 0.7358 → v8 **0.7459** (+0.010). Do NOT keep/kill on this — wait for full-58.
+- fold2+3 **RUNNING**; fold4 queued after a slot frees.
 
 ## 2026-08-27 — LB PROBE RESULT (calibrated)
 - Notebook `girishbose/rsna-knee-submit-v6c` **Version 1** Succeeded → **public LB = 0.682**.
