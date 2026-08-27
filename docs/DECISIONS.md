@@ -72,6 +72,11 @@ Format: date | decision | why | rejected
 - **Why:** Competition confirmed live (2026 RSNA Knee Abnormality Detection AI Challenge; deadline 2026-10-22, winners in Nov — no writeups yet). Public signal from a top-15 team (LB 0.937): the hidden test is **graded by expert radiologists reading the images** while our train labels are noisy report-derived; "you are never optimising the thing you are scored on." They report bigger backbones / more ensemble members / TTA / extra pretraining "all measured, all worth roughly zero," the LB is noise-limited in the 3rd decimal, and the discipline that mattered was pre-registering the decision rule and reading multiple folds. Remaining open lever: "how you learn from a noisy teacher."
 - **Rejected:** Spending GPU budget on architecture/TTA/ensemble scaling before exhausting label-quality and noisy-loss levers; trusting single-fold deltas.
 
+## 2026-08-27 — v8 overlay is additive gap-fill (not overwrite)
+- **Decision:** When applying v7∩Qwen consensus onto adopted v6c, **only fill cells where v6c is NaN** (`only_where_base_isna=True`). Do not overwrite trusted v6c commits. In practice this re-supplies ACL/MCL/Lateral OA on TR/EL studies where both extractors agree — the columns whose LLM fills v6c dropped.
+- **Why:** Matches the “high-precision multilingual supervision” intent; measured delta was +495 cells with only ~7 accidental overwrites in the overwrite variant. Safer A/B vs v6c.
+- **Rejected:** Blind overwrite of all consensus cells onto v6c.
+
 ## 2026-08-27 — LB calibration: gold-OOF ≈ public + 0.02 (v6c fold0 probe)
 - **Decision:** Treat **full-58 gold OOF** as the primary internal ruler. Translate to expected public LB with **≈ −0.02** (measured: gold 0.7023 vs public **0.682** on fold0-only v6c probe). Ignore weak-label OOF for keep/kill (~0.75 overstated by ~0.07). Do not select the 0.682 probe as a final; do not spend more public submits until gold OOF beats 0.7023 by the pre-registered 0.005 margin *and* projected LB (OOF−0.02) clears an explicit bar.
 - **Why:** First real competition-distribution signal. Confirms the 58-gold macro is slightly optimistic but directionally honest; weak-label val is not.

@@ -1,6 +1,15 @@
 # STATUS
 
-Last updated: 2026-08-27 (LB probe scored — public **0.682**)
+Last updated: 2026-08-27 (LB 0.682 confirmed; cross-check + v8 candidate uploaded)
+
+## 2026-08-27 — Auth restored; cross-check DONE; v8 candidate on Kaggle
+- Kaggle auth working as `girishbose`. Submission API confirms probe **publicScore 0.682** (ref 55818692). Rank ~1999/2516.
+- **In-domain label cross-check** (soft→hard lo=0.2/hi=0.7):
+  - vs **yunus**: **91.2%** agree where both commit (best external teacher signal)
+  - vs **dread**: 80.9%; MCL agree only 38% (we much more positive)
+  - vs **barun** `pseudo_*`: useless (mass at 0.5); hard cols = 58 gold only
+- **v8 candidate built + uploaded:** `girishbose/rsna-knee-weak-v8` = v6c ⊕ additive (v7∩Qwen) on TR/EL. +495 known cells (mostly ACL/MCL/LatOA gap-fills). v7∩Qwen agree 85.1%. **Not yet trained** — next = frozen-B 5-fold → full-58 gold vs 0.7023.
+- **SECURITY:** token was pasted in chat again — **rotate** after this session.
 
 ## 2026-08-27 — LB PROBE RESULT (calibrated)
 - Notebook `girishbose/rsna-knee-submit-v6c` **Version 1** Succeeded → **public LB = 0.682**.
@@ -101,9 +110,9 @@ v6b was a legitimate, fully-gated supervision win (beat label gate + all 5 folds
 - Config: `configs/labels_v3_robust.yaml` (frozen-B + weak_v3 + GCE + smoothing).
 
 ## Next 3 actions
-1. **Human:** add rotated `KAGGLE_API_TOKEN` to this environment (still missing; prior token was pasted in chat — rotate it).
-2. With auth: download competitor public label sets + v6c/Qwen/v7 artifacts → `scripts/crosscheck_labels.py` (in-domain ruler, zero domain shift).
-3. Build **v8** (`scripts/build_weak_labels_v8.py`) → sync into `girishbose/rsna-knee-code` → frozen-B 5-fold → keep only if full-58 gold OOF ≥ **0.7023 + 0.005**; only then consider another LB probe (projected ≈ OOF − 0.02).
+1. Kaggle: frozen-B 5-fold on `girishbose/rsna-knee-weak-v8` (same recipe as v6c; pin T4 + known docker image). Save `fold*_oof.csv`.
+2. Full-58 gold OOF vs v6c **0.7023** — keep only if Δ ≥ 0.005; projected LB ≈ OOF − 0.02.
+3. Fold `fill_policy` + v7 + `label_consensus` into `girishbose/rsna-knee-code`; rotate the pasted Kaggle token.
 
 ## Do not
 - Select v6c fold0 (0.682) as a final; burn more LB probes without a gold-OOF rule win

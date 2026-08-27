@@ -27,17 +27,38 @@ from rsna_knee.constants import LABEL_COLS, SUBMISSION_ID_COL
 from rsna_knee.text.label_consensus import agreement_stats
 
 
-def _load_labels(path: Path) -> pd.DataFrame:
+def _harden_soft(series: pd.Series, *, lo: float, hi: float) -> pd.Series:
+    """Map soft probs → {0, 1, NA}. Values in (lo, hi) abstain."""
+    x = pd.to_numeric(series, errors="coerce")
+    out = pd.Series(pd.NA, index=x.index, dtype="Float64")
+    out = out.mask(x <= lo, 0.0)
+    out = out.mask(x >= hi, 1.0)
+    return out
+
+
+def _load_labels(
+    path: Path,
+    *,
+    prefix: str = "",
+    soft_lo: float | None = None,
+    soft_hi: float | None = None,
+) -> pd.DataFrame:
     df = pd.read_csv(path)
     if SUBMISSION_ID_COL not in df.columns:
         raise SystemExit(f"{path}: missing {SUBMISSION_ID_COL}")
-    missing = [c for c in LABEL_COLS if c not in df.columns]
-    if missing:
-        raise SystemExit(f"{path}: missing label cols {missing}")
-    out = df[[SUBMISSION_ID_COL, *LABEL_COLS]].copy()
+    cols = []
+    for c in LABEL_COLS:
+        src = f"{prefix}{c}" if prefix else c
+        if src not in df.columns:
+            raise SystemExit(f"{path}: missing label col {src!r}")
+        cols.append(src)
+    out = df[[SUBMISSION_ID_COL, *cols]].copy()
+    out = out.rename(columns={f"{prefix}{c}": c for c in LABEL_COLS} if prefix else {})
     out[SUBMISSION_ID_COL] = out[SUBMISSION_ID_COL].astype(str)
     for c in LABEL_COLS:
         out[c] = pd.to_numeric(out[c], errors="coerce")
+        if soft_lo is not None and soft_hi is not None:
+            out[c] = _harden_soft(out[c], lo=soft_lo, hi=soft_hi)
     return out.drop_duplicates(SUBMISSION_ID_COL, keep="first")
 
 
@@ -97,12 +118,40 @@ def main() -> None:
         metavar="NAME=PATH",
         help="Competitor label CSV as name=path (repeatable)",
     )
+    ap.add_argument(
+        "--other-prefix",
+        action="append",
+        default=[],
+        metavar="NAME=PREFIX",
+        help="Optional column prefix for a named --other source (e.g. barun=pseudo_)",
+    )
+    ap.add_argument(
+        "--soft-lo",
+        type=float,
+        default=None,
+        help="Harden soft probs: <=lo → 0 (with --soft-hi)",
+    )
+    ap.add_argument(
+        "--soft-hi",
+        type=float,
+        default=None,
+        help="Harden soft probs: >=hi → 1; (lo,hi) abstain",
+    )
     ap.add_argument("--gold", type=Path, default=None, help="Optional train.csv with expert gold")
     ap.add_argument("--out", type=Path, required=True, help="Output directory for audit CSVs")
     args = ap.parse_args()
 
-    ours = _load_labels(args.ours)
+    if (args.soft_lo is None) ^ (args.soft_hi is None):
+        raise SystemExit("provide both --soft-lo and --soft-hi, or neither")
+
+    ours = _load_labels(args.ours)  # ours are already hard / NaN
     args.out.mkdir(parents=True, exist_ok=True)
+    prefix_map = {}
+    for spec in args.other_prefix:
+        if "=" not in spec:
+            raise SystemExit(f"--other-prefix expects NAME=PREFIX, got {spec!r}")
+        n, p = spec.split("=", 1)
+        prefix_map[n] = p
 
     cov_rows = [{"source": "ours", **_coverage(ours)}]
     print("=== coverage ===")
@@ -112,7 +161,12 @@ def main() -> None:
         if "=" not in spec:
             raise SystemExit(f"--other expects NAME=PATH, got {spec!r}")
         name, path_s = spec.split("=", 1)
-        other = _load_labels(Path(path_s))
+        other = _load_labels(
+            Path(path_s),
+            prefix=prefix_map.get(name, ""),
+            soft_lo=args.soft_lo,
+            soft_hi=args.soft_hi,
+        )
         cov = _coverage(other)
         cov_rows.append({"source": name, **cov})
         print(f"{name}: {cov}")

@@ -137,6 +137,13 @@ Append one row (or block) per run. Never delete history.
 - **v7 vs Qwen cross-check: 88.2% agreement on Turkish (2107 cells), 76.8% on Greek (482).** Two independent methods concur → both capture real signal; the agreement cells are high-precision.
 - conclusion: v7 is a validated independent multilingual labeler. Its highest-value use is a **v7∩Qwen consensus** (label where both agree, else abstain) for high-precision TR/EL supervision — not v7 alone. Blocker remains measurement: 6+3 TR/EL gold can't validate model impact → need an external ruler (MRNet/KneeMRI) before trusting a retrain delta.
 
+### 2026-08-27 — In-domain cross-check + v8 candidate (additive TR/EL consensus)
+- LB API confirm: submission 55818692 publicScore **0.682**.
+- Cross-check (`scripts/crosscheck_labels.py`, soft lo/hi 0.2/0.7): yunus **91.2%** agree, dread 80.9% (MCL 38%), barun pseudo unusable (≈0.5 mass).
+- v8: `build_weak_labels_v8.py` default = **additive gap-fill** of v7∩Qwen onto v6c for TR/EL only. Agree 85.1% (2593/3048). +495 cells (ACL+108, MCL+120, LatOA+267). Uploaded `girishbose/rsna-knee-weak-v8`.
+- Gold n on TR/EL = 9 → cannot keep/kill from label audit alone.
+- conclusion: iterate — **retrain frozen-B 5-fold on v8**; keep iff full-58 gold OOF ≥ 0.7023+0.005. No new LB probe yet. Rotate pasted token.
+
 ### 2026-08-27 — LB probe v6c fold0 = public **0.682** (CALIBRATION)
 - submit: `girishbose/rsna-knee-submit-v6c` Version 1 Succeeded; images-only frozen DINOv2-B **v6c fold0**, cache_v1 3×12×224.
 - **public LB: 0.682**

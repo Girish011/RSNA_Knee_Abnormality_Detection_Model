@@ -71,7 +71,10 @@ def main() -> None:
         consensus = consensus[consensus[SUBMISSION_ID_COL].isin(trel_uids)].copy()
         print(f"overlay restricted to {len(consensus)} TR/EL studies")
 
-    out = overlay_consensus(base, consensus, only_where_base_isna=False)
+    # Default = additive gap-fill: consensus only writes where base abstained.
+    # This is the safe v8 pattern (re-supplies high-precision TR/EL cells on
+    # labels v6c dropped, without overwriting trusted base commits).
+    out = overlay_consensus(base, consensus, only_where_base_isna=True)
     # Ensure schema: id + labels (+ conf if present on base).
     keep = [SUBMISSION_ID_COL, *LABEL_COLS]
     for c in LABEL_COLS:
