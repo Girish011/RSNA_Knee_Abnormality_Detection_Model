@@ -137,6 +137,14 @@ Append one row (or block) per run. Never delete history.
 - **v7 vs Qwen cross-check: 88.2% agreement on Turkish (2107 cells), 76.8% on Greek (482).** Two independent methods concur → both capture real signal; the agreement cells are high-precision.
 - conclusion: v7 is a validated independent multilingual labeler. Its highest-value use is a **v7∩Qwen consensus** (label where both agree, else abstain) for high-precision TR/EL supervision — not v7 alone. Blocker remains measurement: 6+3 TR/EL gold can't validate model impact → need an external ruler (MRNet/KneeMRI) before trusting a retrain delta.
 
+### 2026-08-27 — LB probe v6c fold0 = public **0.682** (CALIBRATION)
+- submit: `girishbose/rsna-knee-submit-v6c` Version 1 Succeeded; images-only frozen DINOv2-B **v6c fold0**, cache_v1 3×12×224.
+- **public LB: 0.682**
+- vs full-58 gold OOF v6c **0.7023** → gold overstates public by **~0.020**
+- vs weak-label OOF ~0.75 → weak overstates by **~0.07** (do not use for decisions)
+- vs public top ~0.94 → gap **~0.26**; single fold0 probe may slightly understate a 5-fold blend, but not enough to change strategy
+- conclusion: **KEEP gold-OOF as internal ruler** (apply ≈−0.02 for LB projection). **DO NOT final** this submission. Next: v8 consensus / in-domain competitor-label cross-check; retrain only with full-58 keep rule vs 0.7023; no further LB until projected LB clears a deliberate bar. Still need Kaggle token in cloud env to execute.
+
 ### 2026-08-27 — v8 consensus tooling + in-domain cross-check CLI (code-only)
 - code: `src/rsna_knee/text/label_consensus.py` (`intersect_labels`, `agreement_stats`, `overlay_consensus`); `scripts/build_weak_labels_v8.py` (v6c base ⊕ v7∩Qwen, optional TR/EL lang filter via `detect_language`); `scripts/crosscheck_labels.py` (ours vs named competitor CSVs + optional gold audit).
 - tests: `tests/test_label_consensus.py` (4) — agreement-only keep, outer unilateral→NaN, stats rates, overlay overwrite vs gap-fill. Related suite 13 passed.

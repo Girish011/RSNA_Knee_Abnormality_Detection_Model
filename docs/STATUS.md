@@ -1,10 +1,22 @@
 # STATUS
 
-Last updated: 2026-08-27 (cloud handoff session — blocked on Kaggle token + LB click)
+Last updated: 2026-08-27 (LB probe scored — public **0.682**)
+
+## 2026-08-27 — LB PROBE RESULT (calibrated)
+- Notebook `girishbose/rsna-knee-submit-v6c` **Version 1** Succeeded → **public LB = 0.682**.
+- Recipe: images-only, frozen DINOv2-B **v6c fold0 only** (not 5-fold blend), cache_v1 3×12×224.
+- **Calibration vs internal rulers:**
+  | Ruler | Score | vs LB |
+  |---|---|---|
+  | Public LB (this probe) | **0.682** | — |
+  | Full-58 gold OOF (5-fold v6c) | 0.7023 | +0.020 optimistic |
+  | Weak-label OOF (~v6c) | ~0.75 | +0.07 overstates badly |
+- **Verdict:** gold-OOF is the usable internal ruler (±~0.02 to public). Weak-label OOF is not. **0.682 ≪ 0.94 top** and below our old 0.72 “think about finals” floor → **do not select as final; do not burn more probes** until a full-58 gold OOF clearly beats 0.7023 by ≥0.005 *and* a projected LB (OOF−0.02) clears a deliberate bar.
+- Caveat: single-fold submit may slightly understate a 5-fold blend; gap to top is still ~0.26 — label micro-tweaks will not close it alone.
+- Remaining blocker for next work: **rotated `KAGGLE_API_TOKEN`** in this env (still missing).
 
 ## 2026-08-27 — Session: v8 consensus tooling + cross-check scripts (code-only)
-- **Blockers:** no `KAGGLE_API_TOKEN` in this cloud env (prior token must be rotated); LB probe still needs a human **Submit** click on `girishbose/rsna-knee-submit-v6c` (CSV API blocked for code comps).
-- **Shipped (GitHub):** `rsna_knee.text.label_consensus` (`intersect_labels` / `agreement_stats` / `overlay_consensus`) = building block for **v8 = v7∩Qwen**; `scripts/build_weak_labels_v8.py`; `scripts/crosscheck_labels.py` for in-domain compare vs competitor public label CSVs. Unit tests + CLI smoke pass locally. Cannot download competitor sets or Qwen fills until Kaggle auth lands.
+- **Shipped (GitHub):** `rsna_knee.text.label_consensus` + `scripts/build_weak_labels_v8.py` + `scripts/crosscheck_labels.py`. Unit tests + CLI smoke passed.
 - Still true: GitHub is a stale mirror vs `girishbose/rsna-knee-code`; fold new modules into that dataset before Kaggle train.
 
 ## 2026-08-27 — v6c adopted (full-58 gold OOF 0.7023 > v6b 0.6895); v6d refinement testing
@@ -14,11 +26,8 @@ Last updated: 2026-08-27 (cloud handoff session — blocked on Kaggle token + LB
 - Honest state: gold OOF ~0.70, approaching but not clearing the 0.72 submit bar; far from ~0.94 top. Label lever giving diminishing per-iteration gains (+0.013). Still NO submit.
 - Method that works: audit each label's LLM-fill precision vs 58 gold; drop only the truly coin-flip (<0.51) fills; keep the rest.
 
-## 2026-08-27 (cont.) — Option #1: LB probe notebook READY (needs 1 UI click)
-- Built `girishbose/rsna-knee-submit-v6c`: images-only, frozen DINOv2-B v6c fold0, exact cache_v1 recipe (3 series x 12 slices x 224, live DICOM decode via StudyDataset = build_cache parity). Internet OFF, GPU, <=9h, writes submission.csv. Has a constant-0.5 fallback so a run always scores.
-- Verified on visible test: loaded the real fold0 checkpoint, produced valid 12-label probs (not fallback), ~5 s/study → full hidden test well within 9h.
-- Account has NO prior submissions; CSV API submit is rejected (400) because this is a CODE competition. **The LB probe requires clicking "Submit" on the committed notebook version in the Kaggle UI** (API cannot trigger a code-comp notebook submission).
-- Purpose: calibrate our internal gold-OOF (~0.70) against the real LB; this is our first true competition-distribution signal.
+## 2026-08-27 (cont.) — Option #1: LB probe — DONE (public 0.682)
+- Built + submitted `girishbose/rsna-knee-submit-v6c` Version 1: images-only, frozen DINOv2-B v6c fold0, cache_v1. **Public LB 0.682.** See top section for calibration.
 
 ## 2026-08-27 (cont.) — Option #2 external ruler = NEGATIVE (domain shift)
 - KneeMRI (Croatia, 736 sag volumes, ACL 0/1/2, prevalence 24.8%) is accessible on Kaggle; MRNet is gated.
@@ -76,12 +85,13 @@ v6b was a legitimate, fully-gated supervision win (beat label gate + all 5 folds
 **Noisy-teacher lever, measured with discipline.** Competition is live (RSNA 2026 Knee; deadline 2026-10-22). Hidden test is expert-radiologist-graded on images while train labels are noisy report-derived — so OOF ~0.76 vs public ~0.94 is partly a *label/measurement* gap, not just capacity. External top-15 signal: bigger backbone / more ensemble / TTA / extra pretraining ≈ 0; LB noise-limited in 3rd decimal. Focus: (1) v3 NLI labels, (2) robust losses, (3) pre-registered multi-fold OOF. Do not submit until the full 5-fold OOF clears the rule.
 
 ## Best scores
-| Setup | Fold0 best |
+| Setup | Score |
 |---|---|
-| **S + weak_v1 frozen, cache_v1** | **0.764** (ckpt missing) |
-| **B + weak_v1 fully frozen, cache_v1** | **0.759** ← keep |
-| B + expert head-FT | 0.760 then 0.745 (kill) |
-| S + cache_v2 | 0.738 |
+| **Public LB (v6c fold0 probe)** | **0.682** ← calibrated |
+| Full-58 gold OOF v6c (5-fold) | 0.7023 |
+| Full-58 gold OOF v6b (5-fold) | 0.6895 |
+| B + weak_v1 fully frozen fold0 (weak labels) | 0.759 (confounded) |
+| S + weak_v1 frozen fold0 (weak labels) | 0.764 (confounded) |
 | Public LB top | ~0.942 |
 
 ## New tooling (2026-08-24, code-only, unit-tested; no scores yet)
@@ -91,11 +101,11 @@ v6b was a legitimate, fully-gated supervision win (beat label gate + all 5 folds
 - Config: `configs/labels_v3_robust.yaml` (frozen-B + weak_v3 + GCE + smoothing).
 
 ## Next 3 actions
-1. **Human:** open `girishbose/rsna-knee-submit-v6c` → **Submit to Competition**; reply with public LB. Calibrates ~0.70 gold-OOF.
-2. **Human:** add rotated `KAGGLE_API_TOKEN` to this environment (prior token was pasted in chat — rotate it).
-3. With auth: (a) download competitor public label sets + our v6c/Qwen/v7 artifacts → run `scripts/crosscheck_labels.py`; (b) build v8 via `scripts/build_weak_labels_v8.py` → upload dataset → frozen-B 5-fold → full-58 gold vs **0.7023**; (c) sync GitHub modules into `girishbose/rsna-knee-code`.
+1. **Human:** add rotated `KAGGLE_API_TOKEN` to this environment (still missing; prior token was pasted in chat — rotate it).
+2. With auth: download competitor public label sets + v6c/Qwen/v7 artifacts → `scripts/crosscheck_labels.py` (in-domain ruler, zero domain shift).
+3. Build **v8** (`scripts/build_weak_labels_v8.py`) → sync into `girishbose/rsna-knee-code` → frozen-B 5-fold → keep only if full-58 gold OOF ≥ **0.7023 + 0.005**; only then consider another LB probe (projected ≈ OOF − 0.02).
 
 ## Do not
-- Submit/burn finals before a calibrated LB (or clear OOF rule) clears the bar
+- Select v6c fold0 (0.682) as a final; burn more LB probes without a gold-OOF rule win
 - Trust per-label / 2-fold gold at n≤58; reopen killed paths (unfreeze, expert head-FT, cache_v2, 384, MRI-CORE, external-image train)
 - Use reports at test time; commit secrets / weights / DICOMs
