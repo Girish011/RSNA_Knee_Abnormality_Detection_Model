@@ -137,6 +137,13 @@ Append one row (or block) per run. Never delete history.
 - **v7 vs Qwen cross-check: 88.2% agreement on Turkish (2107 cells), 76.8% on Greek (482).** Two independent methods concur → both capture real signal; the agreement cells are high-precision.
 - conclusion: v7 is a validated independent multilingual labeler. Its highest-value use is a **v7∩Qwen consensus** (label where both agree, else abstain) for high-precision TR/EL supervision — not v7 alone. Blocker remains measurement: 6+3 TR/EL gold can't validate model impact → need an external ruler (MRNet/KneeMRI) before trusting a retrain delta.
 
+### 2026-08-27 — External ACL ruler (KneeMRI) — NEGATIVE (domain shift)
+- Option #2: use external expert-labeled knee MRI as an unbiased ACL ruler. MRNet is gated (Stanford DUA; only a 22-byte Kaggle stub). KneeMRI (Croatia) IS on Kaggle (`sohaibanwaar1203/kneemridataset`): 736 sagittal volumes accessible, ACL 0/1/2, binary-positive prevalence 24.8% (representative, unlike the 58's 41%).
+- Built `girishbose/knee-acl-ruler-v6c`: run our v6c fold0 model on KneeMRI as a 1-series sagittal study.
+- Result: external ACL AUC **0.507** (fluid=0/center slices) → **0.530** (fixed: fluid=1/fat=1, spread slices). Both ≈ chance.
+- conclusion: **external-image ruler is not viable for our model.** Severe domain shift + structural mismatch (our model expects the competition's 3-series plane/fluid/fat attention; KneeMRI is a single sagittal series) drive it to chance. Corroborates the top team's "extra corpora ≈ 0" — external knee MRI won't help THIS competition as ruler OR training data. Also a red flag that our ACL detector leans on competition-specific cues, not robust anatomy.
+- pivot: the only reliable read of true performance on the competition distribution is (a) a single calibrated **LB probe** of v6c, or (b) an **in-domain** label cross-check vs competitors' public RSNA-knee label sets (barun2104, dreaddevelopment, yunusgmsoy) — no domain shift.
+
 ## Template
 ```text
 ### exp-XXX — YYYY-MM-DD

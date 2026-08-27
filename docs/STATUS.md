@@ -9,6 +9,12 @@ Last updated: 2026-08-27 (live Kaggle session)
 - Honest state: gold OOF ~0.70, approaching but not clearing the 0.72 submit bar; far from ~0.94 top. Label lever giving diminishing per-iteration gains (+0.013). Still NO submit.
 - Method that works: audit each label's LLM-fill precision vs 58 gold; drop only the truly coin-flip (<0.51) fills; keep the rest.
 
+## 2026-08-27 (cont.) — Option #2 external ruler = NEGATIVE (domain shift)
+- KneeMRI (Croatia, 736 sag volumes, ACL 0/1/2, prevalence 24.8%) is accessible on Kaggle; MRNet is gated.
+- Ran v6c fold0 on it (`knee-acl-ruler-v6c`): external ACL AUC **0.53** even after fixing the adapter (fluid/fat metadata, spread slices). ≈ chance.
+- Verdict: external-image datasets are NOT a viable ruler (or training source) here — domain shift + our multi-series model structure. Matches "extra corpora ≈ 0".
+- Real ruler options now: (a) ONE calibrated LB probe of v6c (direct competition-distribution signal), or (b) in-domain cross-check of our labels vs competitors' public RSNA-knee label sets (barun2104/dreaddevelopment/yunusgmsoy) — zero domain shift.
+
 ## 2026-08-27 (cont.) — STOP label micro-tuning: it's below the noise floor
 - v6d (keep Lateral OA) fold0+1 gold = **0.7378** vs v6c **0.7358** — a tie.
 - **Proof the per-label gold reads are noise:** v6c and v6d have IDENTICAL ACL+MCL labels (both drop those fills; only Lateral OA differs), yet ACL gold swings 0.770→0.596 and MCL 0.698→0.508 between them on the same 24 experts. Changing only Lateral OA moved ACL by 0.17. So the earlier "ACL fixed +0.32" was mostly noise.
