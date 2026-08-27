@@ -4,9 +4,10 @@ Paste this into a new chat. Repo docs are the source of truth: read `docs/STATUS
 `docs/DECISIONS.md`, and the tail of `docs/experiments.md` first.
 
 ## TL;DR / immediate next action
-- **LB probe DONE:** `girishbose/rsna-knee-submit-v6c` Version 1 → **public LB 0.682**.
-  Calibration: full-58 gold OOF 0.7023 ≈ LB + 0.02; weak-label OOF ~0.75 is not usable.
-  Do **not** select as final. Next needs rotated Kaggle token → competitor label cross-check + v8 build/retrain.
+- **LB probe DONE:** public **0.682** (API-confirmed). Gold-OOF 0.7023 ≈ LB+0.02. Do not final.
+- **v8 candidate uploaded** (`girishbose/rsna-knee-weak-v8`); fold0+1 trains **RUNNING**.
+  Keep iff full-58 gold OOF ≥ 0.7023+0.005. **Rotate pasted Kaggle token.**
+- Cross-check: yunus 91% agree, dread 81% (MCL weak).
 
 ## CRITICAL: GitHub is a stale mirror
 - The GitHub repo (`Girish011/RSNA_Knee_Abnormality_Detection_Model`, branch `main`) is an
