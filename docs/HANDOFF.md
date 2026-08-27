@@ -4,10 +4,10 @@ Paste this into a new chat. Repo docs are the source of truth: read `docs/STATUS
 `docs/DECISIONS.md`, and the tail of `docs/experiments.md` first.
 
 ## TL;DR / immediate next action
-- **LB probe DONE:** public **0.682** (API-confirmed). Gold-OOF 0.7023 ≈ LB+0.02. Do not final.
-- **v8 candidate uploaded** (`girishbose/rsna-knee-weak-v8`); fold0+1 trains **RUNNING**.
-  Keep iff full-58 gold OOF ≥ 0.7023+0.005. **Rotate pasted Kaggle token.**
-- Cross-check: yunus 91% agree, dread 81% (MCL weak).
+- **LB probe DONE:** public **0.682** (v6c fold0). Gold-OOF 0.7023 ≈ LB+0.02. Do not final.
+- **v8 KILLED:** full-58 gold **0.6935** < v6c **0.7023** (Δ −0.0088). Keep v6c. Do not gap-fill ACL/MCL/LatOA again.
+- Next: rotate pasted token; pick next lever with user steer (yunus-consensus teacher vs image plan vs GCE on v6c).
+- Cross-check still useful: yunus 91% agree, dread 81%.
 
 ## CRITICAL: GitHub is a stale mirror
 - The GitHub repo (`Girish011/RSNA_Knee_Abnormality_Detection_Model`, branch `main`) is an

@@ -1,24 +1,22 @@
 # STATUS
 
-Last updated: 2026-08-27 (LB 0.682 confirmed; cross-check + v8 candidate uploaded)
+Last updated: 2026-08-27 (v8 KILLED — full-58 gold 0.6935 < v6c 0.7023)
+
+## 2026-08-27 — v8 KILL (full-58 gold OOF)
+- All 5 folds COMPLETE. Weak-val looked better (confounded): f0–4 = 0.785/0.783/0.781/0.767/0.742 vs v6c 0.768/0.749/0.762/0.764/0.721.
+- **Full-58 gold: v6c 0.7023 → v8 0.6935 (Δ −0.0088) → KILL** (rule margin 0.005).
+- Matched 4-fold had already warned (−0.024). Additive TR/EL gap-fill of v7∩Qwen onto dropped ACL/MCL/LatOA cells re-poisoned training.
+- **Adopted labels remain v6c.** Calibrated public LB still **0.682** (fold0 probe). Projected LB ≈ gold-OOF − 0.02.
+- Do not LB-probe v8. Do not continue TR/EL consensus gap-fills on coin-flip columns.
 
 ## 2026-08-27 — Auth restored; cross-check DONE; v8 candidate on Kaggle
-- Kaggle auth working as `girishbose`. Submission API confirms probe **publicScore 0.682** (ref 55818692). Rank ~1999/2516.
+- Kaggle auth working as `girishbose`. Submission API confirms probe **publicScore 0.682** (ref 55818692).
 - **In-domain label cross-check** (soft→hard lo=0.2/hi=0.7):
   - vs **yunus**: **91.2%** agree where both commit (best external teacher signal)
-  - vs **dread**: 80.9%; MCL agree only 38% (we much more positive)
-  - vs **barun** `pseudo_*`: useless (mass at 0.5); hard cols = 58 gold only
-- **v8 candidate built + uploaded:** `girishbose/rsna-knee-weak-v8` = v6c ⊕ additive (v7∩Qwen) on TR/EL. +495 known cells (mostly ACL/MCL/LatOA gap-fills). v7∩Qwen agree 85.1%.
-- **SECURITY:** token was pasted in chat again — **rotate** after this session.
-
-### v8 train progress (live)
-- fold0 COMPLETE: weak-val **0.7853** (v6c 0.7683)
-- fold1 COMPLETE: weak-val **0.7827** (v6c 0.7493)
-- fold2 COMPLETE: weak-val **0.7810** (v6c 0.7624)
-- fold3 COMPLETE: weak-val **0.7672** (v6c 0.7636)
-- fold4 **QUEUED/RUNNING**
-- **Matched 4-fold gold (n=46):** v6c **0.7365** → v8 **0.7127** (**−0.024**). Weak-val lift was confounded. Early fold0+1 gold +0.01 was noise.
-- Full-58 keep/kill still needs fold4; leaning **KILL** unless fold4 reverses hard (rule: beat 0.7023 by ≥0.005).
+  - vs **dread**: 80.9%; MCL agree only 38%
+  - vs **barun** `pseudo_*`: useless (mass at 0.5)
+- v8 candidate was uploaded + trained; **killed** (see above).
+- **SECURITY:** token was pasted in chat — **rotate**.
 
 ## 2026-08-27 — LB PROBE RESULT (calibrated)
 - Notebook `girishbose/rsna-knee-submit-v6c` **Version 1** Succeeded → **public LB = 0.682**.
@@ -119,11 +117,12 @@ v6b was a legitimate, fully-gated supervision win (beat label gate + all 5 folds
 - Config: `configs/labels_v3_robust.yaml` (frozen-B + weak_v3 + GCE + smoothing).
 
 ## Next 3 actions
-1. Wait for `train-b-fold4-weak-v8` COMPLETE → full-58 gold OOF vs v6c **0.7023** (keep iff Δ ≥ 0.005).
-2. Likely **KILL v8** if 4-fold matched −0.024 holds on full-58; keep v6c + LB 0.682 calibration.
-3. Fold `fill_policy` + v7 + `label_consensus` into `girishbose/rsna-knee-code`; **rotate** pasted Kaggle token; next lever after kill = image/backbone plan (user steer) or yunus-consensus labels (91% agree), not more TR/EL gap-fills on coin-flip cols.
+1. **Rotate** the pasted Kaggle API token.
+2. Next lever (pick with user steer): (a) yunus-consensus / in-domain teacher labels (91% agree — not yet trained); (b) deliberate image/backbone plan (cache/plane — several paths already killed); (c) robust loss (GCE) A/B on **v6c** with full-58 rule.
+3. Fold `fill_policy` + v7 + `label_consensus` into `girishbose/rsna-knee-code` for reproducibility (optional hygiene).
 
 ## Do not
-- Select v6c fold0 (0.682) as a final; burn more LB probes without a gold-OOF rule win
-- Trust per-label / 2-fold gold at n≤58; reopen killed paths (unfreeze, expert head-FT, cache_v2, 384, MRI-CORE, external-image train)
+- Select v6c fold0 (0.682) as a final; burn LB probes without a gold-OOF rule win
+- Retry v8-style TR/EL gap-fills on ACL/MCL/LatOA; trust per-label / 2-fold gold at n≤58
+- Reopen killed paths (unfreeze, expert head-FT, cache_v2, 384, MRI-CORE, external-image train, **v8**)
 - Use reports at test time; commit secrets / weights / DICOMs

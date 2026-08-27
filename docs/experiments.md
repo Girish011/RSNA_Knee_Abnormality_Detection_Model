@@ -137,6 +137,12 @@ Append one row (or block) per run. Never delete history.
 - **v7 vs Qwen cross-check: 88.2% agreement on Turkish (2107 cells), 76.8% on Greek (482).** Two independent methods concur → both capture real signal; the agreement cells are high-precision.
 - conclusion: v7 is a validated independent multilingual labeler. Its highest-value use is a **v7∩Qwen consensus** (label where both agree, else abstain) for high-precision TR/EL supervision — not v7 alone. Blocker remains measurement: 6+3 TR/EL gold can't validate model impact → need an external ruler (MRNet/KneeMRI) before trusting a retrain delta.
 
+### 2026-08-27 — v8 KILL (full-58 gold 0.6935 < v6c 0.7023)
+- fold4 COMPLETE (weak-val 0.7420). Full 5-fold OOF vs 58 gold: **v8 0.6935 vs v6c 0.7023 (Δ −0.0088) → KILL** (margin 0.005).
+- Per-label vs v6c: Effusion +0.043, MedMen +0.020; losses MCL −0.051, LatOA −0.040, Fracture −0.032, ACL −0.020.
+- Matched 4-fold already −0.024; weak-val lift was confounded by +495 TR/EL cells on dropped coin-flip cols.
+- conclusion: **KILL v8**. Keep adopted **v6c** + LB calibration 0.682. Do not probe v8. Next levers: yunus-consensus teacher or image plan — not more consensus gap-fills on ACL/MCL/LatOA.
+
 ### 2026-08-27 — v8 folds 0–3 COMPLETE; matched 4-fold gold LOSES to v6c
 - weak-val: f0 0.785 / f1 0.783 / f2 0.781 / f3 0.767 (all ≥ v6c counterparts). fold4 QUEUED.
 - **Matched 4-fold gold (n=46): v6c 0.7365 → v8 0.7127 (−0.024).** Regressions: MCL −0.08, Fracture −0.07, Baker's −0.06, MedOA −0.04; small gains Effusion/PF OA.
