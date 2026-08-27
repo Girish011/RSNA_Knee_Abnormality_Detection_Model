@@ -130,6 +130,13 @@ Append one row (or block) per run. Never delete history.
 - **Noise proof:** v6c & v6d share IDENTICAL ACL+MCL labels, yet ACL gold 0.770(v6c) vs 0.596(v6d), MCL 0.698 vs 0.508 — driven only by the Lateral OA column change → per-label gold AUC at n≤58 is training-noise-dominated.
 - conclusion: ADOPT v6c (full-58 0.7023 > v6b 0.6895 is the only stable signal). STOP label micro-tuning — v6d≈v6c within noise; do not burn GPU resolving sub-0.02 deltas or trust per-label gold stories at this n. Next real lever is image/backbone (needs a plan + user steer), not more label recipes.
 
+### 2026-08-27 — v7 multilingual extractor (adds Turkish + Greek)
+- code: `src/rsna_knee/text/weak_labels_v7.py` (+ `tests/test_weak_labels_v7.py`, 7 tests). Language detect → Turkish/Greek handled with correct negation direction + normalcy + borderline("minimal/mild"→abstain, matching host "on the fence = negative"); other langs delegate to v2. Fixed the Turkish dotted-i (İ/ı) re.IGNORECASE fold bug that misdetects English.
+- coverage: Turkish 0.0→6.6 known cells/study, Greek 0.1→4.5 vs the v2 keyword extractor (recovers ~860 previously-unsupervised studies). BUT v6c already labels TR/EL via Qwen (5.2/2.9), so v7 alone is not a clear win over the current best.
+- 58-gold audit (only 6 TR + 3 EL → unreliable): TR positive-precision ~0.47, TR negatives NPV 0.80; EL pos 0.67.
+- **v7 vs Qwen cross-check: 88.2% agreement on Turkish (2107 cells), 76.8% on Greek (482).** Two independent methods concur → both capture real signal; the agreement cells are high-precision.
+- conclusion: v7 is a validated independent multilingual labeler. Its highest-value use is a **v7∩Qwen consensus** (label where both agree, else abstain) for high-precision TR/EL supervision — not v7 alone. Blocker remains measurement: 6+3 TR/EL gold can't validate model impact → need an external ruler (MRNet/KneeMRI) before trusting a retrain delta.
+
 ## Template
 ```text
 ### exp-XXX — YYYY-MM-DD
