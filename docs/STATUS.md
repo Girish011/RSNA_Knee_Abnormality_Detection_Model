@@ -2,6 +2,11 @@
 
 Last updated: 2026-08-27 (v8 KILLED — full-58 gold 0.6935 < v6c 0.7023)
 
+## 2026-08-27 — v8 KILL; next lever: GCE on v6c (RUNNING)
+- **yunus gap-fill screened out:** strict intersect adds 0 cells; naive yunus gap-fill adds +24,628 cells (mostly negatives) — do not train without a gate.
+- **GCE A/B launched:** `train-b-fold{0,1}-gce-v6c` with dataset `girishbose/rsna-knee-loss-gce` (shadows BCE-only loss on stale code dataset). Same v6c labels, frozen-B 8ep. v2 pushed with patch attached (v1 may fail without dataset).
+- Keep rule unchanged: full-58 gold vs v6c BCE **0.7023**, margin **0.005**.
+
 ## 2026-08-27 — v8 KILL (full-58 gold OOF)
 - All 5 folds COMPLETE. Weak-val looked better (confounded): f0–4 = 0.785/0.783/0.781/0.767/0.742 vs v6c 0.768/0.749/0.762/0.764/0.721.
 - **Full-58 gold: v6c 0.7023 → v8 0.6935 (Δ −0.0088) → KILL** (rule margin 0.005).
@@ -116,9 +121,9 @@ v6b was a legitimate, fully-gated supervision win (beat label gate + all 5 folds
 - Config: `configs/labels_v3_robust.yaml` (frozen-B + weak_v3 + GCE + smoothing).
 
 ## Next 3 actions
-1. **Rotate** the pasted Kaggle API token.
-2. Next lever (pick with user steer): (a) yunus-consensus / in-domain teacher labels (91% agree — not yet trained); (b) deliberate image/backbone plan (cache/plane — several paths already killed); (c) robust loss (GCE) A/B on **v6c** with full-58 rule.
-3. Fold `fill_policy` + v7 + `label_consensus` into `girishbose/rsna-knee-code` for reproducibility (optional hygiene).
+1. Wait for `train-b-fold{0,1}-gce-v6c` (retry v2 if v1 failed without loss patch) → folds 2–4 if fold0+1 promising.
+2. Full-58 gold OOF vs v6c BCE **0.7023** — keep GCE only if Δ ≥ 0.005.
+3. **Rotate** pasted Kaggle token; fold `fill_policy` + GCE loss into `rsna-knee-code` dataset (hygiene).
 
 ## Do not
 - Select v6c fold0 (0.682) as a final; burn LB probes without a gold-OOF rule win

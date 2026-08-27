@@ -1,0 +1,47 @@
+experiment:
+  id: v6c_gce_b
+  track: main
+  notes: >
+    Noisy-teacher lever on adopted v6c labels: frozen DINOv2-B + GCE (q=0.7) +
+    label smoothing 0.05 vs BCE baseline (v6c full-58 gold 0.7023). Pre-registered
+    keep rule: full-58 gold OOF delta >= 0.005 vs v6c BCE. Do not submit until rule clears.
+
+paths:
+  train_csv: /kaggle/input/competitions/rsna-knee-abnormality-detection/train.csv
+  folds: data/folds/folds_v1.csv
+  weak_labels: data/processed/weak_labels_v6c.csv
+  output_dir: outputs/experiments/v6c_gce_b
+  backbone_weights: null
+
+data:
+  max_series: 3
+  n_slices: 12
+  image_size: 224
+  center_bias: true
+  require_plane_coverage: true
+
+model:
+  backbone: dinov2_vitb14
+  freeze_backbone_epochs: 8
+  dropout: 0.15
+  pretrained: true
+
+train:
+  n_folds: 5
+  seed: 42
+  epochs: 8
+  batch_size: 1
+  lr: 1.5e-4
+  weight_decay: 0.05
+  unfreeze_lr_mult: 0.05
+  amp: true
+  num_workers: 2
+
+loss:
+  type: masked_bce
+  mode: gce
+  gce_q: 0.7
+  label_smoothing: 0.05
+  use_confidence: true
+  pos_weight: 1.0
+  min_weak_confidence: 0.5

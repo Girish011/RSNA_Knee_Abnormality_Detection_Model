@@ -137,6 +137,12 @@ Append one row (or block) per run. Never delete history.
 - **v7 vs Qwen cross-check: 88.2% agreement on Turkish (2107 cells), 76.8% on Greek (482).** Two independent methods concur → both capture real signal; the agreement cells are high-precision.
 - conclusion: v7 is a validated independent multilingual labeler. Its highest-value use is a **v7∩Qwen consensus** (label where both agree, else abstain) for high-precision TR/EL supervision — not v7 alone. Blocker remains measurement: 6+3 TR/EL gold can't validate model impact → need an external ruler (MRNet/KneeMRI) before trusting a retrain delta.
 
+### 2026-08-27 — GCE loss A/B on v6c labels (fold0+1 RUNNING)
+- code: `configs/v6c_gce.yaml` (GCE q=0.7, smoothing 0.05); Kaggle dataset `girishbose/rsna-knee-loss-gce` shadows stale code `loss.py`.
+- kernels: `train-b-fold{0,1}-gce-v6c` (v2 with patch dataset). v1 may fail — missing patch at launch.
+- yunus screened: strict intersect +0 cells; naive gap +24,628 (mostly neg) → no train.
+- conclusion: iterate — measure GCE vs v6c BCE on full-58 gold; do not yunus gap-fill.
+
 ### 2026-08-27 — v8 KILL (full-58 gold 0.6935 < v6c 0.7023)
 - fold4 COMPLETE (weak-val 0.7420). Full 5-fold OOF vs 58 gold: **v8 0.6935 vs v6c 0.7023 (Δ −0.0088) → KILL** (margin 0.005).
 - Per-label vs v6c: Effusion +0.043, MedMen +0.020; losses MCL −0.051, LatOA −0.040, Fracture −0.032, ACL −0.020.
