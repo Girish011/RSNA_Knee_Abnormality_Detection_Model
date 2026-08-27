@@ -4,13 +4,9 @@ Paste this into a new chat. Repo docs are the source of truth: read `docs/STATUS
 `docs/DECISIONS.md`, and the tail of `docs/experiments.md` first.
 
 ## TL;DR / immediate next action
-- **A calibrated LB probe is one UI click away.** Notebook `girishbose/rsna-knee-submit-v6c`
-  (images-only, frozen DINOv2-B **v6c fold0**, cache_v1 3×12×224) is committed, attached to
-  the competition, and verified to write a valid `submission.csv` on the visible test. CSV
-  API submit is blocked (code competition), so a human must open the notebook and click
-  **"Submit to Competition"**. That LB number calibrates our internal ~0.70 gold-OOF.
-- After the LB comes back: record the gold-OOF↔LB calibration, then pick the next lever
-  with a ruler we can finally trust.
+- **LB probe DONE:** `girishbose/rsna-knee-submit-v6c` Version 1 → **public LB 0.682**.
+  Calibration: full-58 gold OOF 0.7023 ≈ LB + 0.02; weak-label OOF ~0.75 is not usable.
+  Do **not** select as final. Next needs rotated Kaggle token → competitor label cross-check + v8 build/retrain.
 
 ## CRITICAL: GitHub is a stale mirror
 - The GitHub repo (`Girish011/RSNA_Knee_Abnormality_Detection_Model`, branch `main`) is an
