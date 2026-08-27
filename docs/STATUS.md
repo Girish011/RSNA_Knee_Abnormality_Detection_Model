@@ -9,6 +9,13 @@ Last updated: 2026-08-27 (live Kaggle session)
 - Honest state: gold OOF ~0.70, approaching but not clearing the 0.72 submit bar; far from ~0.94 top. Label lever giving diminishing per-iteration gains (+0.013). Still NO submit.
 - Method that works: audit each label's LLM-fill precision vs 58 gold; drop only the truly coin-flip (<0.51) fills; keep the rest.
 
+## 2026-08-27 (cont.) — STOP label micro-tuning: it's below the noise floor
+- v6d (keep Lateral OA) fold0+1 gold = **0.7378** vs v6c **0.7358** — a tie.
+- **Proof the per-label gold reads are noise:** v6c and v6d have IDENTICAL ACL+MCL labels (both drop those fills; only Lateral OA differs), yet ACL gold swings 0.770→0.596 and MCL 0.698→0.508 between them on the same 24 experts. Changing only Lateral OA moved ACL by 0.17. So the earlier "ACL fixed +0.32" was mostly noise.
+- **Only stable signal = full-58 macro: v6b 0.6895 → v6c 0.7023 (+0.013).** Per-label attributions and sub-0.02 deltas at n≤58 are not resolvable.
+- **Decision: ADOPT v6c. STOP further label micro-tuning** (v6d≈v6c within noise; not worth a full 5-fold / more GPU). Do NOT keep reading 2-fold gold — it drives false reversals (the documented top-team failure mode).
+- Remaining gap to ~0.94 is NOT a label problem now; it needs the image/backbone lever (frozen DINOv2 + 3×12×224 cache is the likely ceiling). That is a large scoped effort; several image directions (MRI-CORE, 384 rank, unfreeze) were already killed. Needs a deliberate plan + user steer, not more autonomous label runs.
+
 
 ## 2026-08-24 BREAKTHROUGH — v6b labels pass the supervision gate
 Connected to Kaggle with the real competition data + your active kernels. Key facts:

@@ -124,6 +124,12 @@ Append one row (or block) per run. Never delete history.
 - **CONFIRMED 4-fold gold OOF (46 experts): v6c 0.7365 vs v6b 0.7124 (+0.024).** ACL +0.163 (0.552→0.715), MCL +0.099, Synovitis +0.103, Contusion +0.091, Medial OA +0.044; regressions Lat Meniscus -0.117, Lat OA -0.093, Effusion -0.073 (representation shift from dropped label cols; fills for those weren't changed). Net clearly positive.
 - conclusion: ADOPT v6c over v6b — confirmed gold win on 46 experts, driven by fixing coin-flip ACL/MCL fills. fold4 running for full-58. Watch Lateral Meniscus/Lateral OA regressions (Lat OA fill 0.545 was borderline; may relax threshold to <0.5+ACL later). Method generalizes: audit per-label fill precision, drop coin-flips.
 
+### 2026-08-27 — v6d (keep Lateral OA) ties v6c; per-label gold reads are NOISE
+- v6d = drop only {MCL, ACL} fills, keep Lateral OA. Gate passes (prec 0.712, rec 0.680). `girishbose/rsna-knee-weak-v6d`, kernels `train-b-fold{0,1}-weak-v6d` (0.761/0.765 vs own labels).
+- fold0+1 gold (n=24): v6b 0.6894, v6c 0.7358, v6d **0.7378** — v6c/v6d tied.
+- **Noise proof:** v6c & v6d share IDENTICAL ACL+MCL labels, yet ACL gold 0.770(v6c) vs 0.596(v6d), MCL 0.698 vs 0.508 — driven only by the Lateral OA column change → per-label gold AUC at n≤58 is training-noise-dominated.
+- conclusion: ADOPT v6c (full-58 0.7023 > v6b 0.6895 is the only stable signal). STOP label micro-tuning — v6d≈v6c within noise; do not burn GPU resolving sub-0.02 deltas or trust per-label gold stories at this n. Next real lever is image/backbone (needs a plan + user steer), not more label recipes.
+
 ## Template
 ```text
 ### exp-XXX — YYYY-MM-DD
