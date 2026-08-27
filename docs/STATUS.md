@@ -104,10 +104,9 @@ v6b was a legitimate, fully-gated supervision win (beat label gate + all 5 folds
 | Setup | Score |
 |---|---|
 | **Public LB (v6c fold0 probe)** | **0.682** ← calibrated |
-| Full-58 gold OOF v6c (5-fold) | 0.7023 |
+| Full-58 gold OOF **v6c** (5-fold) | **0.7023** ← adopted |
+| Full-58 gold OOF v8 (5-fold) | 0.6935 ← **KILL** |
 | Full-58 gold OOF v6b (5-fold) | 0.6895 |
-| B + weak_v1 fully frozen fold0 (weak labels) | 0.759 (confounded) |
-| S + weak_v1 frozen fold0 (weak labels) | 0.764 (confounded) |
 | Public LB top | ~0.942 |
 
 ## New tooling (2026-08-24, code-only, unit-tested; no scores yet)
