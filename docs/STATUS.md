@@ -1,6 +1,11 @@
 # STATUS
 
-Last updated: 2026-08-27 (live Kaggle session)
+Last updated: 2026-08-27 (cloud handoff session — blocked on Kaggle token + LB click)
+
+## 2026-08-27 — Session: v8 consensus tooling + cross-check scripts (code-only)
+- **Blockers:** no `KAGGLE_API_TOKEN` in this cloud env (prior token must be rotated); LB probe still needs a human **Submit** click on `girishbose/rsna-knee-submit-v6c` (CSV API blocked for code comps).
+- **Shipped (GitHub):** `rsna_knee.text.label_consensus` (`intersect_labels` / `agreement_stats` / `overlay_consensus`) = building block for **v8 = v7∩Qwen**; `scripts/build_weak_labels_v8.py`; `scripts/crosscheck_labels.py` for in-domain compare vs competitor public label CSVs. Unit tests + CLI smoke pass locally. Cannot download competitor sets or Qwen fills until Kaggle auth lands.
+- Still true: GitHub is a stale mirror vs `girishbose/rsna-knee-code`; fold new modules into that dataset before Kaggle train.
 
 ## 2026-08-27 — v6c adopted (full-58 gold OOF 0.7023 > v6b 0.6895); v6d refinement testing
 - **FULL 5-fold gold OOF (all 58 experts): v6b 0.6895 → v6c 0.7023 (+0.013).** ADOPT v6c. ACL 0.501→0.604, MCL 0.601→0.667, Synovitis +0.066, Contusion +0.080, Medial OA +0.043.
@@ -86,10 +91,11 @@ v6b was a legitimate, fully-gated supervision win (beat label gate + all 5 folds
 - Config: `configs/labels_v3_robust.yaml` (frozen-B + weak_v3 + GCE + smoothing).
 
 ## Next 3 actions
-1. Kaggle: run `notebooks/14_pseudo_label_reports.py` (GPU T4x2, **Internet ON**) → `weak_labels_v3.csv`; check expert audit vs v1 (~F1 0.44).
-2. Kaggle: 5-fold frozen-B with `configs/labels_v3_robust.yaml` (weak_v3 + GCE). Save per-fold `fold*_oof.csv`.
-3. Locally: `python scripts/oof_report.py --oof <v3 folds> --baseline-oof <weak_v1 B folds> --targets data/folds/folds_v1.csv` → keep only on a rule win vs **0.759**.
+1. **Human:** open `girishbose/rsna-knee-submit-v6c` → **Submit to Competition**; reply with public LB. Calibrates ~0.70 gold-OOF.
+2. **Human:** add rotated `KAGGLE_API_TOKEN` to this environment (prior token was pasted in chat — rotate it).
+3. With auth: (a) download competitor public label sets + our v6c/Qwen/v7 artifacts → run `scripts/crosscheck_labels.py`; (b) build v8 via `scripts/build_weak_labels_v8.py` → upload dataset → frozen-B 5-fold → full-58 gold vs **0.7023**; (c) sync GitHub modules into `girishbose/rsna-knee-code`.
 
 ## Do not
-- Submit before an OOF-rule win; unfreeze; cache_v2 5-fold; weak_v2; ship FT weights
-- Use reports at test time; chase 3rd-decimal single-fold deltas
+- Submit/burn finals before a calibrated LB (or clear OOF rule) clears the bar
+- Trust per-label / 2-fold gold at n≤58; reopen killed paths (unfreeze, expert head-FT, cache_v2, 384, MRI-CORE, external-image train)
+- Use reports at test time; commit secrets / weights / DICOMs

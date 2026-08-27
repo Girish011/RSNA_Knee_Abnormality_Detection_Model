@@ -137,6 +137,13 @@ Append one row (or block) per run. Never delete history.
 - **v7 vs Qwen cross-check: 88.2% agreement on Turkish (2107 cells), 76.8% on Greek (482).** Two independent methods concur → both capture real signal; the agreement cells are high-precision.
 - conclusion: v7 is a validated independent multilingual labeler. Its highest-value use is a **v7∩Qwen consensus** (label where both agree, else abstain) for high-precision TR/EL supervision — not v7 alone. Blocker remains measurement: 6+3 TR/EL gold can't validate model impact → need an external ruler (MRNet/KneeMRI) before trusting a retrain delta.
 
+### 2026-08-27 — v8 consensus tooling + in-domain cross-check CLI (code-only)
+- code: `src/rsna_knee/text/label_consensus.py` (`intersect_labels`, `agreement_stats`, `overlay_consensus`); `scripts/build_weak_labels_v8.py` (v6c base ⊕ v7∩Qwen, optional TR/EL lang filter via `detect_language`); `scripts/crosscheck_labels.py` (ours vs named competitor CSVs + optional gold audit).
+- tests: `tests/test_label_consensus.py` (4) — agreement-only keep, outer unilateral→NaN, stats rates, overlay overwrite vs gap-fill. Related suite 13 passed.
+- CLI smoke (synthetic): intersect agree 5/7; crosscheck found 1 disagreement cell as expected.
+- **no competition scores** — blocked on rotated Kaggle token + human LB Submit on `rsna-knee-submit-v6c`. Next measure: download real v7/Qwen/v6c + competitor sets, build v8, full-58 gold OOF vs 0.7023.
+- conclusion: iterate — tooling ready; do not retrain until auth + (preferably) LB calibration.
+
 ### 2026-08-27 — External ACL ruler (KneeMRI) — NEGATIVE (domain shift)
 - Option #2: use external expert-labeled knee MRI as an unbiased ACL ruler. MRNet is gated (Stanford DUA; only a 22-byte Kaggle stub). KneeMRI (Croatia) IS on Kaggle (`sohaibanwaar1203/kneemridataset`): 736 sagittal volumes accessible, ACL 0/1/2, binary-positive prevalence 24.8% (representative, unlike the 58's 41%).
 - Built `girishbose/knee-acl-ruler-v6c`: run our v6c fold0 model on KneeMRI as a 1-series sagittal study.
