@@ -116,9 +116,9 @@ v6b was a legitimate, fully-gated supervision win (beat label gate + all 5 folds
 - Config: `configs/labels_v3_robust.yaml` (frozen-B + weak_v3 + GCE + smoothing).
 
 ## Next 3 actions
-1. Kaggle: frozen-B 5-fold on `girishbose/rsna-knee-weak-v8` (same recipe as v6c; pin T4 + known docker image). Save `fold*_oof.csv`.
+1. Wait for `train-b-fold{2,3}-weak-v8` COMPLETE → launch fold4; pull all OOFs.
 2. Full-58 gold OOF vs v6c **0.7023** — keep only if Δ ≥ 0.005; projected LB ≈ OOF − 0.02.
-3. Fold `fill_policy` + v7 + `label_consensus` into `girishbose/rsna-knee-code`; rotate the pasted Kaggle token.
+3. Fold `fill_policy` + v7 + `label_consensus` into `girishbose/rsna-knee-code`; **rotate** the pasted Kaggle token.
 
 ## Do not
 - Select v6c fold0 (0.682) as a final; burn more LB probes without a gold-OOF rule win
