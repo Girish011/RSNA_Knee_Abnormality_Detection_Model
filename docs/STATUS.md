@@ -1,6 +1,14 @@
 # STATUS
 
-Last updated: 2026-08-24 (live Kaggle session)
+Last updated: 2026-08-27 (live Kaggle session)
+
+## 2026-08-27 — v6c adopted (full-58 gold OOF 0.7023 > v6b 0.6895); v6d refinement testing
+- **FULL 5-fold gold OOF (all 58 experts): v6b 0.6895 → v6c 0.7023 (+0.013).** ADOPT v6c. ACL 0.501→0.604, MCL 0.601→0.667, Synovitis +0.066, Contusion +0.080, Medial OA +0.043.
+- But dropping **Lateral OA** fills (borderline precision 0.545) backfired: Lateral OA 0.714→0.609 (-0.104); also Lat Meniscus -0.067, Effusion -0.055 (representation shift).
+- **v6d** = drop ONLY {MCL, ACL} coin-flip fills, KEEP Lateral OA. Gate passes (prec 0.712, rec 0.680). Uploaded `girishbose/rsna-knee-weak-v6d`; testing fold0+1 (`train-b-fold{0,1}-weak-v6d`).
+- Honest state: gold OOF ~0.70, approaching but not clearing the 0.72 submit bar; far from ~0.94 top. Label lever giving diminishing per-iteration gains (+0.013). Still NO submit.
+- Method that works: audit each label's LLM-fill precision vs 58 gold; drop only the truly coin-flip (<0.51) fills; keep the rest.
+
 
 ## 2026-08-24 BREAKTHROUGH — v6b labels pass the supervision gate
 Connected to Kaggle with the real competition data + your active kernels. Key facts:
