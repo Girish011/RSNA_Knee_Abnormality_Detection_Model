@@ -137,6 +137,12 @@ Append one row (or block) per run. Never delete history.
 - **v7 vs Qwen cross-check: 88.2% agreement on Turkish (2107 cells), 76.8% on Greek (482).** Two independent methods concur → both capture real signal; the agreement cells are high-precision.
 - conclusion: v7 is a validated independent multilingual labeler. Its highest-value use is a **v7∩Qwen consensus** (label where both agree, else abstain) for high-precision TR/EL supervision — not v7 alone. Blocker remains measurement: 6+3 TR/EL gold can't validate model impact → need an external ruler (MRNet/KneeMRI) before trusting a retrain delta.
 
+### 2026-08-27 — v8 folds 0–3 COMPLETE; matched 4-fold gold LOSES to v6c
+- weak-val: f0 0.785 / f1 0.783 / f2 0.781 / f3 0.767 (all ≥ v6c counterparts). fold4 QUEUED.
+- **Matched 4-fold gold (n=46): v6c 0.7365 → v8 0.7127 (−0.024).** Regressions: MCL −0.08, Fracture −0.07, Baker's −0.06, MedOA −0.04; small gains Effusion/PF OA.
+- Earlier fold0+1 gold +0.01 was noise (same failure mode as v6d). Weak-val lift confounded by +495 TR/EL cells on ACL/MCL/LatOA.
+- conclusion: provisional **KILL lean** on v8; confirm on full-58 after fold4. Do not LB-probe v8. Additive gap-fill of consensus onto dropped coin-flip labels likely re-poisoned training.
+
 ### 2026-08-27 — v8 train fold0+1 COMPLETE (interim; full-58 pending)
 - kernels: `train-b-fold{0,1}-weak-v8` COMPLETE; fold2+3 RUNNING.
 - weak-val (confounded): f0 **0.7853** / f1 **0.7827** vs v6c 0.7683 / 0.7493 (+0.017 / +0.033).

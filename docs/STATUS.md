@@ -12,10 +12,13 @@ Last updated: 2026-08-27 (LB 0.682 confirmed; cross-check + v8 candidate uploade
 - **SECURITY:** token was pasted in chat again — **rotate** after this session.
 
 ### v8 train progress (live)
-- fold0 COMPLETE: weak-val **0.7853** (v6c was 0.7683) 
-- fold1 COMPLETE: weak-val **0.7827** (v6c was 0.7493)
-- fold0+1 gold (n=24, **noisy**): v6c 0.7358 → v8 **0.7459** (+0.010). Do NOT keep/kill on this — wait for full-58.
-- fold2+3 **RUNNING**; fold4 queued after a slot frees.
+- fold0 COMPLETE: weak-val **0.7853** (v6c 0.7683)
+- fold1 COMPLETE: weak-val **0.7827** (v6c 0.7493)
+- fold2 COMPLETE: weak-val **0.7810** (v6c 0.7624)
+- fold3 COMPLETE: weak-val **0.7672** (v6c 0.7636)
+- fold4 **QUEUED/RUNNING**
+- **Matched 4-fold gold (n=46):** v6c **0.7365** → v8 **0.7127** (**−0.024**). Weak-val lift was confounded. Early fold0+1 gold +0.01 was noise.
+- Full-58 keep/kill still needs fold4; leaning **KILL** unless fold4 reverses hard (rule: beat 0.7023 by ≥0.005).
 
 ## 2026-08-27 — LB PROBE RESULT (calibrated)
 - Notebook `girishbose/rsna-knee-submit-v6c` **Version 1** Succeeded → **public LB = 0.682**.
@@ -116,9 +119,9 @@ v6b was a legitimate, fully-gated supervision win (beat label gate + all 5 folds
 - Config: `configs/labels_v3_robust.yaml` (frozen-B + weak_v3 + GCE + smoothing).
 
 ## Next 3 actions
-1. Wait for `train-b-fold{2,3}-weak-v8` COMPLETE → launch fold4; pull all OOFs.
-2. Full-58 gold OOF vs v6c **0.7023** — keep only if Δ ≥ 0.005; projected LB ≈ OOF − 0.02.
-3. Fold `fill_policy` + v7 + `label_consensus` into `girishbose/rsna-knee-code`; **rotate** the pasted Kaggle token.
+1. Wait for `train-b-fold4-weak-v8` COMPLETE → full-58 gold OOF vs v6c **0.7023** (keep iff Δ ≥ 0.005).
+2. Likely **KILL v8** if 4-fold matched −0.024 holds on full-58; keep v6c + LB 0.682 calibration.
+3. Fold `fill_policy` + v7 + `label_consensus` into `girishbose/rsna-knee-code`; **rotate** pasted Kaggle token; next lever after kill = image/backbone plan (user steer) or yunus-consensus labels (91% agree), not more TR/EL gap-fills on coin-flip cols.
 
 ## Do not
 - Select v6c fold0 (0.682) as a final; burn more LB probes without a gold-OOF rule win
