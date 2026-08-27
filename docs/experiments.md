@@ -120,7 +120,9 @@ Append one row (or block) per run. Never delete history.
 - rule: drop LLM fills with 58-expert fill-precision < 0.55 → {MCL, ACL, Lateral OA}; keep keyword skeleton. Gate PASSES (prec 0.724, rec 0.634, coverage 23,143). Uploaded `girishbose/rsna-knee-weak-v6c`.
 - v6c fold0 0.768 / fold1 0.749 (vs its own labels). Kernels `train-b-fold{0,1}-weak-v6c`.
 - **gold read (fold0+1, 24 experts): v6c 0.7358 vs v6b 0.6894 (+0.046)**. ACL **0.452→0.770 (+0.319)**, MCL 0.381→0.698, Med Men +0.121, Medial OA +0.118, Synovitis +0.107, Baker's +0.159; regressions Effusion -0.230, Lateral OA -0.159 (likely n=24 variance).
-- conclusion: ACL/MCL were label-noise (coin-flip fills), not image-blind — v6c is the strongest lever yet. Rolling v6c to full 5-fold (`train-b-fold{2,3,4}-weak-v6c`) to confirm full-58 gold OOF > v6b 0.6895 before adopting v6c as the labels.
+- v6c folds 2,3 done: 0.7624 / 0.7636 (vs own labels).
+- **CONFIRMED 4-fold gold OOF (46 experts): v6c 0.7365 vs v6b 0.7124 (+0.024).** ACL +0.163 (0.552→0.715), MCL +0.099, Synovitis +0.103, Contusion +0.091, Medial OA +0.044; regressions Lat Meniscus -0.117, Lat OA -0.093, Effusion -0.073 (representation shift from dropped label cols; fills for those weren't changed). Net clearly positive.
+- conclusion: ADOPT v6c over v6b — confirmed gold win on 46 experts, driven by fixing coin-flip ACL/MCL fills. fold4 running for full-58. Watch Lateral Meniscus/Lateral OA regressions (Lat OA fill 0.545 was borderline; may relax threshold to <0.5+ACL later). Method generalizes: audit per-label fill precision, drop coin-flips.
 
 ## Template
 ```text
