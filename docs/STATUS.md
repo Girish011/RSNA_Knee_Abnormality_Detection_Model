@@ -9,6 +9,12 @@ Last updated: 2026-08-27 (live Kaggle session)
 - Honest state: gold OOF ~0.70, approaching but not clearing the 0.72 submit bar; far from ~0.94 top. Label lever giving diminishing per-iteration gains (+0.013). Still NO submit.
 - Method that works: audit each label's LLM-fill precision vs 58 gold; drop only the truly coin-flip (<0.51) fills; keep the rest.
 
+## 2026-08-27 (cont.) — Option #1: LB probe notebook READY (needs 1 UI click)
+- Built `girishbose/rsna-knee-submit-v6c`: images-only, frozen DINOv2-B v6c fold0, exact cache_v1 recipe (3 series x 12 slices x 224, live DICOM decode via StudyDataset = build_cache parity). Internet OFF, GPU, <=9h, writes submission.csv. Has a constant-0.5 fallback so a run always scores.
+- Verified on visible test: loaded the real fold0 checkpoint, produced valid 12-label probs (not fallback), ~5 s/study → full hidden test well within 9h.
+- Account has NO prior submissions; CSV API submit is rejected (400) because this is a CODE competition. **The LB probe requires clicking "Submit" on the committed notebook version in the Kaggle UI** (API cannot trigger a code-comp notebook submission).
+- Purpose: calibrate our internal gold-OOF (~0.70) against the real LB; this is our first true competition-distribution signal.
+
 ## 2026-08-27 (cont.) — Option #2 external ruler = NEGATIVE (domain shift)
 - KneeMRI (Croatia, 736 sag volumes, ACL 0/1/2, prevalence 24.8%) is accessible on Kaggle; MRNet is gated.
 - Ran v6c fold0 on it (`knee-acl-ruler-v6c`): external ACL AUC **0.53** even after fixing the adapter (fluid/fat metadata, spread slices). ≈ chance.
