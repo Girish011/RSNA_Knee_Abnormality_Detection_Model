@@ -1,13 +1,13 @@
 # STATUS
 
-Last updated: 2026-08-27 (GCE v6c fold0+1 v4 RUNNING)
+Last updated: 2026-08-28 (GCE v6c KILL — identical to BCE; loss never applied)
 
-## 2026-08-27 — GCE on v6c: fold0+1 v4 RUNNING
-- **v1–v3 failed:** empty 0-byte scripts → instant COMPLETE, no outputs. Real scripts in `kernels/train-b-fold*-gce-v6c.py`.
-- **fold0 v4 RUNNING** (real script, `rsna-knee-loss-gce` patch). **fold1 v4 pushed + RUNNING** (2026-08-27 22:15 UTC).
-- **fold2–4** push dirs prepared at `/tmp/kaggle_kernels/`; launch when GPU slots free (max 2 concurrent).
-- **yunus gap-fill screened out:** strict intersect +0 cells; naive gap +24,628 mostly neg — do not train.
-- Keep rule: full-58 gold vs v6c BCE **0.7023**, margin **0.005**. Weak-val refs: fold0 **0.7683**, fold1 **0.7493** (v6c BCE).
+## 2026-08-28 — GCE on v6c KILL (fold0+1 identical to BCE)
+- fold0+1 v4 **COMPLETE**. Weak-val: GCE **0.7683 / 0.7493** = v6c BCE (exact tie).
+- fold0+1 gold OOF: **0.7358** vs BCE **0.7358** (Δ **0.0000**). OOF preds max abs diff **0.0**.
+- **Root cause:** stale `rsna-knee-code` `train_baseline_fold.py` calls `masked_bce_with_logits`; `rsna-knee-loss-gce` only patched `loss.py` — **GCE never ran**.
+- **folds 2–4 NOT launched** (tie + null test). Verdict: **KILL**; retest only after trainer patch in code dataset.
+- Adopted labels remain **v6c** (full-58 gold **0.7023**). Public LB **0.682**.
 
 ## 2026-08-27 — v8 KILL (full-58 gold OOF)
 - All 5 folds COMPLETE. Weak-val looked better (confounded): f0–4 = 0.785/0.783/0.781/0.767/0.742 vs v6c 0.768/0.749/0.762/0.764/0.721.
@@ -123,9 +123,9 @@ v6b was a legitimate, fully-gated supervision win (beat label gate + all 5 folds
 - Config: `configs/labels_v3_robust.yaml` (frozen-B + weak_v3 + GCE + smoothing).
 
 ## Next 3 actions
-1. Wait for `train-b-fold{0,1}-gce-v6c` v4 → compare weak-val vs BCE refs; launch folds 2–4 if promising.
-2. Full-58 gold OOF vs v6c BCE **0.7023** — keep GCE only if Δ ≥ 0.005.
-3. **Rotate** pasted Kaggle token; fold GCE `loss.py` into `rsna-knee-code` dataset (hygiene).
+1. **Image/backbone plan** with user steer — label + loss levers exhausted (v8 KILL, GCE null).
+2. Fold `train_baseline_fold.py` GCE support into `rsna-knee-code` before any GCE retest.
+3. **Rotate** pasted Kaggle token.
 
 ## Do not
 - Select v6c fold0 (0.682) as a final; burn LB probes without a gold-OOF rule win

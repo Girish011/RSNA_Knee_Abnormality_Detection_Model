@@ -137,6 +137,12 @@ Append one row (or block) per run. Never delete history.
 - **v7 vs Qwen cross-check: 88.2% agreement on Turkish (2107 cells), 76.8% on Greek (482).** Two independent methods concur → both capture real signal; the agreement cells are high-precision.
 - conclusion: v7 is a validated independent multilingual labeler. Its highest-value use is a **v7∩Qwen consensus** (label where both agree, else abstain) for high-precision TR/EL supervision — not v7 alone. Blocker remains measurement: 6+3 TR/EL gold can't validate model impact → need an external ruler (MRNet/KneeMRI) before trusting a retrain delta.
 
+### 2026-08-28 — GCE v6c KILL (fold0+1 identical to BCE; GCE never applied)
+- fold0+1 v4 COMPLETE. Weak-val GCE = BCE (0.7683/0.7493). fold0+1 gold OOF **0.7358** vs BCE **0.7358** (Δ 0.0); OOF max abs diff **0.0**.
+- Root cause: Kaggle `rsna-knee-code` trainer uses `masked_bce_with_logits`; loss-gce patch only shadowed `loss.py`.
+- folds 2–4 not launched. Audit: `docs/audit/gce_v6c_fold01_keepkill.json`.
+- conclusion: **KILL GCE** as implemented. Label lever exhausted with v8. Next real lever = image/backbone (user steer).
+
 ### 2026-08-27 — GCE v6c fold0+1 v4 RUNNING (v1–v3 empty-script failures fixed)
 - kernels `train-b-fold{0,1}-gce-v6c` v1–v3: **0-byte scripts** → instant COMPLETE, no outputs. Real scripts in `kernels/train-b-fold*-gce-v6c.py`.
 - fold0 **v4 RUNNING**; fold1 **v4 pushed + RUNNING** (22:15 UTC). fold2–4 dirs prepared, not launched.
