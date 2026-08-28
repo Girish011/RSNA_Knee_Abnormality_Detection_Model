@@ -2,7 +2,11 @@
 
 Last updated: 2026-08-28 (GCE v6c KILL — identical to BCE; loss never applied)
 
-## 2026-08-28 — GCE on v6c KILL (fold0+1 identical to BCE)
+## 2026-08-28 — Rank-1 stack shipped (plane routing + cache_v3 + 5-fold submit)
+- **Goal:** Close gap to ~0.95 via image lever (labels exhausted at gold 0.7023 / LB 0.682).
+- **Shipped:** per-label **plane routing** in `multiseries.py`; **ACL sagittal slice bias** + 4×16 **cache_v3** builder; `configs/rank1_v6c.yaml` (frozen-B 12ep, per-label pos_weight); `scripts/infer_ensemble.py` (5-fold blend submit).
+- **Kaggle:** dataset `girishbose/rsna-knee-rank1-patch` uploaded; kernels `train-b-fold{0,1}-rank1-v6c` ready — **push blocked: weekly GPU quota 30h exhausted**.
+- **Honest 0.95 path:** rank1 on cache_v1 → gold OOF gate vs 0.7023; if pass, cache_v3 rebuild + 5-fold rank1 + ensemble submit. No calendar guarantee — gap is ~0.26 LB.
 - fold0+1 v4 **COMPLETE**. Weak-val: GCE **0.7683 / 0.7493** = v6c BCE (exact tie).
 - fold0+1 gold OOF: **0.7358** vs BCE **0.7358** (Δ **0.0000**). OOF preds max abs diff **0.0**.
 - **Root cause:** stale `rsna-knee-code` `train_baseline_fold.py` calls `masked_bce_with_logits`; `rsna-knee-loss-gce` only patched `loss.py` — **GCE never ran**.
@@ -123,9 +127,9 @@ v6b was a legitimate, fully-gated supervision win (beat label gate + all 5 folds
 - Config: `configs/labels_v3_robust.yaml` (frozen-B + weak_v3 + GCE + smoothing).
 
 ## Next 3 actions
-1. **Image/backbone plan** with user steer — label + loss levers exhausted (v8 KILL, GCE null).
-2. Fold `train_baseline_fold.py` GCE support into `rsna-knee-code` before any GCE retest.
-3. **Rotate** pasted Kaggle token.
+1. **When GPU quota resets:** push `train-b-fold{0,1}-rank1-v6c` → folds 2–4 if fold0+1 beat v6c weak-val (0.768/0.749).
+2. Launch `build-cache-v3` (4×16 ACL bias) → retrain rank1 on cache_v3 if rank1 wins on v1.
+3. **5-fold ensemble submit** via `infer_ensemble.py` (v6c or rank1 checkpoints) — one calibrated LB probe after gold-OOF win.
 
 ## Do not
 - Select v6c fold0 (0.682) as a final; burn LB probes without a gold-OOF rule win

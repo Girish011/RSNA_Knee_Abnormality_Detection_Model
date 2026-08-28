@@ -137,6 +137,12 @@ Append one row (or block) per run. Never delete history.
 - **v7 vs Qwen cross-check: 88.2% agreement on Turkish (2107 cells), 76.8% on Greek (482).** Two independent methods concur → both capture real signal; the agreement cells are high-precision.
 - conclusion: v7 is a validated independent multilingual labeler. Its highest-value use is a **v7∩Qwen consensus** (label where both agree, else abstain) for high-precision TR/EL supervision — not v7 alone. Blocker remains measurement: 6+3 TR/EL gold can't validate model impact → need an external ruler (MRNet/KneeMRI) before trusting a retrain delta.
 
+### 2026-08-28 — Rank-1 image stack (plane routing + cache_v3 + ensemble submit)
+- code: label plane routing (`LABEL_PLANE_PRIOR` → per-label series attention), ACL sagittal slice bias, `rank1_v6c.yaml`, `infer_ensemble.py`, Kaggle patch `rsna-knee-rank1-patch`.
+- train kernels prepared; **GPU quota blocked push**.
+- keep rule unchanged: full-58 gold vs v6c **0.7023**, margin **0.005**.
+- conclusion: iterate when quota resets — rank1 is the registered hardest in-repo path toward 0.95; success not guaranteed.
+
 ### 2026-08-28 — GCE v6c KILL (fold0+1 identical to BCE; GCE never applied)
 - fold0+1 v4 COMPLETE. Weak-val GCE = BCE (0.7683/0.7493). fold0+1 gold OOF **0.7358** vs BCE **0.7358** (Δ 0.0); OOF max abs diff **0.0**.
 - Root cause: Kaggle `rsna-knee-code` trainer uses `masked_bce_with_logits`; loss-gce patch only shadowed `loss.py`.
