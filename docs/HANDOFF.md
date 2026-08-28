@@ -1,106 +1,186 @@
-# Handoff — 2026-08-27 (cloud-agent session)
+# Handoff — 2026-08-28 (paste into new chat)
 
-Paste this into a new chat. Repo docs are the source of truth: read `docs/STATUS.md`,
-`docs/DECISIONS.md`, and the tail of `docs/experiments.md` first.
+Read first: `docs/STATUS.md`, `docs/DECISIONS.md`, tail of `docs/experiments.md`.
+GitHub branch with latest work: **`cursor/rank1-v6c-57b3`** (PR #4).
+
+---
 
 ## TL;DR / immediate next action
-- **LB probe DONE:** public **0.682** (v6c fold0). Gold-OOF 0.7023 ≈ LB+0.02. Do not final.
-- **v8 KILLED:** full-58 gold **0.6935** < v6c **0.7023** (Δ −0.0088). Keep v6c. Do not gap-fill ACL/MCL/LatOA again.
-- Next: rotate pasted token; pick next lever with user steer (yunus-consensus teacher vs image plan vs GCE on v6c).
-- Cross-check still useful: yunus 91% agree, dread 81%.
 
-## CRITICAL: GitHub is a stale mirror
-- The GitHub repo (`Girish011/RSNA_Knee_Abnormality_Detection_Model`, branch `main`) is an
-  OLD snapshot. The **authoritative current code is the Kaggle dataset `girishbose/rsna-knee-code`**
-  (has `consensus_labels.py`, `label_query.py`, `pretrain_report_alignment.py`, updated
-  `train_baseline_fold.py` with `--seed/--disable-amp/--model-type/--feature-dir`, notebooks 15–22).
-- This session committed NEW work to GitHub `main` that is NOT yet in the Kaggle code dataset:
-  `src/rsna_knee/text/fill_policy.py`, `src/rsna_knee/text/weak_labels_v7.py`,
-  `src/rsna_knee/evaluation.py`, `scripts/oof_report.py`, `configs/labels_v3_robust.yaml`,
-  robust losses in `training/loss.py`, plus tests. To use these on Kaggle, fold them into the
-  `rsna-knee-code` dataset (package + `kaggle datasets version`).
+1. **Check S01 public LB** — kernel `girishbose/submit-v6c-5fold` v1 COMPLETE (5 checkpoints, uniform blend). Submitted to competition as **S01: 5-fold v6c uniform blend**. Baseline fold0-only = **0.682**. Expected **~0.70–0.72**. Kill if **< 0.690**.
+2. **GPU weekly quota exhausted (30h)** — re-push GPU kernels when reset: `submit-v6c-5fold` (use `kernels/submit-v6c-5fold-metadata.json`), `train-b-fold{0,1}-rank1-v6c`.
+3. **Adopted:** v6c labels, frozen DINOv2-B, cache_v1 3×12×224. **Killed:** v8, GCE (null), yunus gap-fill.
+4. **Strategy shift:** hypothesis-driven public LB submits (S01→S02→…); finals (2 slots) only late Oct.
+
+---
 
 ## Kaggle access
-- User: `girishbose`. Auth: KGAT token via `export KAGGLE_API_TOKEN=<token>` and/or
-  `~/.kaggle/access_token` (chmod 600). CLI at `~/.local/bin/kaggle` (not on default PATH).
-- **SECURITY: rotate the API token** — it was pasted in a chat this session.
 
-## Competition facts (verified this session)
-- Live: RSNA 2026 Knee Abnormality Detection. Deadline **2026-10-22**. Metric **macro AUC** over
-  12 binary labels. **Test is images + series metadata ONLY** (test.csv has just StudyInstanceUID;
-  reports are TRAIN-ONLY). Code competition, ≤9h, internet OFF at submit.
-- **External public data IS allowed** (incl. pretrained models), bundled offline.
-- Train: 4407 studies; **only 58 fully-labeled ("gold")**; rest have multilingual reports.
-- 7 report languages: EN, Turkish, Spanish, German, **Greek (Greek script)**, Dutch, French,
-  + ~428 unplaceable. **Turkish negates AFTER the term** ("efüzyon izlenmedi" = NO effusion).
-- Host grades **borderline / "on the fence" as NEGATIVE** (favor specificity). Ground truth =
-  2 MSK radiologists + adjudicator, whole-exam, single knee.
-- The 58 gold are NOT representative (ACL prevalence 41% vs ~20% corpus) → do NOT calibrate on them.
-- External top-team signal (public): bigger backbones / ensembles / TTA / extra corpora ≈ 0;
-  LB noise-limited in the 3rd decimal; the lever is "how you learn from a noisy teacher."
+- **User:** `girishbose`
+- **CLI:** `~/.local/bin/kaggle` (not on default PATH)
+- **Auth:** token in `~/.kaggle/access_token` (chmod 600) **OR** `export KAGGLE_API_TOKEN=<token>`
+- **Competition slug:** `rsna-knee-abnormality-detection`
+- **⚠ SECURITY:** Token was pasted in chat sessions — **rotate at kaggle.com/settings** after handoff. **Do not commit token to git.**
 
-## Current best & honest numbers
-- **Adopted labels: v6c** (constrained-Qwen fills + keyword skeleton, dropping the coin-flip
-  ACL/MCL/LatOA LLM fills). Kaggle dataset `girishbose/rsna-knee-weak-v6c`.
-- **Model: frozen DINOv2-B, 8 epochs, never unfreeze, cache_v1 (3×12×224), pos_weight 1.0.**
-  Checkpoints = kernel outputs `girishbose/train-b-fold{0..4}-weak-v6c` (`fold{F}_best.pt`).
-- **Full 5-fold OOF vs 58 gold: v6b 0.6895 → v6c 0.7023** (weak-label OOF ~0.75 overstates by ~0.06).
-- Per-label v6c gold (noisy, n=58): MedialOA .904, Effusion .795, Synovitis .766, PFOA .745,
-  MedMen .719, Baker's .706, Contusion .691, MCL .667, LatMen .666, LatOA .609, **ACL .604**,
-  **Fracture .556**.
-- vs ~0.94 public top → large remaining gap.
+```bash
+export KAGGLE_API_TOKEN="$(cat ~/.kaggle/access_token)"
+export PATH="$HOME/.local/bin:$PATH"
+```
 
-## Hard-won lessons (do NOT relitigate)
-1. **Per-label gold AUC at n≤58 is NOISE.** Proof: v6c and v6d share identical ACL+MCL labels
-   yet ACL gold swung 0.77↔0.60 (only Lateral OA differed). Only the **full-58 macro** is stable.
-   Sub-0.02 deltas are unresolvable. STOP tuning labels on the 58; stop reading 2-fold gold.
-2. **External-image datasets don't help here.** KneeMRI (Croatia, `sohaibanwaar1203/kneemridataset`,
-   736 sag volumes, ACL prevalence 24.8%) ruler: our v6c model scored AUC **0.53** (≈chance) even
-   after adapter fixes → domain shift + multi-series mismatch. MRNet is gated (Stanford DUA).
-   Matches "extra corpora ≈ 0". Ruler kernel: `girishbose/knee-acl-ruler-v6c`.
-3. **Coin-flip labels poison training.** The v6→v6b unblock was dropping LLM fills whose 58-expert
-   fill-precision < 0.5 (exactly MCL). Encoded in `src/rsna_knee/text/fill_policy.py`.
+---
 
-## v7 multilingual extractor (built this session, on GitHub main)
-- `src/rsna_knee/text/weak_labels_v7.py` (+ tests). Adds Turkish + Greek with correct
-  post-negation (Turkish), normalcy→negative, borderline→abstain; fixes Turkish dotted-i
-  (İ/ı) `re.IGNORECASE` fold bug; delegates other languages to v2.
-- v7 vs Qwen agree **88% (Turkish) / 77% (Greek)** where both commit → both capture real signal.
-- v6c already labels TR/EL via Qwen, so v7 ALONE isn't a clear win. **Best use = v7∩Qwen
-  consensus** (label where both agree, else abstain) for high-precision multilingual supervision.
-- NOT yet retrained/measured (blocked on the measurement problem → the LB probe / a real ruler).
+## Calibrated scores (source of truth)
 
-## Kaggle assets created this session
-- Datasets: `girishbose/rsna-knee-weak-v6b`, `-v6c`, `-v6d` (candidate label CSVs).
-- Train kernels: `train-b-fold{0..4}-weak-v6b`, `train-b-fold{0..4}-weak-v6c`,
-  `train-b-fold{0,1}-weak-v6d` (frozen-B fold runs; outputs incl. `fold{F}_best.pt`, `fold{F}_oof.csv`).
-- `knee-acl-ruler-v6c` (external ruler, negative). `rsna-knee-submit-v6c` (LB probe, ready).
-- Pre-existing assets: `dinov2-vitb14-rsna-knee` (`dinov2_vitb14_pretrain.pth`),
-  `dinov2-vits14-rsna-knee`, `rsna-knee-cache-v1` (kernel output → `cache_v1`),
-  `mri-core-vitb-rsna-knee` (killed path).
+| Ruler | Score | Notes |
+|---|---|---|
+| **Public LB (fold0 probe)** | **0.682** | submission ref **55818692**, `rsna-knee-submit-v6c` v1 |
+| **Public LB (S01 5-fold)** | *pending* | `submit-v6c-5fold` v1 — check submissions API |
+| **Full-58 gold OOF v6c** | **0.7023** | 5-fold, adopted baseline |
+| Full-58 gold OOF v8 | 0.6935 | **KILL** (Δ −0.0088) |
+| Weak-val v6c BCE (fold0/1) | 0.7683 / 0.7493 | confounded; do not use for keep/kill |
+| Public LB top | ~0.942 | gap ~0.26 |
 
-## Kaggle kernel gotchas (must-follow)
-- **Pin GPU + image or you get `CUDA: no kernel image`**: kernel-metadata must include
-  `"machine_shape": "NvidiaTeslaT4"` and
-  `"docker_image": "gcr.io/kaggle-private-byod/python@sha256:37c64f7dd9c54116ecd1bcc88817c5469b88387388fade02bfa8bf3fc647d461"`.
-- **Max 2 concurrent GPU sessions** → launch folds in pairs.
-- Attach kernel OUTPUTS via `kernel_sources`; datasets via `dataset_sources`; comp via `competition_sources`.
-- Use an O(n) filename index, not per-item `rglob`, when iterating many files.
-- Frozen-B 8ep ≈ 3.4h/fold. Fetch results with `kaggle kernels output <slug> -p <dir>`; logs are JSON lines.
+**Calibration:** gold-OOF ≈ public LB **+ 0.02**. Weak-label OOF ~0.75 overstates by ~0.07.
 
-## Next levers (ranked; measure before trusting)
-1. **Get the LB number** (the pending Submit) → calibrate 0.70 gold-OOF; unblocks all decisions.
-2. **v8 = v7∩Qwen consensus labels** → retrain frozen-B 5-fold → compare full-58 gold to v6c 0.7023
-   (only trust the full-58 macro, and the LB if you probe again).
-3. In-domain label cross-check vs competitors' public RSNA-knee label sets
-   (`barun2104/rsna-knee-stratified-folds-and-llm-soft-labels`, `dreaddevelopment/rsna-knee-labels`,
-   `yunusgmsoy/rsna-knee-llm-report-labels`) — zero domain shift; find our label errors.
-4. Fold the v6b/v6c drop-coin-flip rule and v7 into `consensus_labels.py` in the code dataset so
-   labels regenerate deterministically.
+**Keep/kill rule (trains):** full-58 gold vs v6c **0.7023**, margin **0.005**.
+
+---
+
+## Current model recipe (production)
+
+- **Labels:** `girishbose/rsna-knee-weak-v6c` (`weak_labels_v6c_candidate.csv`)
+- **Backbone:** frozen DINOv2-B, 8ep, never unfreeze, `dinov2_vitb14_pretrain.pth`
+- **Cache:** `girishbose/rsna-knee-cache-v1` → `cache_v1` (3 series × 12 slices × 224)
+- **Checkpoints:** `girishbose/train-b-fold{0..4}-weak-v6c` → `fold{F}_best.pt`, `fold{F}_oof.csv`
+- **Code:** `girishbose/rsna-knee-code` (Kaggle) — **GitHub is stale mirror**; fold new modules into Kaggle dataset before train
+
+---
+
+## Submit queue (hypothesis-driven)
+
+| ID | Hypothesis | Status | Kill if |
+|---|---|---|---|
+| **S01** | 5-fold uniform mean >> fold0 | SUBMITTED (check LB) | LB < 0.690 |
+| S02 | Per-label AUC-weighted 5-fold blend | queued | ≤ S01 |
+| S03 | Best-3-fold subset | queued | < S01 − 0.003 |
+| S05+ | rank1 plane routing (needs GPU train) | blocked quota | gold < 0.7073 |
+
+**Submit command:**
+```bash
+kaggle competitions submit rsna-knee-abnormality-detection \
+  -k girishbose/submit-v6c-5fold -m "S01: 5-fold v6c uniform blend" -v 1
+```
+
+**Check score:**
+```bash
+kaggle competitions submissions rsna-knee-abnormality-detection -v
+```
+
+---
+
+## Killed experiments (do NOT retry)
+
+| Experiment | Result | Why |
+|---|---|---|
+| **v8** (TR/EL consensus gap-fill) | gold 0.6935 | Re-poisoned ACL/MCL/LatOA |
+| **GCE on v6c** | identical to BCE | Stale trainer ignored `loss.mode`; patch only shadowed `loss.py` |
+| **yunus gap-fill** | +24k mostly-neg cells | strict intersect = 0 cells |
+| cache_v2 4×16 | S fold0 0.738 | Below cache_v1 0.764 |
+| unfreeze backbone | 0.729→0.615 | Collapse |
+| external KneeMRI ACL | AUC 0.53 | Domain shift |
+| v6d label micro-tune | ≈ v6c | 2-fold gold noise |
+
+---
+
+## Rank-1 stack (shipped, not yet trained)
+
+Branch `cursor/rank1-v6c-57b3`:
+
+- **Per-label plane routing** — `src/rsna_knee/models/plane_routing.py`, `multiseries.py` (`label_plane_routing=True`)
+- **ACL sagittal slice bias** — `dicom.py`, `build_cache.py --sagittal-acl-bias`
+- **cache_v3** — 4×16 + ACL bias; kernel `kernels/build-cache-v3.py`
+- **Config** — `configs/rank1_v6c.yaml` (frozen-B 12ep, per-label pos_weight)
+- **Kaggle patch** — `girishbose/rsna-knee-rank1-patch` (shadows stale code)
+- **Train kernels** — `kernels/train-b-fold{0,1}-rank1-v6c.py` (not pushed — GPU quota)
+- **Submit** — `kernels/submit-v6c-5fold.py` + `submit-v6c-5fold-metadata.json` (GPU)
+
+---
+
+## Top-team post (0.937 LB) — lessons mapped to us
+
+1. **Elimination > addition at 0.93+** — we are at 0.68; image/ensemble levers still matter for us.
+2. **Real bugs can score zero** — GCE lesson; always 5-fold + full-58 gold.
+3. **Public LB 3rd decimal is noise at top** — not relevant until ~0.85+.
+4. **Never trust 2-fold gold** — pre-register rules; full-58 macro only.
+5. **Remaining gap for leaders = noisy teacher** — we already mined labels (v6c); our gap also needs **image signal** (ACL gold ~0.60).
+
+---
+
+## Kaggle kernel gotchas
+
+```json
+"machine_shape": "NvidiaTeslaT4",
+"docker_image": "gcr.io/kaggle-private-byod/python@sha256:37c64f7dd9c54116ecd1bcc88817c5469b88387388fade02bfa8bf3fc647d461"
+```
+
+- Max **2 concurrent GPU** sessions → launch folds in pairs.
+- Attach outputs via `kernel_sources`; datasets via `dataset_sources`.
+- Empty script kernels → instant COMPLETE, no outputs (happened on GCE v1–v3).
+- Frozen-B 8ep ≈ **3.4h/fold**. Submit inference ≈ **6min/study on GPU**, much slower on CPU.
+- Fetch: `kaggle kernels output <slug> -p <dir>`; logs are JSON lines.
+
+---
+
+## Key Kaggle assets
+
+| Asset | Slug |
+|---|---|
+| Code (authoritative) | `girishbose/rsna-knee-code` |
+| Labels v6c | `girishbose/rsna-knee-weak-v6c` |
+| Rank1 patch | `girishbose/rsna-knee-rank1-patch` |
+| Loss GCE patch | `girishbose/rsna-knee-loss-gce` |
+| Weights | `girishbose/dinov2-vitb14-rsna-knee` |
+| Cache v1 | kernel `girishbose/rsna-knee-cache-v1` |
+| Train v6c | `girishbose/train-b-fold{0..4}-weak-v6c` |
+| Submit fold0 | `girishbose/rsna-knee-submit-v6c` |
+| **Submit 5-fold S01** | `girishbose/submit-v6c-5fold` |
+
+---
+
+## GitHub vs Kaggle sync gap
+
+GitHub has (not all in Kaggle code dataset):
+
+- `fill_policy.py`, `weak_labels_v7.py`, `label_consensus.py`, `evaluation.py`, `oof_report.py`
+- Robust losses in `training/loss.py` (GitHub trainer reads `loss.mode`; Kaggle trainer may not)
+- Rank1 plane routing, `infer_ensemble.py`, `submit-v6c-5fold.py`
+
+**To train on Kaggle:** upload patch dataset or version `rsna-knee-code` via `scripts/package_kaggle_code.py`.
+
+---
+
+## Next 3 actions
+
+1. **Record S01 public LB** in `docs/experiments.md`; queue S02 if ≥ 0.690.
+2. **When GPU quota resets:** push GPU `submit-v6c-5fold` v2 + `train-b-fold{0,1}-rank1-v6c`.
+3. **Rotate Kaggle token** (exposed in chat).
+
+---
 
 ## Do NOT
-- Submit repeatedly / burn finals before OOF (or a calibrated LB) clearly beats the bar.
-- Tune labels on the 58 or trust per-label / 2-fold gold deltas (noise).
-- Reopen killed paths without new evidence: unfreeze, expert head-FT, cache_v2, 384 rank,
-  MRI-CORE, report-alignment-as-init, external-image training.
-- Use reports at inference. Commit secrets (kaggle token, weights, DICOMs).
+
+- Final anything below ~0.80 projected LB (max-AUC slot).
+- Retry v8, GCE-as-shipped, yunus gap-fill, label micro-tuning.
+- Trust 2-fold or weak-val for keep/kill.
+- Reopen: unfreeze, cache_v2, MRI-CORE, 384, external-image train.
+- Use reports at inference. Commit secrets / weights / DICOMs.
+
+---
+
+## Competition facts
+
+- **RSNA 2026 Knee Abnormality Detection**, deadline **2026-10-22**
+- Metric: **macro AUC**, 12 binary labels
+- Test: **images + series metadata only** (no reports)
+- Code competition, ≤9h runtime, internet OFF at submit
+- Dual finals: max-AUC + efficiency (separate student track)
