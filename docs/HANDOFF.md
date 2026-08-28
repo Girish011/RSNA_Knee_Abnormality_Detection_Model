@@ -34,7 +34,7 @@ export PATH="$HOME/.local/bin:$PATH"
 | Ruler | Score | Notes |
 |---|---|---|
 | **Public LB (fold0 probe)** | **0.682** | submission ref **55818692**, `rsna-knee-submit-v6c` v1 |
-| **Public LB (S01 5-fold)** | *pending* | `submit-v6c-5fold` v1 — check submissions API |
+| **Public LB (S01 5-fold)** | *pending* | ref **55851760**, PENDING 2026-08-28 |
 | **Full-58 gold OOF v6c** | **0.7023** | 5-fold, adopted baseline |
 | Full-58 gold OOF v8 | 0.6935 | **KILL** (Δ −0.0088) |
 | Weak-val v6c BCE (fold0/1) | 0.7683 / 0.7493 | confounded; do not use for keep/kill |
