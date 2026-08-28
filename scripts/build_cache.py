@@ -30,6 +30,7 @@ def build_study_cache(
     max_series: int = 3,
     n_slices: int = 12,
     image_size: int = 224,
+    sagittal_acl_bias: bool = False,
 ) -> dict:
     """Write one npz per study: images uint8 (S,N,H,W) + metadata arrays."""
     choices = rank_and_select_series(series_df, study_uid, max_series=max_series)
@@ -45,7 +46,12 @@ def build_study_cache(
     for i, ch in enumerate(choices[:s]):
         series_dir = series_root / study_uid / ch.series_uid
         vol = load_series_volume(series_dir, target_size=(h, h))
-        idxs = sample_slice_indices(len(vol), n, center_bias=True)
+        idxs = sample_slice_indices(
+            len(vol),
+            n,
+            center_bias=True,
+            sagittal_acl_bias=sagittal_acl_bias and ch.plane == "Sagittal",
+        )
         if not idxs:
             series_uids.append(ch.series_uid)
             continue
@@ -89,6 +95,11 @@ def main() -> None:
     parser.add_argument("--image-size", type=int, default=224)
     parser.add_argument("--limit", type=int, default=0, help="Optional study cap for smoke tests")
     parser.add_argument("--study-list", type=Path, default=None, help="Optional txt of StudyInstanceUIDs")
+    parser.add_argument(
+        "--sagittal-acl-bias",
+        action="store_true",
+        help="Tighter mid-stack sampling on sagittal series (cache_v3)",
+    )
     args = parser.parse_args()
 
     train = pd.read_csv(args.train_csv)
@@ -115,6 +126,7 @@ def main() -> None:
                 max_series=args.max_series,
                 n_slices=args.n_slices,
                 image_size=args.image_size,
+                sagittal_acl_bias=args.sagittal_acl_bias,
             )
             manifest.append(entry)
         except Exception as e:  # noqa: BLE001 — keep building despite bad series
