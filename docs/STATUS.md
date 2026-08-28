@@ -1,19 +1,56 @@
 # STATUS
 
-Last updated: 2026-08-27 (live Kaggle session)
+Last updated: 2026-08-28 (GCE v6c KILL — identical to BCE; loss never applied)
+
+## 2026-08-28 — GCE on v6c KILL (fold0+1 identical to BCE)
+- fold0+1 v4 **COMPLETE**. Weak-val: GCE **0.7683 / 0.7493** = v6c BCE (exact tie).
+- fold0+1 gold OOF: **0.7358** vs BCE **0.7358** (Δ **0.0000**). OOF preds max abs diff **0.0**.
+- **Root cause:** stale `rsna-knee-code` `train_baseline_fold.py` calls `masked_bce_with_logits`; `rsna-knee-loss-gce` only patched `loss.py` — **GCE never ran**.
+- **folds 2–4 NOT launched** (tie + null test). Verdict: **KILL**; retest only after trainer patch in code dataset.
+- Adopted labels remain **v6c** (full-58 gold **0.7023**). Public LB **0.682**.
+
+## 2026-08-27 — v8 KILL (full-58 gold OOF)
+- All 5 folds COMPLETE. Weak-val looked better (confounded): f0–4 = 0.785/0.783/0.781/0.767/0.742 vs v6c 0.768/0.749/0.762/0.764/0.721.
+- **Full-58 gold: v6c 0.7023 → v8 0.6935 (Δ −0.0088) → KILL** (rule margin 0.005).
+- Matched 4-fold had already warned (−0.024). Additive TR/EL gap-fill of v7∩Qwen onto dropped ACL/MCL/LatOA cells re-poisoned training.
+- **Adopted labels remain v6c.** Calibrated public LB still **0.682** (fold0 probe). Projected LB ≈ gold-OOF − 0.02.
+- Do not LB-probe v8. Do not continue TR/EL consensus gap-fills on coin-flip columns.
+
+## 2026-08-27 — Auth restored; cross-check DONE; v8 candidate on Kaggle
+- Kaggle auth working as `girishbose`. Submission API confirms probe **publicScore 0.682** (ref 55818692).
+- **In-domain label cross-check** (soft→hard lo=0.2/hi=0.7):
+  - vs **yunus**: **91.2%** agree where both commit (best external teacher signal)
+  - vs **dread**: 80.9%; MCL agree only 38%
+  - vs **barun** `pseudo_*`: useless (mass at 0.5)
+- v8 candidate was uploaded + trained; **killed** (see above).
+- **SECURITY:** token was pasted in chat — **rotate**.
+
+## 2026-08-27 — LB PROBE RESULT (calibrated)
+- Notebook `girishbose/rsna-knee-submit-v6c` **Version 1** Succeeded → **public LB = 0.682**.
+- Recipe: images-only, frozen DINOv2-B **v6c fold0 only** (not 5-fold blend), cache_v1 3×12×224.
+- **Calibration vs internal rulers:**
+  | Ruler | Score | vs LB |
+  |---|---|---|
+  | Public LB (this probe) | **0.682** | — |
+  | Full-58 gold OOF (5-fold v6c) | 0.7023 | +0.020 optimistic |
+  | Weak-label OOF (~v6c) | ~0.75 | +0.07 overstates badly |
+- **Verdict:** gold-OOF is the usable internal ruler (±~0.02 to public). Weak-label OOF is not. **0.682 ≪ 0.94 top** and below our old 0.72 “think about finals” floor → **do not select as final; do not burn more probes** until a full-58 gold OOF clearly beats 0.7023 by ≥0.005 *and* a projected LB (OOF−0.02) clears a deliberate bar.
+- Caveat: single-fold submit may slightly understate a 5-fold blend; gap to top is still ~0.26 — label micro-tweaks will not close it alone.
+- Remaining blocker for next work: **rotated `KAGGLE_API_TOKEN`** in this env (still missing).
+
+## 2026-08-27 — Session: v8 consensus tooling + cross-check scripts (code-only)
+- **Shipped (GitHub):** `rsna_knee.text.label_consensus` + `scripts/build_weak_labels_v8.py` + `scripts/crosscheck_labels.py`. Unit tests + CLI smoke passed.
+- Still true: GitHub is a stale mirror vs `girishbose/rsna-knee-code`; fold new modules into that dataset before Kaggle train.
 
 ## 2026-08-27 — v6c adopted (full-58 gold OOF 0.7023 > v6b 0.6895); v6d refinement testing
 - **FULL 5-fold gold OOF (all 58 experts): v6b 0.6895 → v6c 0.7023 (+0.013).** ADOPT v6c. ACL 0.501→0.604, MCL 0.601→0.667, Synovitis +0.066, Contusion +0.080, Medial OA +0.043.
 - But dropping **Lateral OA** fills (borderline precision 0.545) backfired: Lateral OA 0.714→0.609 (-0.104); also Lat Meniscus -0.067, Effusion -0.055 (representation shift).
 - **v6d** = drop ONLY {MCL, ACL} coin-flip fills, KEEP Lateral OA. Gate passes (prec 0.712, rec 0.680). Uploaded `girishbose/rsna-knee-weak-v6d`; testing fold0+1 (`train-b-fold{0,1}-weak-v6d`).
-- Honest state: gold OOF ~0.70, approaching but not clearing the 0.72 submit bar; far from ~0.94 top. Label lever giving diminishing per-iteration gains (+0.013). Still NO submit.
+- Honest state: **public LB 0.682** (v6c fold0 probe); gold OOF ~0.70 (+0.02 vs LB); far from ~0.94 top. Label lever giving diminishing per-iteration gains (+0.013). Do not final the probe.
 - Method that works: audit each label's LLM-fill precision vs 58 gold; drop only the truly coin-flip (<0.51) fills; keep the rest.
 
-## 2026-08-27 (cont.) — Option #1: LB probe notebook READY (needs 1 UI click)
-- Built `girishbose/rsna-knee-submit-v6c`: images-only, frozen DINOv2-B v6c fold0, exact cache_v1 recipe (3 series x 12 slices x 224, live DICOM decode via StudyDataset = build_cache parity). Internet OFF, GPU, <=9h, writes submission.csv. Has a constant-0.5 fallback so a run always scores.
-- Verified on visible test: loaded the real fold0 checkpoint, produced valid 12-label probs (not fallback), ~5 s/study → full hidden test well within 9h.
-- Account has NO prior submissions; CSV API submit is rejected (400) because this is a CODE competition. **The LB probe requires clicking "Submit" on the committed notebook version in the Kaggle UI** (API cannot trigger a code-comp notebook submission).
-- Purpose: calibrate our internal gold-OOF (~0.70) against the real LB; this is our first true competition-distribution signal.
+## 2026-08-27 (cont.) — Option #1: LB probe — DONE (public 0.682)
+- Built + submitted `girishbose/rsna-knee-submit-v6c` Version 1: images-only, frozen DINOv2-B v6c fold0, cache_v1. **Public LB 0.682.** See top section for calibration.
 
 ## 2026-08-27 (cont.) — Option #2 external ruler = NEGATIVE (domain shift)
 - KneeMRI (Croatia, 736 sag volumes, ACL 0/1/2, prevalence 24.8%) is accessible on Kaggle; MRNet is gated.
@@ -71,12 +108,12 @@ v6b was a legitimate, fully-gated supervision win (beat label gate + all 5 folds
 **Noisy-teacher lever, measured with discipline.** Competition is live (RSNA 2026 Knee; deadline 2026-10-22). Hidden test is expert-radiologist-graded on images while train labels are noisy report-derived — so OOF ~0.76 vs public ~0.94 is partly a *label/measurement* gap, not just capacity. External top-15 signal: bigger backbone / more ensemble / TTA / extra pretraining ≈ 0; LB noise-limited in 3rd decimal. Focus: (1) v3 NLI labels, (2) robust losses, (3) pre-registered multi-fold OOF. Do not submit until the full 5-fold OOF clears the rule.
 
 ## Best scores
-| Setup | Fold0 best |
+| Setup | Score |
 |---|---|
-| **S + weak_v1 frozen, cache_v1** | **0.764** (ckpt missing) |
-| **B + weak_v1 fully frozen, cache_v1** | **0.759** ← keep |
-| B + expert head-FT | 0.760 then 0.745 (kill) |
-| S + cache_v2 | 0.738 |
+| **Public LB (v6c fold0 probe)** | **0.682** ← calibrated |
+| Full-58 gold OOF **v6c** (5-fold) | **0.7023** ← adopted |
+| Full-58 gold OOF v8 (5-fold) | 0.6935 ← **KILL** |
+| Full-58 gold OOF v6b (5-fold) | 0.6895 |
 | Public LB top | ~0.942 |
 
 ## New tooling (2026-08-24, code-only, unit-tested; no scores yet)
@@ -86,10 +123,12 @@ v6b was a legitimate, fully-gated supervision win (beat label gate + all 5 folds
 - Config: `configs/labels_v3_robust.yaml` (frozen-B + weak_v3 + GCE + smoothing).
 
 ## Next 3 actions
-1. Kaggle: run `notebooks/14_pseudo_label_reports.py` (GPU T4x2, **Internet ON**) → `weak_labels_v3.csv`; check expert audit vs v1 (~F1 0.44).
-2. Kaggle: 5-fold frozen-B with `configs/labels_v3_robust.yaml` (weak_v3 + GCE). Save per-fold `fold*_oof.csv`.
-3. Locally: `python scripts/oof_report.py --oof <v3 folds> --baseline-oof <weak_v1 B folds> --targets data/folds/folds_v1.csv` → keep only on a rule win vs **0.759**.
+1. **Image/backbone plan** with user steer — label + loss levers exhausted (v8 KILL, GCE null).
+2. Fold `train_baseline_fold.py` GCE support into `rsna-knee-code` before any GCE retest.
+3. **Rotate** pasted Kaggle token.
 
 ## Do not
-- Submit before an OOF-rule win; unfreeze; cache_v2 5-fold; weak_v2; ship FT weights
-- Use reports at test time; chase 3rd-decimal single-fold deltas
+- Select v6c fold0 (0.682) as a final; burn LB probes without a gold-OOF rule win
+- Retry v8-style TR/EL gap-fills on ACL/MCL/LatOA; trust per-label / 2-fold gold at n≤58
+- Reopen killed paths (unfreeze, expert head-FT, cache_v2, 384, MRI-CORE, external-image train, **v8**)
+- Use reports at test time; commit secrets / weights / DICOMs

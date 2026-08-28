@@ -1,0 +1,13 @@
+label,n_studies,n_both_commit,n_agree,agree_rate,n_left_only,n_right_only
+ACL,4407,58,58,1.0,371,0
+MCL,4407,58,58,1.0,204,0
+Medial Meniscus,4407,58,58,1.0,2829,0
+Lateral Meniscus,4407,58,58,1.0,3243,0
+Medial OA,4407,58,58,1.0,2336,0
+Lateral OA,4407,58,58,1.0,133,0
+PF OA,4407,58,58,1.0,2211,0
+Effusion,4407,58,58,1.0,3585,0
+Synovitis,4407,58,58,1.0,1589,0
+Baker's,4407,58,58,1.0,2457,0
+Contusion,4407,58,58,1.0,1800,0
+Fracture,4407,58,58,1.0,2072,0
