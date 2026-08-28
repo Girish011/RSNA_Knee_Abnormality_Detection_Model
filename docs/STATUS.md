@@ -2,6 +2,12 @@
 
 Last updated: 2026-08-28 (GCE v6c KILL — identical to BCE; loss never applied)
 
+## 2026-08-28 — S01 submit RUNNING (5-fold v6c blend)
+- **S01** kernel `girishbose/submit-v6c-5fold` v1 **RUNNING** (CPU — GPU weekly quota exhausted).
+- Hypothesis: 5-fold uniform mean >> fold0-only **0.682**; expect **~0.70–0.72** public LB.
+- When COMPLETE: `kaggle competitions submit rsna-knee-abnormality-detection -k girishbose/submit-v6c-5fold -m "S01 5-fold v6c blend" -v <N>`
+- Re-push with GPU (`kernels/submit-v6c-5fold-metadata.json`) when quota resets if CPU exceeds 9h.
+
 ## 2026-08-28 — Rank-1 stack shipped (plane routing + cache_v3 + 5-fold submit)
 - **Goal:** Close gap to ~0.95 via image lever (labels exhausted at gold 0.7023 / LB 0.682).
 - **Shipped:** per-label **plane routing** in `multiseries.py`; **ACL sagittal slice bias** + 4×16 **cache_v3** builder; `configs/rank1_v6c.yaml` (frozen-B 12ep, per-label pos_weight); `scripts/infer_ensemble.py` (5-fold blend submit).

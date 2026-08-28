@@ -137,6 +137,13 @@ Append one row (or block) per run. Never delete history.
 - **v7 vs Qwen cross-check: 88.2% agreement on Turkish (2107 cells), 76.8% on Greek (482).** Two independent methods concur → both capture real signal; the agreement cells are high-precision.
 - conclusion: v7 is a validated independent multilingual labeler. Its highest-value use is a **v7∩Qwen consensus** (label where both agree, else abstain) for high-precision TR/EL supervision — not v7 alone. Blocker remains measurement: 6+3 TR/EL gold can't validate model impact → need an external ruler (MRNet/KneeMRI) before trusting a retrain delta.
 
+### 2026-08-28 — S01 QUEUED/RUNNING: 5-fold v6c uniform blend submit
+- experiment **S01**: hypothesis fold0-only LB 0.682 understates 5-fold; expect **~0.70–0.72**.
+- kernel `girishbose/submit-v6c-5fold` v1 pushed; **CPU run** (weekly GPU quota exhausted — re-push with GPU metadata when quota resets).
+- recipe: frozen DINOv2-B v6c, 5× `fold{0..4}_best.pt` from `train-b-fold*-weak-v6c`, uniform mean, cache_v1 3×12×224.
+- baseline: fold0-only public **0.682** (submission 55818692). Kill if LB < **0.690**.
+- conclusion: iterate — submit to competition when kernel COMPLETE; log public score.
+
 ### 2026-08-28 — Rank-1 image stack (plane routing + cache_v3 + ensemble submit)
 - code: label plane routing (`LABEL_PLANE_PRIOR` → per-label series attention), ACL sagittal slice bias, `rank1_v6c.yaml`, `infer_ensemble.py`, Kaggle patch `rsna-knee-rank1-patch`.
 - train kernels prepared; **GPU quota blocked push**.
