@@ -12,7 +12,8 @@
   "dataset_sources": [
     "girishbose/dinov2-vitb14-rsna-knee",
     "girishbose/rsna-knee-code",
-    "girishbose/rsna-knee-weak-v6c"
+    "girishbose/rsna-knee-weak-v6c",
+    "girishbose/rsna-knee-rank1-patch"
   ],
   "kernel_sources": [
     "girishbose/train-b-fold0-weak-v6c",

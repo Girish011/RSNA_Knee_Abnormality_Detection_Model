@@ -8,7 +8,9 @@
   "enable_gpu": true,
   "enable_tpu": false,
   "enable_internet": false,
-  "keywords": ["gpu"],
+  "keywords": [
+    "gpu"
+  ],
   "dataset_sources": [
     "girishbose/dinov2-vitb14-rsna-knee",
     "girishbose/rsna-knee-code",
@@ -21,7 +23,9 @@
     "girishbose/train-b-fold3-weak-v6c",
     "girishbose/train-b-fold4-weak-v6c"
   ],
-  "competition_sources": ["rsna-knee-abnormality-detection"],
+  "competition_sources": [
+    "rsna-knee-abnormality-detection"
+  ],
   "model_sources": [],
   "docker_image": "gcr.io/kaggle-private-byod/python@sha256:37c64f7dd9c54116ecd1bcc88817c5469b88387388fade02bfa8bf3fc647d461",
   "machine_shape": "NvidiaTeslaT4"

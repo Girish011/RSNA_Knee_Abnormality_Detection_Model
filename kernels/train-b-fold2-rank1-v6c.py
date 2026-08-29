@@ -11,8 +11,8 @@ CODE = Path("/kaggle/input/datasets/girishbose/rsna-knee-code")
 PATCH = Path("/kaggle/input/datasets/girishbose/rsna-knee-rank1-patch")
 WEIGHTS = Path("/kaggle/input/datasets/girishbose/dinov2-vitb14-rsna-knee/dinov2_vitb14_pretrain.pth")
 CACHE = Path("/kaggle/input/notebooks/girishbose/rsna-knee-cache-v1/cache_v1")
-FOLD = 2
 
+FOLD = 2
 
 def _find(pattern, is_dir=False, must_contain=None):
     for p in Path("/kaggle/input").rglob(pattern):
@@ -24,12 +24,13 @@ def _find(pattern, is_dir=False, must_contain=None):
     return None
 
 
-if not CODE.exists():
-    hit = _find("scripts/train_baseline_fold.py")
-    CODE = hit.parents[1] if hit else CODE
-if not PATCH.exists():
-    PATCH = _find("rank1_v6c.yaml")
-    PATCH = PATCH.parents[1] if PATCH else PATCH
+# Prefer real code dataset (has third_party/dinov2 + folds) over the rank1 patch.
+if not (CODE.exists() and (CODE / "third_party/dinov2/hubconf.py").exists()):
+    hit = _find("hubconf.py")
+    CODE = hit.parents[2] if hit else CODE
+if not (PATCH.exists() and (PATCH / "configs/rank1_v6c.yaml").exists()):
+    hit = _find("rank1_v6c.yaml")
+    PATCH = hit.parents[1] if hit else PATCH
 if not WEIGHTS.exists():
     WEIGHTS = _find("dinov2_vitb14_pretrain.pth") or WEIGHTS
 if not CACHE.exists():
@@ -61,6 +62,13 @@ if (dino / "hubconf.py").exists():
 
 cfg = PATCH / "configs/rank1_v6c.yaml"
 folds = CODE / "data/folds/folds_v1.csv"
+if not folds.exists():
+    folds = PATCH / "data/folds/folds_v1.csv"
+if not folds.exists():
+    folds = _find("folds_v1.csv")
+assert folds and Path(folds).exists(), f"folds_v1.csv not found (CODE={CODE}, PATCH={PATCH})"
+folds = Path(folds)
+
 out = Path(f"/kaggle/working/rank1_v6c_b/fold{FOLD}")
 out.mkdir(parents=True, exist_ok=True)
 

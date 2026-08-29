@@ -1,6 +1,14 @@
 # STATUS
 
-Last updated: 2026-08-29 (GPU quota restored — rank1 launch ready)
+Last updated: 2026-08-29 (S01 timeout; rank1 GPU training launched)
+
+## 2026-08-29 — S01 TIMED OUT; rank1 fold0+1 GPU launched; S01b queued
+- **S01** ref **55851760**: status COMPLETE but **no publicScore** — error: *submission notebook exceeded allowed runtime* (CPU dry-run ~126s/study × 5 models; hidden test too large).
+- **Not a kill on the ensemble hypothesis** — runtime failure, not a scored loss. Baseline fold0 LB remains **0.682**.
+- **S01b fix:** GPU + decode-once infer in `infer.py`; submit kernel prefers `rsna-knee-rank1-patch`. Waiting for a free GPU slot (2 concurrent max) to re-run, then competition re-submit.
+- **Rank1 training:** `train-b-fold{0,1}-rank1-v6c` pushed (v3+ after fixing incomplete patch / folds path). Keep iff full-58 gold ≥ **0.7073**.
+- **GPU quota:** ~30h remaining (refreshes 2026-09-05).
+- **⚠ SECURITY:** Kaggle token pasted in chat — **rotate** after session.
 
 ## 2026-08-29 — GPU quota restored; rank1 + S02 launch queue
 - **S01** (5-fold v6c uniform blend): ref **55851760**, LB still **PENDING** (check with `kaggle competitions submissions rsna-knee-abnormality-detection -v`).
@@ -140,9 +148,9 @@ v6b was a legitimate, fully-gated supervision win (beat label gate + all 5 folds
 - Config: `configs/labels_v3_robust.yaml` (frozen-B + weak_v3 + GCE + smoothing).
 
 ## Next 3 actions
-1. **Push + launch rank1:** refresh `rsna-knee-rank1-patch`, then `python scripts/push_kaggle_kernels.py train-b-fold0-rank1-v6c-metadata.json train-b-fold1-rank1-v6c-metadata.json` and start both on GPU.
-2. **When S01 LB ≥ 0.690:** push/submit S02 (`submit-v6c-5fold-s02`) per-label AUC-weighted blend.
-3. **If rank1 fold0+1 weak-val beats v6c (0.768/0.749):** launch folds 2–4; full-58 gold OOF vs 0.7023 before any LB probe.
+1. **Confirm rank1 fold0+1 train** past epoch 0; push folds 2–4 if weak-val beats v6c (0.768/0.749).
+2. **When a GPU slot frees:** push/run GPU `submit-v6c-5fold` (S01b decode-once) → competition submit when COMPLETE.
+3. **S02** only after S01b scores ≥ 0.690 (or kill ensemble-weighting if S01b < 0.690).
 
 ## Do not
 - Select v6c fold0 (0.682) as a final; burn LB probes without a gold-OOF rule win

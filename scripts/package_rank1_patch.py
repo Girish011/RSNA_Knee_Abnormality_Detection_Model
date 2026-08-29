@@ -4,24 +4,22 @@
 from __future__ import annotations
 
 import argparse
+import json
+import os
 import shutil
 import subprocess
-import tempfile
 import zipfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 
 INCLUDE = [
-    "src/rsna_knee/models/plane_routing.py",
-    "src/rsna_knee/models/multiseries.py",
-    "src/rsna_knee/data/dicom.py",
-    "src/rsna_knee/training/loss.py",
-    "src/rsna_knee/infer.py",
+    "src/rsna_knee",  # full package — partial trees break imports
     "scripts/train_baseline_fold.py",
     "scripts/build_cache.py",
     "scripts/infer_ensemble.py",
     "configs/rank1_v6c.yaml",
+    "data/folds/folds_v1.csv",
 ]
 
 
@@ -33,34 +31,57 @@ def main() -> None:
     args = ap.parse_args()
 
     args.out_zip.parent.mkdir(parents=True, exist_ok=True)
-    with tempfile.TemporaryDirectory() as tmp:
-        staging = Path(tmp) / "bundle"
-        staging.mkdir()
-        for rel in INCLUDE:
-            src = ROOT / rel
-            if not src.exists():
-                print("skip missing", rel)
-                continue
-            dst = staging / rel
-            dst.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(src, dst)
+    upload_dir = args.out_zip.parent / "rank1_patch_upload"
+    if upload_dir.exists():
+        shutil.rmtree(upload_dir)
+    upload_dir.mkdir(parents=True)
 
-        with zipfile.ZipFile(args.out_zip, "w", zipfile.ZIP_DEFLATED) as zf:
-            for p in staging.rglob("*"):
+    for rel in INCLUDE:
+        src = ROOT / rel
+        if not src.exists():
+            print("skip missing", rel)
+            continue
+        dst = upload_dir / rel
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        if src.is_dir():
+            if dst.exists():
+                shutil.rmtree(dst)
+            shutil.copytree(src, dst)
+            for p in dst.rglob("*"):
                 if p.is_file():
-                    zf.write(p, p.relative_to(staging))
+                    os.utime(p, None)
+        else:
+            shutil.copy2(src, dst)
+            os.utime(dst, None)
+
+    with zipfile.ZipFile(args.out_zip, "w", zipfile.ZIP_DEFLATED) as zf:
+        for p in upload_dir.rglob("*"):
+            if p.is_file() and p.name != "dataset-metadata.json":
+                zf.write(p, p.relative_to(upload_dir))
 
     print("wrote", args.out_zip, "size", args.out_zip.stat().st_size)
     if args.upload:
         kaggle = Path.home() / ".local/bin/kaggle"
         if not kaggle.exists():
             raise SystemExit("kaggle CLI not found")
-        upload_dir = args.out_zip.parent / "rank1_patch_upload"
-        if upload_dir.exists():
-            shutil.rmtree(upload_dir)
-        shutil.unpack_archive(args.out_zip, upload_dir)
+        meta = {
+            "id": args.slug,
+            "title": "rsna-knee-rank1-patch",
+            "licenses": [{"name": "CC0-1.0"}],
+        }
+        (upload_dir / "dataset-metadata.json").write_text(json.dumps(meta, indent=2))
         subprocess.check_call(
-            [str(kaggle), "datasets", "version", "-p", str(upload_dir), "-m", "rank1 infer+plane routing refresh"]
+            [
+                str(kaggle),
+                "datasets",
+                "version",
+                "-p",
+                str(upload_dir),
+                "-m",
+                "decode-once infer + plane routing",
+                "--dir-mode",
+                "zip",
+            ]
         )
         print("uploaded", args.slug)
 

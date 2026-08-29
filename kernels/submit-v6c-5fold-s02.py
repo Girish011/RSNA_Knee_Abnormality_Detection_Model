@@ -54,7 +54,21 @@ CODE = next(
 if CODE is None:
     hit = locate("train_baseline_fold.py")
     CODE = hit.parents[1] if hit else None
+# Prefer patch infer (decode-once) over stale code dataset.
+PATCH = next(
+    (
+        p
+        for p in [
+            INPUT / "datasets/girishbose/rsna-knee-rank1-patch",
+            INPUT / "rsna-knee-rank1-patch",
+        ]
+        if (p / "src").exists() or (p / "src/rsna_knee/infer.py").exists()
+    ),
+    None,
+)
 sys.path.insert(0, str(CODE / "src"))
+if PATCH is not None and (PATCH / "src").exists():
+    sys.path.insert(0, str(PATCH / "src"))
 dino = CODE / "third_party" / "dinov2"
 if (dino / "hubconf.py").exists():
     os.environ["DINOV2_REPO"] = str(dino)
@@ -79,6 +93,7 @@ CHECKPOINTS, OOF_CSVS = locate_checkpoints_and_oof()
 
 for n, p in [
     ("CODE", CODE),
+    ("PATCH", PATCH),
     ("test_csv", test_csv),
     ("series_csv", series_csv),
     ("series_root", series_root),
@@ -88,6 +103,8 @@ for n, p in [
 ]:
     print(n, p, flush=True)
 print("CHECKPOINTS", len(CHECKPOINTS), "OOF_CSVS", len(OOF_CSVS), flush=True)
+import torch
+print("torch.cuda.is_available()", torch.cuda.is_available(), flush=True)
 
 cfg = WORK / "infer_v6c_5fold.yaml"
 cfg.write_text(

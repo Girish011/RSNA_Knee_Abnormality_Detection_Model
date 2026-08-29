@@ -137,6 +137,13 @@ Append one row (or block) per run. Never delete history.
 - **v7 vs Qwen cross-check: 88.2% agreement on Turkish (2107 cells), 76.8% on Greek (482).** Two independent methods concur → both capture real signal; the agreement cells are high-precision.
 - conclusion: v7 is a validated independent multilingual labeler. Its highest-value use is a **v7∩Qwen consensus** (label where both agree, else abstain) for high-precision TR/EL supervision — not v7 alone. Blocker remains measurement: 6+3 TR/EL gold can't validate model impact → need an external ruler (MRNet/KneeMRI) before trusting a retrain delta.
 
+### 2026-08-29 — S01 TIMED OUT (no score); rank1 GPU launched; S01b decode-once queued
+- S01 ref **55851760** COMPLETE with empty publicScore — runtime exceeded on hidden test (CPU ~126s/study × 5 ckpts). Ensemble hypothesis **not killed**.
+- Fix: `run_model_submission` decode-once; full `src/rsna_knee` + folds in `rsna-knee-rank1-patch`; GPU submit kernel; `push_kaggle_kernels.py`.
+- Rank1: fold0+1 pushed/running after import+folds path fixes. Gate: full-58 gold ≥ 0.7073.
+- S02 still queued pending a scored S01b ≥ 0.690.
+- conclusion: iterate — wait rank1 weak-val; free a GPU slot for S01b submit then competition re-submit.
+
 ### 2026-08-29 — GPU launch queue: rank1 train + S02 submit kernel
 - code: `run_model_submission` in `infer.py` (uniform + per-label AUC blend from OOF); S02 kernel `submit-v6c-5fold-s02`; rank1 fold2–4 kernels + metadata; `scripts/push_kaggle_kernels.py`, `scripts/package_rank1_patch.py`.
 - tests: `tests/test_infer.py` (OOF weight normalization + submission schema); 36 passed locally.

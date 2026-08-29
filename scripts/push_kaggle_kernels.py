@@ -39,7 +39,9 @@ def push_one(meta_path: Path, *, dry_run: bool = False) -> None:
     kernel_meta.setdefault("machine_shape", "NvidiaTeslaT4")
     (staging / "kernel-metadata.json").write_text(json.dumps(kernel_meta, indent=2))
 
-    cmd = [str(KAGGLE), "kernels", "push", str(staging)]
+    cmd = [str(KAGGLE), "kernels", "push", "-p", str(staging)]
+    # Do not force --accelerator here: when 2 GPU sessions are already running,
+    # omitting it lets Kaggle queue from kernel-metadata enable_gpu.
     print(" ".join(cmd))
     if dry_run:
         return
