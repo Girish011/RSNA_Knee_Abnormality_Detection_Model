@@ -1,6 +1,16 @@
 # STATUS
 
-Last updated: 2026-08-29 (rank1 fold0+1 training — ep0 interim)
+Last updated: 2026-08-29 (rank1 fold0+1 — ep2–3 interim)
+
+## 2026-08-29 — Rank1 fold0+1 mid-train (climbing, still below v6c)
+- Both still **RUNNING**. Plane routing confirmed. GPU ~6.2h / 30h.
+- **Weak-val trajectory (not keep/kill yet):**
+  | Fold | ep0 | ep1 | ep2 | ep3 | best so far | v6c BCE |
+  |---|---|---|---|---|---|---|
+  | 0 | 0.685 | 0.723 | **0.742** | 0.737 | **0.742** | 0.768 |
+  | 1 | 0.682 | 0.720 | **0.721** | — | **0.721** | 0.749 |
+- Gap to v6c ≈ −0.026 / −0.028 at best-so-far; ~8–9 epochs left. Watch whether it clears baselines by ep8–11.
+- S01b submit still blocked (2 GPU slots). Do not push folds 2–4 until fold0+1 beat 0.768/0.749 *or* finish with a clear kill.
 
 ## 2026-08-29 — Rank1 fold0+1 TRAINING (plane routing confirmed)
 - Both GPU sessions RUNNING. Live logs via `kaggle kernels logs … -f`.

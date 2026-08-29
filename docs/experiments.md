@@ -137,6 +137,11 @@ Append one row (or block) per run. Never delete history.
 - **v7 vs Qwen cross-check: 88.2% agreement on Turkish (2107 cells), 76.8% on Greek (482).** Two independent methods concur → both capture real signal; the agreement cells are high-precision.
 - conclusion: v7 is a validated independent multilingual labeler. Its highest-value use is a **v7∩Qwen consensus** (label where both agree, else abstain) for high-precision TR/EL supervision — not v7 alone. Blocker remains measurement: 6+3 TR/EL gold can't validate model impact → need an external ruler (MRNet/KneeMRI) before trusting a retrain delta.
 
+### 2026-08-29 — Rank1 fold0+1 mid-train ep2–3
+- Still RUNNING. Best so far: fold0 **0.7416** (ep2), fold1 **0.7215** (ep2) vs v6c 0.7683 / 0.7493 (Δ −0.027 / −0.028).
+- Climbing but trailing; ~8–9 epochs left. S01b still GPU-slot blocked.
+- conclusion: iterate — wait for finish; provisional lean if final best stays < v6c − 0.005.
+
 ### 2026-08-29 — Rank1 fold0+1 TRAINING (ep0 interim weak-val)
 - Live: both RUNNING; `label_plane_routing=True`; folds/code/cache/weights resolved correctly.
 - epoch 0 weak-val: fold0 **0.6847**, fold1 **0.6822** (vs v6c 0.7683 / 0.7493). Too early to keep/kill.
