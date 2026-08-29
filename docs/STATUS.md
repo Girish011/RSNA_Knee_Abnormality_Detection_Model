@@ -1,6 +1,17 @@
 # STATUS
 
-Last updated: 2026-08-29 (rank1 fold0+1 — ep6–7; fold1 beating v6c)
+Last updated: 2026-08-29 (rank1 fold0+1 ep10/9 — fold1 wins smoke bar)
+
+## 2026-08-29 — Rank1 fold0+1 near finish; fold1 BEATS v6c → folds 2–3 queued
+- Still **RUNNING** (fold0 ep10/12, fold1 ep9/12). GPU ~15.4h / 30h.
+- **Best weak-val so far:**
+  | Fold | best | @ep | v6c | Δ | vs baseline−0.005 |
+  |---|---|---|---|---|---|
+  | 0 | **0.7558** | 10 | 0.7683 | −0.012 | below 0.7633 |
+  | 1 | **0.7640** | 6 | 0.7493 | **+0.015** | **pass** |
+- Fold1 clears smoke bar → **pushed `train-b-fold{2,3}-rank1-v6c`** (queues when GPU slots free).
+- Full keep/kill still = full-58 gold ≥ **0.7073** after 5-fold. S01b deferred until rank1 slots free.
+- Next: on fold0+1 COMPLETE download checkpoints; finish folds 2–4 if fold1 holds.
 
 ## 2026-08-29 — Rank1 fold0+1 late-train: fold1 BEATS v6c weak-val
 - Both still **RUNNING**. GPU ~11.3h / 30h.

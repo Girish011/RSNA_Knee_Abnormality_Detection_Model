@@ -137,6 +137,11 @@ Append one row (or block) per run. Never delete history.
 - **v7 vs Qwen cross-check: 88.2% agreement on Turkish (2107 cells), 76.8% on Greek (482).** Two independent methods concur → both capture real signal; the agreement cells are high-precision.
 - conclusion: v7 is a validated independent multilingual labeler. Its highest-value use is a **v7∩Qwen consensus** (label where both agree, else abstain) for high-precision TR/EL supervision — not v7 alone. Blocker remains measurement: 6+3 TR/EL gold can't validate model impact → need an external ruler (MRNet/KneeMRI) before trusting a retrain delta.
 
+### 2026-08-29 — Rank1 fold0+1 ep10/9; fold2+3 pushed
+- Still RUNNING. Best: fold0 **0.7558** (ep10), fold1 **0.7640** (ep6, ep9 **0.7636**). Fold1 **+0.015** vs v6c 0.7493 → smoke pass.
+- Pushed `train-b-fold{2,3}-rank1-v6c` (GPU queue). S01b still deferred.
+- conclusion: iterate — provisional KEEP; wait COMPLETE + folds 2–4.
+
 ### 2026-08-29 — Rank1 fold0+1 late-train: fold1 beats v6c
 - Still RUNNING. Best: fold0 **0.7545** (ep7, −0.014 vs 0.7683), fold1 **0.7640** (ep6, **+0.015** vs 0.7493).
 - Fold1 smoke-bar pass. Finish remaining epochs then push folds 2–4 if fold0 closes or holds; decide keep on full-58 gold ≥ 0.7073.
