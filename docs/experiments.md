@@ -137,6 +137,12 @@ Append one row (or block) per run. Never delete history.
 - **v7 vs Qwen cross-check: 88.2% agreement on Turkish (2107 cells), 76.8% on Greek (482).** Two independent methods concur → both capture real signal; the agreement cells are high-precision.
 - conclusion: v7 is a validated independent multilingual labeler. Its highest-value use is a **v7∩Qwen consensus** (label where both agree, else abstain) for high-precision TR/EL supervision — not v7 alone. Blocker remains measurement: 6+3 TR/EL gold can't validate model impact → need an external ruler (MRNet/KneeMRI) before trusting a retrain delta.
 
+### 2026-08-29 — GPU launch queue: rank1 train + S02 submit kernel
+- code: `run_model_submission` in `infer.py` (uniform + per-label AUC blend from OOF); S02 kernel `submit-v6c-5fold-s02`; rank1 fold2–4 kernels + metadata; `scripts/push_kaggle_kernels.py`, `scripts/package_rank1_patch.py`.
+- tests: `tests/test_infer.py` (OOF weight normalization + submission schema); 36 passed locally.
+- blocked: Kaggle token not in cloud env — user must `export KAGGLE_API_TOKEN=...` then push/launch.
+- conclusion: iterate — launch rank1 fold0+1 on GPU; queue S02 when S01 LB ≥ 0.690.
+
 ### 2026-08-28 — S01 SUBMITTED: 5-fold v6c uniform blend (LB pending)
 - experiment **S01**: hypothesis fold0-only LB 0.682 understates 5-fold; expect **~0.70–0.72**.
 - kernel `girishbose/submit-v6c-5fold` v1 COMPLETE (5 checkpoints, uniform mean, 379s on 3-study dry run).

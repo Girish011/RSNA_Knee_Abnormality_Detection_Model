@@ -1,6 +1,12 @@
 # STATUS
 
-Last updated: 2026-08-28 (S01 submitted — LB pending)
+Last updated: 2026-08-29 (GPU quota restored — rank1 launch ready)
+
+## 2026-08-29 — GPU quota restored; rank1 + S02 launch queue
+- **S01** (5-fold v6c uniform blend): ref **55851760**, LB still **PENDING** (check with `kaggle competitions submissions rsna-knee-abnormality-detection -v`).
+- **GPU quota available** — launch rank1 training (`train-b-fold{0,1}-rank1-v6c` first pair, then 2–4).
+- **Shipped this session:** `run_model_submission` + per-label AUC blend in `infer.py`; S02 kernel `submit-v6c-5fold-s02`; rank1 fold2–4 kernels + metadata; `scripts/push_kaggle_kernels.py` + `package_rank1_patch.py`.
+- **Honest 0.95 path:** rank1 (plane routing + pos_weight) on cache_v1 → full-58 gold gate vs **0.7023** → cache_v3 rebuild → 5-fold rank1 ensemble submit. Gap ~0.26 LB; no calendar guarantee.
 
 ## 2026-08-28 — S01 SUBMITTED (5-fold v6c blend; LB pending)
 - Kernel `girishbose/submit-v6c-5fold` v1 **COMPLETE** (5 checkpoints, uniform mean blend).
@@ -134,9 +140,9 @@ v6b was a legitimate, fully-gated supervision win (beat label gate + all 5 folds
 - Config: `configs/labels_v3_robust.yaml` (frozen-B + weak_v3 + GCE + smoothing).
 
 ## Next 3 actions
-1. **When GPU quota resets:** push `train-b-fold{0,1}-rank1-v6c` → folds 2–4 if fold0+1 beat v6c weak-val (0.768/0.749).
-2. Launch `build-cache-v3` (4×16 ACL bias) → retrain rank1 on cache_v3 if rank1 wins on v1.
-3. **5-fold ensemble submit** via `infer_ensemble.py` (v6c or rank1 checkpoints) — one calibrated LB probe after gold-OOF win.
+1. **Push + launch rank1:** refresh `rsna-knee-rank1-patch`, then `python scripts/push_kaggle_kernels.py train-b-fold0-rank1-v6c-metadata.json train-b-fold1-rank1-v6c-metadata.json` and start both on GPU.
+2. **When S01 LB ≥ 0.690:** push/submit S02 (`submit-v6c-5fold-s02`) per-label AUC-weighted blend.
+3. **If rank1 fold0+1 weak-val beats v6c (0.768/0.749):** launch folds 2–4; full-58 gold OOF vs 0.7023 before any LB probe.
 
 ## Do not
 - Select v6c fold0 (0.682) as a final; burn LB probes without a gold-OOF rule win
