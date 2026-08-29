@@ -137,6 +137,12 @@ Append one row (or block) per run. Never delete history.
 - **v7 vs Qwen cross-check: 88.2% agreement on Turkish (2107 cells), 76.8% on Greek (482).** Two independent methods concur → both capture real signal; the agreement cells are high-precision.
 - conclusion: v7 is a validated independent multilingual labeler. Its highest-value use is a **v7∩Qwen consensus** (label where both agree, else abstain) for high-precision TR/EL supervision — not v7 alone. Blocker remains measurement: 6+3 TR/EL gold can't validate model impact → need an external ruler (MRNet/KneeMRI) before trusting a retrain delta.
 
+### 2026-08-29 — Rank1 fold0+1 TRAINING (ep0 interim weak-val)
+- Live: both RUNNING; `label_plane_routing=True`; folds/code/cache/weights resolved correctly.
+- epoch 0 weak-val: fold0 **0.6847**, fold1 **0.6822** (vs v6c 0.7683 / 0.7493). Too early to keep/kill.
+- S01b GPU submit still waiting on free slot. S01 timeout unchanged (no score).
+- conclusion: iterate — wait for ≥epoch 6–12; then compare weak-val and launch folds 2–4 only if promising.
+
 ### 2026-08-29 — S01 TIMED OUT (no score); rank1 GPU launched; S01b decode-once queued
 - S01 ref **55851760** COMPLETE with empty publicScore — runtime exceeded on hidden test (CPU ~126s/study × 5 ckpts). Ensemble hypothesis **not killed**.
 - Fix: `run_model_submission` decode-once; full `src/rsna_knee` + folds in `rsna-knee-rank1-patch`; GPU submit kernel; `push_kaggle_kernels.py`.

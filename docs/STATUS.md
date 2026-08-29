@@ -1,6 +1,13 @@
 # STATUS
 
-Last updated: 2026-08-29 (S01 timeout; rank1 GPU training launched)
+Last updated: 2026-08-29 (rank1 fold0+1 training — ep0 interim)
+
+## 2026-08-29 — Rank1 fold0+1 TRAINING (plane routing confirmed)
+- Both GPU sessions RUNNING. Live logs via `kaggle kernels logs … -f`.
+- Recipe OK: `label_plane_routing=True`, folds from `rsna-knee-code`, cache_v1, v6c labels, frozen-B 12ep.
+- **Interim weak-val (epoch 0 only — not keep/kill):** fold0 **0.6847**, fold1 **0.6822** (v6c BCE baselines 0.768 / 0.749). Expect climb over remaining 11 epochs (~3–5h).
+- GPU used ~2.1h / 30h. S01b submit still blocked (2 concurrent GPU slots).
+- Gate unchanged: full-58 gold ≥ **0.7073** after 5-fold; weak-val vs 0.768/0.749 is a smoke signal only.
 
 ## 2026-08-29 — S01 TIMED OUT; rank1 fold0+1 GPU launched; S01b queued
 - **S01** ref **55851760**: status COMPLETE but **no publicScore** — error: *submission notebook exceeded allowed runtime* (CPU dry-run ~126s/study × 5 models; hidden test too large).
