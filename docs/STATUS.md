@@ -1,6 +1,17 @@
 # STATUS
 
-Last updated: 2026-08-29 (rank1 fold0+1 — ep2–3 interim)
+Last updated: 2026-08-29 (rank1 fold0+1 — ep6–7; fold1 beating v6c)
+
+## 2026-08-29 — Rank1 fold0+1 late-train: fold1 BEATS v6c weak-val
+- Both still **RUNNING**. GPU ~11.3h / 30h.
+- **Weak-val best-so-far:**
+  | Fold | best | @ep | v6c BCE | Δ |
+  |---|---|---|---|---|
+  | 0 | **0.7545** | 7 | 0.7683 | −0.014 |
+  | 1 | **0.7640** | 6 | 0.7493 | **+0.015** |
+- Fold1 clears the smoke bar. Fold0 still climbing (0.685→0.755). ~4–5 epochs left.
+- **Plan:** finish both → if fold0 also near/above OR fold1 holds, push folds 2–4. Full keep/kill = full-58 gold ≥ 0.7073.
+- S01b still blocked on GPU slots (do not interrupt a winning train).
 
 ## 2026-08-29 — Rank1 fold0+1 mid-train (climbing, still below v6c)
 - Both still **RUNNING**. Plane routing confirmed. GPU ~6.2h / 30h.
