@@ -7,10 +7,11 @@ GitHub branch with latest work: **`cursor/rank1-v6c-57b3`** (PR #4).
 
 ## TL;DR / immediate next action
 
-1. **Check S01 public LB** — kernel `girishbose/submit-v6c-5fold` v1 COMPLETE (5 checkpoints, uniform blend). Submitted to competition as **S01: 5-fold v6c uniform blend**. Baseline fold0-only = **0.682**. Expected **~0.70–0.72**. Kill if **< 0.690**.
-2. **GPU weekly quota exhausted (30h)** — re-push GPU kernels when reset: `submit-v6c-5fold` (use `kernels/submit-v6c-5fold-metadata.json`), `train-b-fold{0,1}-rank1-v6c`.
-3. **Adopted:** v6c labels, frozen DINOv2-B, cache_v1 3×12×224. **Killed:** v8, GCE (null), yunus gap-fill.
-4. **Strategy shift:** hypothesis-driven public LB submits (S01→S02→…); finals (2 slots) only late Oct.
+1. **Check S01 public LB** — ref **55851760**. Baseline fold0-only = **0.682**. Expected **~0.70–0.72**. Kill if **< 0.690**; queue S02 if ≥ 0.690.
+2. **GPU quota restored** — push rank1: refresh `rsna-knee-rank1-patch`, then `python3 scripts/push_kaggle_kernels.py train-b-fold{0,1}-rank1-v6c-metadata.json` and start both on GPU.
+3. **Cloud blocker:** this env has **no `KAGGLE_API_TOKEN`**. Add secret or paste score + token to continue.
+4. **Adopted:** v6c labels, frozen DINOv2-B, cache_v1. **Killed:** v8, GCE (null), yunus gap-fill.
+5. Branch with launch tooling: **`cursor/rank1-gpu-launch-1252`** (PR #5).
 
 ---
 
