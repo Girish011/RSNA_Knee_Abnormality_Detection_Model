@@ -1,6 +1,17 @@
 # STATUS
 
-Last updated: 2026-08-29 (rank1 fold0+1 ep10/9 — fold1 wins smoke bar)
+Last updated: 2026-08-30 (rank1 fold0+1 COMPLETE; fold2+3 RUNNING)
+
+## 2026-08-30 — Rank1 fold0+1 COMPLETE; fold1 beats v6c → fold2+3 launched
+- **Final weak-val (12ep, plane routing + pos_weight):**
+  | Fold | BEST | v6c BCE | Δ | verdict |
+  |---|---|---|---|---|
+  | 0 | **0.7558** | 0.7683 | −0.012 | below (close) |
+  | 1 | **0.7640** | 0.7493 | **+0.015** | **smoke pass** |
+- Checkpoints + OOF downloaded locally (`outputs/kaggle_rank1/`).
+- **Fold2+3 RUNNING** on freed GPU slots. Fold4 queued after 2–3 finish.
+- Full keep/kill = full-58 gold ≥ **0.7073** (not decided yet). S01b submit after fold4 or when slot frees.
+- GPU ~17.2h / 30h used.
 
 ## 2026-08-29 — Rank1 fold0+1 near finish; fold1 BEATS v6c → folds 2–3 queued
 - Still **RUNNING** (fold0 ep10/12, fold1 ep9/12). GPU ~15.4h / 30h.
