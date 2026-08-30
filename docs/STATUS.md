@@ -9,7 +9,7 @@ Last updated: 2026-08-29 (rank1 fold0+1 ep10/9 — fold1 wins smoke bar)
   |---|---|---|---|---|---|
   | 0 | **0.7558** | 10 | 0.7683 | −0.012 | below 0.7633 |
   | 1 | **0.7640** | 6 | 0.7493 | **+0.015** | **pass** |
-- Fold1 clears smoke bar → **pushed `train-b-fold{2,3}-rank1-v6c`** (queues when GPU slots free).
+- Fold1 clears smoke bar → **folds 2–3 push blocked** (2 GPU slots full); retry when fold0+1 COMPLETE.
 - Full keep/kill still = full-58 gold ≥ **0.7073** after 5-fold. S01b deferred until rank1 slots free.
 - Next: on fold0+1 COMPLETE download checkpoints; finish folds 2–4 if fold1 holds.
 

@@ -139,7 +139,7 @@ Append one row (or block) per run. Never delete history.
 
 ### 2026-08-29 — Rank1 fold0+1 ep10/9; fold2+3 pushed
 - Still RUNNING. Best: fold0 **0.7558** (ep10), fold1 **0.7640** (ep6, ep9 **0.7636**). Fold1 **+0.015** vs v6c 0.7493 → smoke pass.
-- Pushed `train-b-fold{2,3}-rank1-v6c` (GPU queue). S01b still deferred.
+- Fold1 **+0.015** vs v6c → smoke pass. Folds 2–3 push **blocked** (GPU full); retry on COMPLETE.
 - conclusion: iterate — provisional KEEP; wait COMPLETE + folds 2–4.
 
 ### 2026-08-29 — Rank1 fold0+1 late-train: fold1 beats v6c
