@@ -1,6 +1,15 @@
 # STATUS
 
-Last updated: 2026-08-30 (rank1 folds 0–3 COMPLETE; GPU quota exhausted)
+Last updated: 2026-08-30 (rank1 matched-4 gold KILL lean; GPU quota until 2026-09-05)
+
+## 2026-08-30 — Rank1 matched-4 gold OOF = KILL lean (−0.024 vs v6c)
+- Downloaded OOF from `train-b-fold{0..3}-rank1-v6c` + v6c baselines; scored vs 46 experts in `folds_v1.csv` (folds 0–3).
+- **Matched-4 gold macro:** rank1 **0.7124** vs v6c **0.7365** (Δ **−0.0241**) → rule **KILL** (margin 0.005). Audit: `docs/audit/rank1_matched4_keepkill.json`.
+- Drag: **MCL −0.297** (0.465≈chance), Synovitis −0.099, Medial OA −0.084, Contusion −0.076. Gains: Lat OA +0.153, Lat Men +0.083, ACL +0.033 — not enough.
+- Same failure pattern as v8 (weak-val looked OK / mixed; matched-4 gold −0.024). Fold4's 12 experts would need ≈**+0.12** gold vs v6c to flip full-58 past +0.005 — unrealistic.
+- **Provisional: KILL lean on rank1 plane-routing+pos_weight.** Registered full-58 gate remains optional; do **not** burn Sep-5 quota on fold4 by default.
+- **GPU quota:** 33.45h/30h, refresh **2026-09-05**. Prefer **S01b** (GPU decode-once 5-fold v6c) on reset.
+- S01b kernel + fold4 metadata verified ready (`enable_gpu`, T4 pin, rank1-patch with decode-once `infer.py`). Tests: `test_infer`+`test_evaluation` 7 passed.
 
 ## 2026-08-30 — Rank1 4/5 folds COMPLETE; fold4 + S01b blocked on GPU quota
 - **Final weak-val vs v6c (plane routing + per-label pos_weight, 12ep frozen-B):**
@@ -11,10 +20,9 @@ Last updated: 2026-08-30 (rank1 folds 0–3 COMPLETE; GPU quota exhausted)
   | 2 | **0.7706** | 0.7624 | **+0.0082** | **pass** |
   | 3 | **0.7606** | 0.7636 | −0.0030 | miss (within 0.005) |
   | 4 | *not trained* | 0.721 | — | **quota** |
-- 2/4 folds beat v6c; fold3 is a tie within the 0.005 rule margin. **KEEP lean** pending fold4 + full-58 gold ≥ **0.7073**.
-- Checkpoints + OOF for folds 0–3 downloaded (`outputs/kaggle_rank1/`).
-- **GPU weekly quota exhausted** (used 33.45h / 30h). Refresh **2026-09-05**. Fold4 push and S01b GPU submit both rejected.
-- Do not interrupt; wait for quota reset → fold4 (~3.4h) then S01b decode-once submit.
+- 2/4 folds beat v6c on weak-val; fold3 within 0.005. **Superseded** by matched-4 gold kill lean (see above).
+- Checkpoints + OOF for folds 0–3 on Kaggle kernels (local `outputs/kaggle_rank1/` gitignored).
+- **GPU weekly quota exhausted** (used 33.45h / 30h). Refresh **2026-09-05**.
 
 ## 2026-08-30 — Rank1 fold2+3 mid-train; fold2 beating v6c
 - Both **RUNNING** (fold2 ep6/12, fold3 ep5/12). GPU **3.7h left** — tight for fold4 (~3.4h/fold).
@@ -224,12 +232,13 @@ v6b was a legitimate, fully-gated supervision win (beat label gate + all 5 folds
 - Config: `configs/labels_v3_robust.yaml` (frozen-B + weak_v3 + GCE + smoothing).
 
 ## Next 3 actions
-1. **When GPU quota resets (2026-09-05):** push `train-b-fold4-rank1-v6c` immediately (~3.4h).
-2. **5-fold gold OOF** vs 0.7023 (keep if ≥ 0.7073); then S01b GPU decode-once submit.
-3. Until then: optional 4-fold gold OOF on folds 0–3 if expert CSV is available on Kaggle (do not burn remaining quota).
+1. **2026-09-05 (quota reset):** push + run **S01b** first — `submit-v6c-5fold` (GPU, decode-once) → competition submit; record public LB (kill if runtime-fail again; soft-kill if LB < 0.690).
+2. If S01b LB ≥ **0.690** → queue **S02** (`submit-v6c-5fold-s02`, per-label AUC blend).
+3. **Skip fold4 rank1 by default** (matched-4 gold −0.024). Only push fold4 if explicitly wanting the formal full-58 stamp; do not expect a keep.
 
 ## Do not
 - Select v6c fold0 (0.682) as a final; burn LB probes without a gold-OOF rule win
-- Retry v8-style TR/EL gap-fills on ACL/MCL/LatOA; trust per-label / 2-fold gold at n≤58
-- Reopen killed paths (unfreeze, expert head-FT, cache_v2, 384, MRI-CORE, external-image train, **v8**)
+- Retry v8-style TR/EL gap-fills on ACL/MCL/LatOA; trust per-label / 2-fold / weak-val alone at n≤58
+- Reopen killed paths (unfreeze, expert head-FT, cache_v2, 384, MRI-CORE, external-image train, **v8**, **rank1 plane+pw lean**)
 - Use reports at test time; commit secrets / weights / DICOMs
+- Burn Sep-5 GPU on rank1 fold4 before S01b

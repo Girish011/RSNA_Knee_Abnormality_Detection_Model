@@ -72,10 +72,16 @@ Format: date | decision | why | rejected
 - **Why:** Competition confirmed live (2026 RSNA Knee Abnormality Detection AI Challenge; deadline 2026-10-22, winners in Nov — no writeups yet). Public signal from a top-15 team (LB 0.937): the hidden test is **graded by expert radiologists reading the images** while our train labels are noisy report-derived; "you are never optimising the thing you are scored on." They report bigger backbones / more ensemble members / TTA / extra pretraining "all measured, all worth roughly zero," the LB is noise-limited in the 3rd decimal, and the discipline that mattered was pre-registering the decision rule and reading multiple folds. Remaining open lever: "how you learn from a noisy teacher."
 - **Rejected:** Spending GPU budget on architecture/TTA/ensemble scaling before exhausting label-quality and noisy-loss levers; trusting single-fold deltas.
 
+## 2026-08-30 — Rank1 plane+pw KILL lean; Sep-5 quota → S01b first
+- **Decision:** Treat rank1 (plane routing + per-label pos_weight on cache_v1) as **provisional KILL** after matched-4 gold OOF **0.7124 vs v6c 0.7365 (Δ −0.024)**. On GPU quota reset (**2026-09-05**), run **S01b** (5-fold v6c GPU decode-once submit) before any rank1 fold4 train. Skip fold4 unless an explicit full-58 stamp is requested.
+- **Why:** Same pattern as v8 — mixed/positive weak-val, decisive matched-4 gold loss driven by MCL collapse (0.465). Fold4 cannot plausibly overcome −0.024 on 46 experts. S01b is the unscored ensemble hypothesis (S01 timed out on CPU) and the highest-value use of ~30h quota.
+- **Rejected:** Burning Sep-5 hours on fold4-by-default; trusting weak-val 2/4 fold wins; shipping rank1 as a final.
+
 ## 2026-08-28 — Rank-1 image lever (plane routing + cache_v3)
 - **Decision:** Pursue 0.95 via image pipeline, not more label recipes. Rank-1 stack = per-label plane routing + ACL sagittal cache_v3 + 5-fold ensemble submit.
 - **Why:** Labels capped at gold 0.7023; ACL/Fracture gold still weak; `LABEL_PLANE_PRIOR` was unused; cache_v1 is thin (3×12).
 - **Rejected:** Reopening v8/GCE/yunus gap-fill; naive cache_v2 4×16 without ACL bias (killed at 0.738).
+- **Update 2026-08-30:** plane+pw on cache_v1 failed matched-4 gold (see above). cache_v3 path not yet tested; only revisit with a new registered recipe after S01b LB read.
 
 - **Decision:** Do not train or submit on `weak_labels_v8`. Keep adopted **v6c**. Full-58 gold OOF 0.6935 < v6c 0.7023 (Δ −0.0088; fails +0.005 keep rule).
 - **Why:** Re-supplying ACL/MCL/Lateral OA via v7∩Qwen consensus on TR/EL (the columns whose LLM fills v6c dropped) hurt gold OOF despite higher weak-val and 85% extractor agreement. Confirms coin-flip-adjacent fills remain dangerous even under consensus.

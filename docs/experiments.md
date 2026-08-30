@@ -137,10 +137,18 @@ Append one row (or block) per run. Never delete history.
 - **v7 vs Qwen cross-check: 88.2% agreement on Turkish (2107 cells), 76.8% on Greek (482).** Two independent methods concur → both capture real signal; the agreement cells are high-precision.
 - conclusion: v7 is a validated independent multilingual labeler. Its highest-value use is a **v7∩Qwen consensus** (label where both agree, else abstain) for high-precision TR/EL supervision — not v7 alone. Blocker remains measurement: 6+3 TR/EL gold can't validate model impact → need an external ruler (MRNet/KneeMRI) before trusting a retrain delta.
 
+### 2026-08-30 — Rank1 matched-4 gold OOF KILL lean (−0.024 vs v6c)
+- OOF: `train-b-fold{0..3}-rank1-v6c` vs `train-b-fold{0..3}-weak-v6c`; targets = 46 experts in folds 0–3 of `folds_v1.csv`.
+- Macro gold: rank1 **0.7124** vs v6c **0.7365** (Δ **−0.0241**, margin 0.005) → **KILL**. Bootstrap CI rank1 [0.665, 0.759] overlaps heavily; point estimate decisive under rule.
+- Worst labels: MCL **0.465** (−0.297), Synovitis −0.099, MedOA −0.084, Contusion −0.076. Plane routing helped LatOA/LatMen/ACL but destroyed MCL.
+- Arithmetic: fold4's 12 experts need ≈+0.12 gold vs v6c to flip full-58 keep — not credible.
+- Audit: `docs/audit/rank1_matched4_keepkill.json`. Kernels for S01b/fold4 still ready; quota refresh 2026-09-05.
+- conclusion: **KILL lean** on rank1 plane+pw. On reset prioritize **S01b** (v6c 5-fold GPU decode-once); skip fold4 unless formal full-58 stamp wanted.
+
 ### 2026-08-30 — Rank1 folds 0–3 COMPLETE; GPU quota exhausted
 - FINAL: f0 **0.7558** (−0.012 vs 0.7683), f1 **0.7640** (+0.015 vs 0.7493), f2 **0.7706** (+0.008 vs 0.7624), f3 **0.7606** (−0.003 vs 0.7636). Fold4 not trained.
 - Fold4 + S01b pushes **rejected**: weekly GPU 30h used (refresh 2026-09-05).
-- conclusion: **KEEP lean** (2/4 folds beat v6c; f3 within 0.005). Resume fold4 + S01b after quota reset; full-58 gold gate pending.
+- conclusion: weak-val looked **KEEP lean**; superseded by matched-4 gold kill (entry above).
 
 ### 2026-08-30 — Rank1 fold2+3 mid-train ep5–6
 - RUNNING. Best: fold2 **0.7706** (+0.009 vs v6c ~0.762), fold3 **0.7606** (−0.003 vs ~0.764). GPU 3.7h left.
