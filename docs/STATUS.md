@@ -1,6 +1,32 @@
 # STATUS
 
-Last updated: 2026-08-30 (rank1 fold0+1 COMPLETE; fold2+3 RUNNING)
+Last updated: 2026-08-30 (rank1 folds 0–3 COMPLETE; GPU quota exhausted)
+
+## 2026-08-30 — Rank1 4/5 folds COMPLETE; fold4 + S01b blocked on GPU quota
+- **Final weak-val vs v6c (plane routing + per-label pos_weight, 12ep frozen-B):**
+  | Fold | rank1 BEST | v6c BCE | Δ | smoke |
+  |---|---|---|---|---|
+  | 0 | **0.7558** | 0.7683 | −0.0125 | miss |
+  | 1 | **0.7640** | 0.7493 | **+0.0147** | **pass** |
+  | 2 | **0.7706** | 0.7624 | **+0.0082** | **pass** |
+  | 3 | **0.7606** | 0.7636 | −0.0030 | miss (within 0.005) |
+  | 4 | *not trained* | 0.721 | — | **quota** |
+- 2/4 folds beat v6c; fold3 is a tie within the 0.005 rule margin. **KEEP lean** pending fold4 + full-58 gold ≥ **0.7073**.
+- Checkpoints + OOF for folds 0–3 downloaded (`outputs/kaggle_rank1/`).
+- **GPU weekly quota exhausted** (used 33.45h / 30h). Refresh **2026-09-05**. Fold4 push and S01b GPU submit both rejected.
+- Do not interrupt; wait for quota reset → fold4 (~3.4h) then S01b decode-once submit.
+
+## 2026-08-30 — Rank1 fold2+3 mid-train; fold2 beating v6c
+- Both **RUNNING** (fold2 ep6/12, fold3 ep5/12). GPU **3.7h left** — tight for fold4 (~3.4h/fold).
+- **Best weak-val so far vs v6c:**
+  | Fold | rank1 best | @ep | v6c BCE | Δ |
+  |---|---|---|---|---|
+  | 0 | 0.7558 | 10 | 0.7683 | −0.012 | *(done)* |
+  | 1 | 0.7640 | 6 | 0.7493 | +0.015 | *(done)* |
+  | 2 | **0.7706** | 4 | ~0.762 | **+0.009** |
+  | 3 | 0.7606 | 1 | ~0.764 | −0.003 |
+- Fold4 not pushed yet (kernel doesn't exist). Push immediately when slots free.
+- S01b deferred until fold4 done or quota allows.
 
 ## 2026-08-30 — Rank1 fold0+1 COMPLETE; fold1 beats v6c → fold2+3 launched
 - **Final weak-val (12ep, plane routing + pos_weight):**
@@ -198,9 +224,9 @@ v6b was a legitimate, fully-gated supervision win (beat label gate + all 5 folds
 - Config: `configs/labels_v3_robust.yaml` (frozen-B + weak_v3 + GCE + smoothing).
 
 ## Next 3 actions
-1. **Monitor fold2+3 rank1** → push fold4 when slots free.
-2. **After 5-fold rank1:** aggregate OOF, full-58 gold vs 0.7023 (keep if ≥ 0.7073).
-3. **S01b GPU submit** when a slot frees (decode-once 5-fold blend) — ensemble hypothesis still untested on LB.
+1. **When GPU quota resets (2026-09-05):** push `train-b-fold4-rank1-v6c` immediately (~3.4h).
+2. **5-fold gold OOF** vs 0.7023 (keep if ≥ 0.7073); then S01b GPU decode-once submit.
+3. Until then: optional 4-fold gold OOF on folds 0–3 if expert CSV is available on Kaggle (do not burn remaining quota).
 
 ## Do not
 - Select v6c fold0 (0.682) as a final; burn LB probes without a gold-OOF rule win

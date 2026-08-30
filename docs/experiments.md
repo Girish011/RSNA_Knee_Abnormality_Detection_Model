@@ -137,6 +137,15 @@ Append one row (or block) per run. Never delete history.
 - **v7 vs Qwen cross-check: 88.2% agreement on Turkish (2107 cells), 76.8% on Greek (482).** Two independent methods concur → both capture real signal; the agreement cells are high-precision.
 - conclusion: v7 is a validated independent multilingual labeler. Its highest-value use is a **v7∩Qwen consensus** (label where both agree, else abstain) for high-precision TR/EL supervision — not v7 alone. Blocker remains measurement: 6+3 TR/EL gold can't validate model impact → need an external ruler (MRNet/KneeMRI) before trusting a retrain delta.
 
+### 2026-08-30 — Rank1 folds 0–3 COMPLETE; GPU quota exhausted
+- FINAL: f0 **0.7558** (−0.012 vs 0.7683), f1 **0.7640** (+0.015 vs 0.7493), f2 **0.7706** (+0.008 vs 0.7624), f3 **0.7606** (−0.003 vs 0.7636). Fold4 not trained.
+- Fold4 + S01b pushes **rejected**: weekly GPU 30h used (refresh 2026-09-05).
+- conclusion: **KEEP lean** (2/4 folds beat v6c; f3 within 0.005). Resume fold4 + S01b after quota reset; full-58 gold gate pending.
+
+### 2026-08-30 — Rank1 fold2+3 mid-train ep5–6
+- RUNNING. Best: fold2 **0.7706** (+0.009 vs v6c ~0.762), fold3 **0.7606** (−0.003 vs ~0.764). GPU 3.7h left.
+- conclusion: iterate — push fold4 on COMPLETE; quota watch.
+
 ### 2026-08-30 — Rank1 fold0+1 COMPLETE; fold2+3 launched
 - FINAL weak-val: fold0 **0.7558** (−0.012 vs 0.7683), fold1 **0.7640** (**+0.015** vs 0.7493).
 - Outputs downloaded (ckpt + OOF). Fold2+3 **RUNNING**. Fold4 after they finish.
