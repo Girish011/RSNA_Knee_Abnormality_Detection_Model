@@ -6,6 +6,7 @@ from typing import Any
 
 from rsna_knee.constants import NUM_LABELS
 from rsna_knee.models.backbone import DINOV2_DIMS, create_dinov2_encoder
+from rsna_knee.models.plane_routing import plane_prior_bias_matrix
 from rsna_knee.models.pooling import create_attention_pool
 
 
@@ -24,6 +25,7 @@ def create_multiseries_model(
     pretrained: bool = True,
     num_planes: int = 4,
     dropout: float = 0.1,
+    label_plane_routing: bool = False,
 ):
     torch, nn = _torch()
     encoder = create_dinov2_encoder(
@@ -43,6 +45,15 @@ def create_multiseries_model(
             self.fat_emb = nn.Embedding(2, dim)
             self.slice_pool = create_attention_pool(dim)
             self.series_pool = create_attention_pool(dim)
+            self.label_plane_routing = label_plane_routing
+            if label_plane_routing:
+                bias = plane_prior_bias_matrix()
+                self.register_buffer(
+                    "plane_prior_bias",
+                    torch.as_tensor(bias, dtype=torch.float32),
+                    persistent=True,
+                )
+                self.series_score = nn.Linear(dim, 1)
             self.head = nn.Sequential(
                 nn.LayerNorm(dim),
                 nn.Dropout(dropout),
@@ -68,6 +79,8 @@ def create_multiseries_model(
             series_mask: Any,
             slice_mask: Any,
         ) -> Any:
+            import torch.nn.functional as F
+
             # images: (B,S,N,3,H,W)
             token = self.encode_slices(images)  # (B,S,N,D)
             b, s, n, d = token.shape
@@ -83,7 +96,21 @@ def create_multiseries_model(
             mask_s = slice_mask.reshape(b * s, n)
             series_vec = self.slice_pool(token_s, mask_s).reshape(b, s, d)
 
-            # Pool series → study.
+            if self.label_plane_routing:
+                base_scores = self.series_score(series_vec).squeeze(-1)  # (B,S)
+                logits_list = []
+                for li, clf in enumerate(self.classifiers):
+                    plane_bonus = self.plane_prior_bias[li][plane_ids.clamp(0, num_planes - 1)]
+                    scores = base_scores + plane_bonus
+                    scores = scores.masked_fill(series_mask <= 0, -1e4)
+                    weights = F.softmax(scores, dim=-1).unsqueeze(-1)
+                    study_vec = (series_vec * weights).sum(dim=1)
+                    shared = self.head(study_vec)
+                    logits_list.append(clf(shared))
+                logits = torch.cat(logits_list, dim=-1)
+                return logits
+
+            # Pool series → study (shared routing).
             study_vec = self.series_pool(series_vec, series_mask)
             shared = self.head(study_vec)
             logits = torch.cat([clf(shared) for clf in self.classifiers], dim=-1)

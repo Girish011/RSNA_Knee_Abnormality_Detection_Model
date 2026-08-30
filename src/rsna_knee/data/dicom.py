@@ -102,16 +102,30 @@ def _resize2d(arr: np.ndarray, target_size: tuple[int, int]) -> np.ndarray:
         return np.asarray(img, dtype=np.float32) / 255.0
 
 
-def sample_slice_indices(n_slices: int, n_sample: int, center_bias: bool = True) -> list[int]:
-    """Select up to n_sample indices from a series."""
+def sample_slice_indices(
+    n_slices: int,
+    n_sample: int,
+    center_bias: bool = True,
+    *,
+    sagittal_acl_bias: bool = False,
+) -> list[int]:
+    """Select up to n_sample indices from a series.
+
+    When ``sagittal_acl_bias`` is True, sample a tighter mid-stack window
+    (35–65%) where ACL / meniscus signal is often concentrated on sagittal PD.
+    """
     if n_slices <= 0 or n_sample <= 0:
         return []
     if n_slices <= n_sample:
         return list(range(n_slices))
     if not center_bias:
         return np.linspace(0, n_slices - 1, n_sample).round().astype(int).tolist()
-    lo = int(0.15 * (n_slices - 1))
-    hi = int(0.85 * (n_slices - 1))
+    if sagittal_acl_bias:
+        lo = int(0.35 * (n_slices - 1))
+        hi = int(0.65 * (n_slices - 1))
+    else:
+        lo = int(0.15 * (n_slices - 1))
+        hi = int(0.85 * (n_slices - 1))
     if hi <= lo:
         lo, hi = 0, n_slices - 1
     return np.linspace(lo, hi, n_sample).round().astype(int).tolist()

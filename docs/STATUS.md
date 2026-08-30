@@ -1,19 +1,177 @@
 # STATUS
 
-Last updated: 2026-08-27 (live Kaggle session)
+Last updated: 2026-08-30 (S01b/S02 hardened; patch re-uploaded; GPU until 2026-09-05)
+
+## 2026-08-30 — S01b/S02 launch hardening (no GPU)
+- **S01 autopsy:** visible-test log shows **CPU**, **126.3 s/study**, 5 ckpts, **no PATCH** (`experiment=S01_v6c_5fold`). Fold0 GPU probe was **4.9 s/study** (1 ckpt). Hidden-test size unknown (visible=3).
+- **Runtime budget (decode-once + 5 GPU forwards):** expect ~**6–12 s/study** → ≤~2700–5400 studies in 9h. If hidden ≈ train (4.4k), still within budget at ≤7.5 s/study.
+- **Shipped:**
+  - `require_cuda` + progress ETA in `infer.run_model_submission`
+  - S01b/S02 kernels: known-path lookup (no DICOM `rglob`), refuse missing PATCH/CUDA, baked S02 weights
+  - `configs/s02_v6c_blend_weights.json` (5×12, near-uniform ~0.15–0.25)
+  - Re-uploaded `girishbose/rsna-knee-rank1-patch` (decode-once infer + baked weights)
+  - CPU smoke: S01b v3 + S02 v4 COMPLETE — both find PATCH+5 ckpts+baked weights, correctly fall back with `requires GPU` (do not competition-submit these CPU versions)
+- Tests: `test_infer`+`test_evaluation` **9 passed**.
+- **Sep-5:** `python3 scripts/push_kaggle_kernels.py submit-v6c-5fold-metadata.json` (repo metadata has `enable_gpu=true` + T4 pin) → wait COMPLETE → competition submit.
+
+## 2026-08-30 — Rank1 matched-4 gold OOF = KILL lean (−0.024 vs v6c)
+- Downloaded OOF from `train-b-fold{0..3}-rank1-v6c` + v6c baselines; scored vs 46 experts in `folds_v1.csv` (folds 0–3).
+- **Matched-4 gold macro:** rank1 **0.7124** vs v6c **0.7365** (Δ **−0.0241**) → rule **KILL** (margin 0.005). Audit: `docs/audit/rank1_matched4_keepkill.json`.
+- Drag: **MCL −0.297** (0.465≈chance), Synovitis −0.099, Medial OA −0.084, Contusion −0.076. Gains: Lat OA +0.153, Lat Men +0.083, ACL +0.033 — not enough.
+- Same failure pattern as v8 (weak-val looked OK / mixed; matched-4 gold −0.024). Fold4's 12 experts would need ≈**+0.12** gold vs v6c to flip full-58 past +0.005 — unrealistic.
+- **Provisional: KILL lean on rank1 plane-routing+pos_weight.** Registered full-58 gate remains optional; do **not** burn Sep-5 quota on fold4 by default.
+- **GPU quota:** 33.45h/30h, refresh **2026-09-05**. Prefer **S01b** (GPU decode-once 5-fold v6c) on reset.
+- S01b kernel + fold4 metadata verified ready (`enable_gpu`, T4 pin, rank1-patch with decode-once `infer.py`). Tests: `test_infer`+`test_evaluation` 7 passed.
+
+## 2026-08-30 — Rank1 4/5 folds COMPLETE; fold4 + S01b blocked on GPU quota
+- **Final weak-val vs v6c (plane routing + per-label pos_weight, 12ep frozen-B):**
+  | Fold | rank1 BEST | v6c BCE | Δ | smoke |
+  |---|---|---|---|---|
+  | 0 | **0.7558** | 0.7683 | −0.0125 | miss |
+  | 1 | **0.7640** | 0.7493 | **+0.0147** | **pass** |
+  | 2 | **0.7706** | 0.7624 | **+0.0082** | **pass** |
+  | 3 | **0.7606** | 0.7636 | −0.0030 | miss (within 0.005) |
+  | 4 | *not trained* | 0.721 | — | **quota** |
+- 2/4 folds beat v6c on weak-val; fold3 within 0.005. **Superseded** by matched-4 gold kill lean (see above).
+- Checkpoints + OOF for folds 0–3 on Kaggle kernels (local `outputs/kaggle_rank1/` gitignored).
+- **GPU weekly quota exhausted** (used 33.45h / 30h). Refresh **2026-09-05**.
+
+## 2026-08-30 — Rank1 fold2+3 mid-train; fold2 beating v6c
+- Both **RUNNING** (fold2 ep6/12, fold3 ep5/12). GPU **3.7h left** — tight for fold4 (~3.4h/fold).
+- **Best weak-val so far vs v6c:**
+  | Fold | rank1 best | @ep | v6c BCE | Δ |
+  |---|---|---|---|---|
+  | 0 | 0.7558 | 10 | 0.7683 | −0.012 | *(done)* |
+  | 1 | 0.7640 | 6 | 0.7493 | +0.015 | *(done)* |
+  | 2 | **0.7706** | 4 | ~0.762 | **+0.009** |
+  | 3 | 0.7606 | 1 | ~0.764 | −0.003 |
+- Fold4 not pushed yet (kernel doesn't exist). Push immediately when slots free.
+- S01b deferred until fold4 done or quota allows.
+
+## 2026-08-30 — Rank1 fold0+1 COMPLETE; fold1 beats v6c → fold2+3 launched
+- **Final weak-val (12ep, plane routing + pos_weight):**
+  | Fold | BEST | v6c BCE | Δ | verdict |
+  |---|---|---|---|---|
+  | 0 | **0.7558** | 0.7683 | −0.012 | below (close) |
+  | 1 | **0.7640** | 0.7493 | **+0.015** | **smoke pass** |
+- Checkpoints + OOF downloaded locally (`outputs/kaggle_rank1/`).
+- **Fold2+3 RUNNING** on freed GPU slots. Fold4 queued after 2–3 finish.
+- Full keep/kill = full-58 gold ≥ **0.7073** (not decided yet). S01b submit after fold4 or when slot frees.
+- GPU ~17.2h / 30h used.
+
+## 2026-08-29 — Rank1 fold0+1 near finish; fold1 BEATS v6c → folds 2–3 queued
+- Still **RUNNING** (fold0 ep10/12, fold1 ep9/12). GPU ~15.4h / 30h.
+- **Best weak-val so far:**
+  | Fold | best | @ep | v6c | Δ | vs baseline−0.005 |
+  |---|---|---|---|---|---|
+  | 0 | **0.7558** | 10 | 0.7683 | −0.012 | below 0.7633 |
+  | 1 | **0.7640** | 6 | 0.7493 | **+0.015** | **pass** |
+- Fold1 clears smoke bar → **folds 2–3 push blocked** (2 GPU slots full); retry when fold0+1 COMPLETE.
+- Full keep/kill still = full-58 gold ≥ **0.7073** after 5-fold. S01b deferred until rank1 slots free.
+- Next: on fold0+1 COMPLETE download checkpoints; finish folds 2–4 if fold1 holds.
+
+## 2026-08-29 — Rank1 fold0+1 late-train: fold1 BEATS v6c weak-val
+- Both still **RUNNING**. GPU ~11.3h / 30h.
+- **Weak-val best-so-far:**
+  | Fold | best | @ep | v6c BCE | Δ |
+  |---|---|---|---|---|
+  | 0 | **0.7545** | 7 | 0.7683 | −0.014 |
+  | 1 | **0.7640** | 6 | 0.7493 | **+0.015** |
+- Fold1 clears the smoke bar. Fold0 still climbing (0.685→0.755). ~4–5 epochs left.
+- **Plan:** finish both → if fold0 also near/above OR fold1 holds, push folds 2–4. Full keep/kill = full-58 gold ≥ 0.7073.
+- S01b still blocked on GPU slots (do not interrupt a winning train).
+
+## 2026-08-29 — Rank1 fold0+1 mid-train (climbing, still below v6c)
+- Both still **RUNNING**. Plane routing confirmed. GPU ~6.2h / 30h.
+- **Weak-val trajectory (not keep/kill yet):**
+  | Fold | ep0 | ep1 | ep2 | ep3 | best so far | v6c BCE |
+  |---|---|---|---|---|---|---|
+  | 0 | 0.685 | 0.723 | **0.742** | 0.737 | **0.742** | 0.768 |
+  | 1 | 0.682 | 0.720 | **0.721** | — | **0.721** | 0.749 |
+- Gap to v6c ≈ −0.026 / −0.028 at best-so-far; ~8–9 epochs left. Watch whether it clears baselines by ep8–11.
+- S01b submit still blocked (2 GPU slots). Do not push folds 2–4 until fold0+1 beat 0.768/0.749 *or* finish with a clear kill.
+
+## 2026-08-29 — Rank1 fold0+1 TRAINING (plane routing confirmed)
+- Both GPU sessions RUNNING. Live logs via `kaggle kernels logs … -f`.
+- Recipe OK: `label_plane_routing=True`, folds from `rsna-knee-code`, cache_v1, v6c labels, frozen-B 12ep.
+- **Interim weak-val (epoch 0 only — not keep/kill):** fold0 **0.6847**, fold1 **0.6822** (v6c BCE baselines 0.768 / 0.749). Expect climb over remaining 11 epochs (~3–5h).
+- GPU used ~2.1h / 30h. S01b submit still blocked (2 concurrent GPU slots).
+- Gate unchanged: full-58 gold ≥ **0.7073** after 5-fold; weak-val vs 0.768/0.749 is a smoke signal only.
+
+## 2026-08-29 — S01 TIMED OUT; rank1 fold0+1 GPU launched; S01b queued
+- **S01** ref **55851760**: status COMPLETE but **no publicScore** — error: *submission notebook exceeded allowed runtime* (CPU dry-run ~126s/study × 5 models; hidden test too large).
+- **Not a kill on the ensemble hypothesis** — runtime failure, not a scored loss. Baseline fold0 LB remains **0.682**.
+- **S01b fix:** GPU + decode-once infer in `infer.py`; submit kernel prefers `rsna-knee-rank1-patch`. Waiting for a free GPU slot (2 concurrent max) to re-run, then competition re-submit.
+- **Rank1 training:** `train-b-fold{0,1}-rank1-v6c` pushed (v3+ after fixing incomplete patch / folds path). Keep iff full-58 gold ≥ **0.7073**.
+- **GPU quota:** ~30h remaining (refreshes 2026-09-05).
+- **⚠ SECURITY:** Kaggle token pasted in chat — **rotate** after session.
+
+## 2026-08-29 — GPU quota restored; rank1 + S02 launch queue
+- **S01** (5-fold v6c uniform blend): ref **55851760**, LB still **PENDING** (check with `kaggle competitions submissions rsna-knee-abnormality-detection -v`).
+- **GPU quota available** — launch rank1 training (`train-b-fold{0,1}-rank1-v6c` first pair, then 2–4).
+- **Shipped this session:** `run_model_submission` + per-label AUC blend in `infer.py`; S02 kernel `submit-v6c-5fold-s02`; rank1 fold2–4 kernels + metadata; `scripts/push_kaggle_kernels.py` + `package_rank1_patch.py`.
+- **Honest 0.95 path:** rank1 (plane routing + pos_weight) on cache_v1 → full-58 gold gate vs **0.7023** → cache_v3 rebuild → 5-fold rank1 ensemble submit. Gap ~0.26 LB; no calendar guarantee.
+
+## 2026-08-28 — S01 SUBMITTED (5-fold v6c blend; LB pending)
+- Kernel `girishbose/submit-v6c-5fold` v1 **COMPLETE** (5 checkpoints, uniform mean blend).
+- **Competition submit:** ref **55851760**, "S01: 5-fold v6c uniform blend", status **PENDING** (as of 2026-08-28 19:24 UTC).
+- Baseline fold0-only LB: **0.682** (ref 55818692). Expected S01: **~0.70–0.72**. Kill if **< 0.690**.
+- Check: `kaggle competitions submissions rsna-knee-abnormality-detection -v`
+- Note: kernel v1 ran on CPU (GPU quota); competition re-run on full test may take hours.
+
+## 2026-08-28 — Rank-1 stack shipped (plane routing + cache_v3 + 5-fold submit)
+- **Goal:** Close gap to ~0.95 via image lever (labels exhausted at gold 0.7023 / LB 0.682).
+- **Shipped:** per-label **plane routing** in `multiseries.py`; **ACL sagittal slice bias** + 4×16 **cache_v3** builder; `configs/rank1_v6c.yaml` (frozen-B 12ep, per-label pos_weight); `scripts/infer_ensemble.py` (5-fold blend submit).
+- **Kaggle:** dataset `girishbose/rsna-knee-rank1-patch` uploaded; kernels `train-b-fold{0,1}-rank1-v6c` ready — **push blocked: weekly GPU quota 30h exhausted**.
+- **Honest 0.95 path:** rank1 on cache_v1 → gold OOF gate vs 0.7023; if pass, cache_v3 rebuild + 5-fold rank1 + ensemble submit. No calendar guarantee — gap is ~0.26 LB.
+- fold0+1 v4 **COMPLETE**. Weak-val: GCE **0.7683 / 0.7493** = v6c BCE (exact tie).
+- fold0+1 gold OOF: **0.7358** vs BCE **0.7358** (Δ **0.0000**). OOF preds max abs diff **0.0**.
+- **Root cause:** stale `rsna-knee-code` `train_baseline_fold.py` calls `masked_bce_with_logits`; `rsna-knee-loss-gce` only patched `loss.py` — **GCE never ran**.
+- **folds 2–4 NOT launched** (tie + null test). Verdict: **KILL**; retest only after trainer patch in code dataset.
+- Adopted labels remain **v6c** (full-58 gold **0.7023**). Public LB **0.682**.
+
+## 2026-08-27 — v8 KILL (full-58 gold OOF)
+- All 5 folds COMPLETE. Weak-val looked better (confounded): f0–4 = 0.785/0.783/0.781/0.767/0.742 vs v6c 0.768/0.749/0.762/0.764/0.721.
+- **Full-58 gold: v6c 0.7023 → v8 0.6935 (Δ −0.0088) → KILL** (rule margin 0.005).
+- Matched 4-fold had already warned (−0.024). Additive TR/EL gap-fill of v7∩Qwen onto dropped ACL/MCL/LatOA cells re-poisoned training.
+- **Adopted labels remain v6c.** Calibrated public LB still **0.682** (fold0 probe). Projected LB ≈ gold-OOF − 0.02.
+- Do not LB-probe v8. Do not continue TR/EL consensus gap-fills on coin-flip columns.
+
+## 2026-08-27 — Auth restored; cross-check DONE; v8 candidate on Kaggle
+- Kaggle auth working as `girishbose`. Submission API confirms probe **publicScore 0.682** (ref 55818692).
+- **In-domain label cross-check** (soft→hard lo=0.2/hi=0.7):
+  - vs **yunus**: **91.2%** agree where both commit (best external teacher signal)
+  - vs **dread**: 80.9%; MCL agree only 38%
+  - vs **barun** `pseudo_*`: useless (mass at 0.5)
+- v8 candidate was uploaded + trained; **killed** (see above).
+- **SECURITY:** token was pasted in chat — **rotate**.
+
+## 2026-08-27 — LB PROBE RESULT (calibrated)
+- Notebook `girishbose/rsna-knee-submit-v6c` **Version 1** Succeeded → **public LB = 0.682**.
+- Recipe: images-only, frozen DINOv2-B **v6c fold0 only** (not 5-fold blend), cache_v1 3×12×224.
+- **Calibration vs internal rulers:**
+  | Ruler | Score | vs LB |
+  |---|---|---|
+  | Public LB (this probe) | **0.682** | — |
+  | Full-58 gold OOF (5-fold v6c) | 0.7023 | +0.020 optimistic |
+  | Weak-label OOF (~v6c) | ~0.75 | +0.07 overstates badly |
+- **Verdict:** gold-OOF is the usable internal ruler (±~0.02 to public). Weak-label OOF is not. **0.682 ≪ 0.94 top** and below our old 0.72 “think about finals” floor → **do not select as final; do not burn more probes** until a full-58 gold OOF clearly beats 0.7023 by ≥0.005 *and* a projected LB (OOF−0.02) clears a deliberate bar.
+- Caveat: single-fold submit may slightly understate a 5-fold blend; gap to top is still ~0.26 — label micro-tweaks will not close it alone.
+- Remaining blocker for next work: **rotated `KAGGLE_API_TOKEN`** in this env (still missing).
+
+## 2026-08-27 — Session: v8 consensus tooling + cross-check scripts (code-only)
+- **Shipped (GitHub):** `rsna_knee.text.label_consensus` + `scripts/build_weak_labels_v8.py` + `scripts/crosscheck_labels.py`. Unit tests + CLI smoke passed.
+- Still true: GitHub is a stale mirror vs `girishbose/rsna-knee-code`; fold new modules into that dataset before Kaggle train.
 
 ## 2026-08-27 — v6c adopted (full-58 gold OOF 0.7023 > v6b 0.6895); v6d refinement testing
 - **FULL 5-fold gold OOF (all 58 experts): v6b 0.6895 → v6c 0.7023 (+0.013).** ADOPT v6c. ACL 0.501→0.604, MCL 0.601→0.667, Synovitis +0.066, Contusion +0.080, Medial OA +0.043.
 - But dropping **Lateral OA** fills (borderline precision 0.545) backfired: Lateral OA 0.714→0.609 (-0.104); also Lat Meniscus -0.067, Effusion -0.055 (representation shift).
 - **v6d** = drop ONLY {MCL, ACL} coin-flip fills, KEEP Lateral OA. Gate passes (prec 0.712, rec 0.680). Uploaded `girishbose/rsna-knee-weak-v6d`; testing fold0+1 (`train-b-fold{0,1}-weak-v6d`).
-- Honest state: gold OOF ~0.70, approaching but not clearing the 0.72 submit bar; far from ~0.94 top. Label lever giving diminishing per-iteration gains (+0.013). Still NO submit.
+- Honest state: **public LB 0.682** (v6c fold0 probe); gold OOF ~0.70 (+0.02 vs LB); far from ~0.94 top. Label lever giving diminishing per-iteration gains (+0.013). Do not final the probe.
 - Method that works: audit each label's LLM-fill precision vs 58 gold; drop only the truly coin-flip (<0.51) fills; keep the rest.
 
-## 2026-08-27 (cont.) — Option #1: LB probe notebook READY (needs 1 UI click)
-- Built `girishbose/rsna-knee-submit-v6c`: images-only, frozen DINOv2-B v6c fold0, exact cache_v1 recipe (3 series x 12 slices x 224, live DICOM decode via StudyDataset = build_cache parity). Internet OFF, GPU, <=9h, writes submission.csv. Has a constant-0.5 fallback so a run always scores.
-- Verified on visible test: loaded the real fold0 checkpoint, produced valid 12-label probs (not fallback), ~5 s/study → full hidden test well within 9h.
-- Account has NO prior submissions; CSV API submit is rejected (400) because this is a CODE competition. **The LB probe requires clicking "Submit" on the committed notebook version in the Kaggle UI** (API cannot trigger a code-comp notebook submission).
-- Purpose: calibrate our internal gold-OOF (~0.70) against the real LB; this is our first true competition-distribution signal.
+## 2026-08-27 (cont.) — Option #1: LB probe — DONE (public 0.682)
+- Built + submitted `girishbose/rsna-knee-submit-v6c` Version 1: images-only, frozen DINOv2-B v6c fold0, cache_v1. **Public LB 0.682.** See top section for calibration.
 
 ## 2026-08-27 (cont.) — Option #2 external ruler = NEGATIVE (domain shift)
 - KneeMRI (Croatia, 736 sag volumes, ACL 0/1/2, prevalence 24.8%) is accessible on Kaggle; MRNet is gated.
@@ -71,12 +229,12 @@ v6b was a legitimate, fully-gated supervision win (beat label gate + all 5 folds
 **Noisy-teacher lever, measured with discipline.** Competition is live (RSNA 2026 Knee; deadline 2026-10-22). Hidden test is expert-radiologist-graded on images while train labels are noisy report-derived — so OOF ~0.76 vs public ~0.94 is partly a *label/measurement* gap, not just capacity. External top-15 signal: bigger backbone / more ensemble / TTA / extra pretraining ≈ 0; LB noise-limited in 3rd decimal. Focus: (1) v3 NLI labels, (2) robust losses, (3) pre-registered multi-fold OOF. Do not submit until the full 5-fold OOF clears the rule.
 
 ## Best scores
-| Setup | Fold0 best |
+| Setup | Score |
 |---|---|
-| **S + weak_v1 frozen, cache_v1** | **0.764** (ckpt missing) |
-| **B + weak_v1 fully frozen, cache_v1** | **0.759** ← keep |
-| B + expert head-FT | 0.760 then 0.745 (kill) |
-| S + cache_v2 | 0.738 |
+| **Public LB (v6c fold0 probe)** | **0.682** ← calibrated |
+| Full-58 gold OOF **v6c** (5-fold) | **0.7023** ← adopted |
+| Full-58 gold OOF v8 (5-fold) | 0.6935 ← **KILL** |
+| Full-58 gold OOF v6b (5-fold) | 0.6895 |
 | Public LB top | ~0.942 |
 
 ## New tooling (2026-08-24, code-only, unit-tested; no scores yet)
@@ -86,10 +244,13 @@ v6b was a legitimate, fully-gated supervision win (beat label gate + all 5 folds
 - Config: `configs/labels_v3_robust.yaml` (frozen-B + weak_v3 + GCE + smoothing).
 
 ## Next 3 actions
-1. Kaggle: run `notebooks/14_pseudo_label_reports.py` (GPU T4x2, **Internet ON**) → `weak_labels_v3.csv`; check expert audit vs v1 (~F1 0.44).
-2. Kaggle: 5-fold frozen-B with `configs/labels_v3_robust.yaml` (weak_v3 + GCE). Save per-fold `fold*_oof.csv`.
-3. Locally: `python scripts/oof_report.py --oof <v3 folds> --baseline-oof <weak_v1 B folds> --targets data/folds/folds_v1.csv` → keep only on a rule win vs **0.759**.
+1. **2026-09-05 (quota reset):** push + run **S01b** first — `submit-v6c-5fold` (GPU, decode-once) → competition submit; record public LB (kill if runtime-fail again; soft-kill if LB < 0.690).
+2. If S01b LB ≥ **0.690** → queue **S02** (`submit-v6c-5fold-s02`, per-label AUC blend).
+3. **Skip fold4 rank1 by default** (matched-4 gold −0.024). Only push fold4 if explicitly wanting the formal full-58 stamp; do not expect a keep.
 
 ## Do not
-- Submit before an OOF-rule win; unfreeze; cache_v2 5-fold; weak_v2; ship FT weights
-- Use reports at test time; chase 3rd-decimal single-fold deltas
+- Select v6c fold0 (0.682) as a final; burn LB probes without a gold-OOF rule win
+- Retry v8-style TR/EL gap-fills on ACL/MCL/LatOA; trust per-label / 2-fold / weak-val alone at n≤58
+- Reopen killed paths (unfreeze, expert head-FT, cache_v2, 384, MRI-CORE, external-image train, **v8**, **rank1 plane+pw lean**)
+- Use reports at test time; commit secrets / weights / DICOMs
+- Burn Sep-5 GPU on rank1 fold4 before S01b

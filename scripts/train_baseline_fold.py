@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import random
 import sys
 from pathlib import Path
 
@@ -22,7 +23,7 @@ from rsna_knee.data.cached_dataset import CachedStudyDataset, attach_folds, merg
 from rsna_knee.data.dataset import collate_studies
 from rsna_knee.metrics import summarize_metrics
 from rsna_knee.models.multiseries import create_multiseries_model
-from rsna_knee.training.loss import masked_multilabel_loss
+from rsna_knee.training.loss import masked_multilabel_loss, pos_weight_from_prevalence
 
 
 def main() -> None:
@@ -41,12 +42,16 @@ def main() -> None:
     parser.add_argument("--out-dir", type=Path, required=True)
     parser.add_argument("--device", default=None)
     parser.add_argument("--expert-only", action="store_true", help="Train only on 58 expert studies")
+    parser.add_argument("--seed", type=int, default=None)
     args = parser.parse_args()
 
     import torch
     from torch.utils.data import DataLoader
 
     cfg = yaml.safe_load(args.config.read_text())
+    seed = args.seed if args.seed is not None else int(cfg.get("train", {}).get("seed", 42))
+    random.seed(seed)
+    np.random.seed(seed)
     epochs = args.epochs or int(cfg["train"]["epochs"])
     freeze_epochs = (
         args.freeze_epochs
@@ -55,11 +60,8 @@ def main() -> None:
     )
     lr = float(cfg["train"]["lr"])
     batch_size = int(cfg["train"]["batch_size"])
-    pos_weight = (
-        args.pos_weight
-        if args.pos_weight is not None
-        else float(cfg.get("loss", {}).get("pos_weight", 1.0))
-    )
+    use_prevalence_pw = cfg.get("loss", {}).get("pos_weight") == "per_label_prevalence"
+    pw_cap = float(cfg.get("loss", {}).get("pos_weight_cap", 10.0))
     unfreeze_lr_mult = (
         args.unfreeze_lr_mult
         if args.unfreeze_lr_mult is not None
@@ -70,16 +72,7 @@ def main() -> None:
     loss_mode = str(loss_cfg.get("mode", "bce"))
     label_smoothing = float(loss_cfg.get("label_smoothing", 0.0))
     gce_q = float(loss_cfg.get("gce_q", 0.7))
-    print(
-        f"backbone={backbone} epochs={epochs} freeze_epochs={freeze_epochs} "
-        f"lr={lr} pos_weight={pos_weight} unfreeze_lr_mult={unfreeze_lr_mult} "
-        f"loss_mode={loss_mode} label_smoothing={label_smoothing}"
-    )
-    device = torch.device(
-        args.device
-        or ("cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
-    )
-    print("device", device)
+    label_plane_routing = bool(cfg.get("model", {}).get("label_plane_routing", False))
 
     train = pd.read_csv(args.train_csv)
     train = merge_weak_labels(train, args.weak_csv)
@@ -115,6 +108,34 @@ def main() -> None:
     if len(tr_df) == 0 or len(val_df) == 0:
         raise SystemExit("No cached studies for this fold — build cache first")
 
+    if args.pos_weight is not None:
+        pos_weight: float | np.ndarray = float(args.pos_weight)
+    elif use_prevalence_pw:
+        prev = []
+        for c in LABEL_COLS:
+            vals = tr_df[c].dropna()
+            prev.append(float(vals.mean()) if len(vals) else 0.5)
+        pos_weight = pos_weight_from_prevalence(prev, cap=pw_cap)
+        print("per_label pos_weight", dict(zip(LABEL_COLS, np.round(pos_weight, 2))))
+    else:
+        pos_weight = float(cfg.get("loss", {}).get("pos_weight", 1.0))
+
+    print(
+        f"backbone={backbone} epochs={epochs} freeze_epochs={freeze_epochs} "
+        f"lr={lr} unfreeze_lr_mult={unfreeze_lr_mult} "
+        f"loss_mode={loss_mode} label_smoothing={label_smoothing} "
+        f"label_plane_routing={label_plane_routing}"
+    )
+    device = torch.device(
+        args.device
+        or ("cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
+    )
+    print("device", device)
+
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed)
+
     tr_ds = CachedStudyDataset(tr_df, args.cache_dir)
     va_ds = CachedStudyDataset(val_df, args.cache_dir)
     tr_loader = DataLoader(tr_ds, batch_size=batch_size, shuffle=True, collate_fn=collate_studies, num_workers=0)
@@ -127,6 +148,7 @@ def main() -> None:
         freeze_backbone=True,
         pretrained=weights is None,
         dropout=float(cfg["model"].get("dropout", 0.1)),
+        label_plane_routing=label_plane_routing,
     )
     model.to(device)
     opt = torch.optim.AdamW(filter(lambda p: p.requires_grad, model.parameters()), lr=lr, weight_decay=0.05)

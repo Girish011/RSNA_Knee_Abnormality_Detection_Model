@@ -72,6 +72,41 @@ Format: date | decision | why | rejected
 - **Why:** Competition confirmed live (2026 RSNA Knee Abnormality Detection AI Challenge; deadline 2026-10-22, winners in Nov — no writeups yet). Public signal from a top-15 team (LB 0.937): the hidden test is **graded by expert radiologists reading the images** while our train labels are noisy report-derived; "you are never optimising the thing you are scored on." They report bigger backbones / more ensemble members / TTA / extra pretraining "all measured, all worth roughly zero," the LB is noise-limited in the 3rd decimal, and the discipline that mattered was pre-registering the decision rule and reading multiple folds. Remaining open lever: "how you learn from a noisy teacher."
 - **Rejected:** Spending GPU budget on architecture/TTA/ensemble scaling before exhausting label-quality and noisy-loss levers; trusting single-fold deltas.
 
+## 2026-08-30 — S01b must be GPU + decode-once; refuse CPU path
+- **Decision:** Competition submit notebooks for 5-fold ensembles **require CUDA** and the `rsna-knee-rank1-patch` decode-once `infer.py`. Do not ship or re-run the S01 CPU path (~126 s/study). Bake S02 per-label AUC weights into the patch (`configs/s02_v6c_blend_weights.json`) so submit does not depend on live OOF/weak merge.
+- **Why:** S01 timed out on hidden test with 5× DICOM decode on CPU; fold0 GPU probe was 4.9 s/study. Constant-0.5 fallback remains only as a last-resort score, not a planned path.
+- **Rejected:** CPU ensemble submits; trusting enable_gpu alone without a runtime CUDA assert.
+
+## 2026-08-30 — Rank1 plane+pw KILL lean; Sep-5 quota → S01b first
+- **Decision:** Treat rank1 (plane routing + per-label pos_weight on cache_v1) as **provisional KILL** after matched-4 gold OOF **0.7124 vs v6c 0.7365 (Δ −0.024)**. On GPU quota reset (**2026-09-05**), run **S01b** (5-fold v6c GPU decode-once submit) before any rank1 fold4 train. Skip fold4 unless an explicit full-58 stamp is requested.
+- **Why:** Same pattern as v8 — mixed/positive weak-val, decisive matched-4 gold loss driven by MCL collapse (0.465). Fold4 cannot plausibly overcome −0.024 on 46 experts. S01b is the unscored ensemble hypothesis (S01 timed out on CPU) and the highest-value use of ~30h quota.
+- **Rejected:** Burning Sep-5 hours on fold4-by-default; trusting weak-val 2/4 fold wins; shipping rank1 as a final.
+
+## 2026-08-28 — Rank-1 image lever (plane routing + cache_v3)
+- **Decision:** Pursue 0.95 via image pipeline, not more label recipes. Rank-1 stack = per-label plane routing + ACL sagittal cache_v3 + 5-fold ensemble submit.
+- **Why:** Labels capped at gold 0.7023; ACL/Fracture gold still weak; `LABEL_PLANE_PRIOR` was unused; cache_v1 is thin (3×12).
+- **Rejected:** Reopening v8/GCE/yunus gap-fill; naive cache_v2 4×16 without ACL bias (killed at 0.738).
+- **Update 2026-08-30:** plane+pw on cache_v1 failed matched-4 gold (see above). cache_v3 path not yet tested; only revisit with a new registered recipe after S01b LB read.
+
+- **Decision:** Do not train or submit on `weak_labels_v8`. Keep adopted **v6c**. Full-58 gold OOF 0.6935 < v6c 0.7023 (Δ −0.0088; fails +0.005 keep rule).
+- **Why:** Re-supplying ACL/MCL/Lateral OA via v7∩Qwen consensus on TR/EL (the columns whose LLM fills v6c dropped) hurt gold OOF despite higher weak-val and 85% extractor agreement. Confirms coin-flip-adjacent fills remain dangerous even under consensus.
+- **Rejected:** Further v8 variants that gap-fill those three labels; trusting weak-val or 2-fold gold for this A/B.
+
+## 2026-08-27 — v8 overlay is additive gap-fill (not overwrite)
+- **Decision:** When applying v7∩Qwen consensus onto adopted v6c, **only fill cells where v6c is NaN** (`only_where_base_isna=True`). Do not overwrite trusted v6c commits. In practice this re-supplies ACL/MCL/Lateral OA on TR/EL studies where both extractors agree — the columns whose LLM fills v6c dropped.
+- **Why:** Matches the “high-precision multilingual supervision” intent; measured delta was +495 cells with only ~7 accidental overwrites in the overwrite variant. Safer A/B vs v6c.
+- **Rejected:** Blind overwrite of all consensus cells onto v6c.
+
+## 2026-08-27 — LB calibration: gold-OOF ≈ public + 0.02 (v6c fold0 probe)
+- **Decision:** Treat **full-58 gold OOF** as the primary internal ruler. Translate to expected public LB with **≈ −0.02** (measured: gold 0.7023 vs public **0.682** on fold0-only v6c probe). Ignore weak-label OOF for keep/kill (~0.75 overstated by ~0.07). Do not select the 0.682 probe as a final; do not spend more public submits until gold OOF beats 0.7023 by the pre-registered 0.005 margin *and* projected LB (OOF−0.02) clears an explicit bar.
+- **Why:** First real competition-distribution signal. Confirms the 58-gold macro is slightly optimistic but directionally honest; weak-label val is not.
+- **Rejected:** Calibrating on weak-label OOF; assuming fold0 LB equals 5-fold blend LB; chasing more probes to climb from 0.68 without a gold win.
+
+## 2026-08-27 — v8 label recipe = v7∩Qwen consensus overlay (not yet measured)
+- **Decision:** Next label candidate after adopted v6c is **v8**: keep v6c as base; replace cells with **v7 ∩ constrained-Qwen** where both commit and agree (else abstain). Prefer restricting the overlay to Turkish/Greek studies (`detect_language`), since that is where v7 adds independent signal (88%/77% agree with Qwen). Keep/kill only on **full-58 gold OOF** vs v6c **0.7023** (margin 0.005 rule); do not trust per-label or 2-fold gold.
+- **Why:** v7 alone is not clearly better than v6c (Qwen already covers TR/EL); agreement cells are the high-precision subset. Encoded in `label_consensus.py` + `scripts/build_weak_labels_v8.py`.
+- **Rejected:** Retraining on v7 alone; further v6d-style micro-tuning on the 58; treating competitor-label cross-check as a substitute for LB calibration (it is complementary).
+
 ## 2026-08-24 — v6b: per-label LLM-fill reliability gate (drop MCL)
 - **Decision:** When combining constrained-Qwen fills with the keyword skeleton, drop LLM fills for any label whose measured 58-expert fill-precision is < 0.5 (pre-registered), keeping the keyword skeleton for that label. On v6 this is exactly MCL and lifts combined precision 0.6826 → 0.7029 (passes the 0.69 gate) with recall 0.690 and parse 1.0.
 - **Why:** MCL LLM fills are consistently poisonous (v5 prec 0.27, v6 prec 0.231); reports describe MCL inconsistently. This is the minimal principled intervention, not a scan for the best label. First supervision recipe to pass the gate after v4/v5/v6.

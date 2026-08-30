@@ -137,6 +137,141 @@ Append one row (or block) per run. Never delete history.
 - **v7 vs Qwen cross-check: 88.2% agreement on Turkish (2107 cells), 76.8% on Greek (482).** Two independent methods concur → both capture real signal; the agreement cells are high-precision.
 - conclusion: v7 is a validated independent multilingual labeler. Its highest-value use is a **v7∩Qwen consensus** (label where both agree, else abstain) for high-precision TR/EL supervision — not v7 alone. Blocker remains measurement: 6+3 TR/EL gold can't validate model impact → need an external ruler (MRNet/KneeMRI) before trusting a retrain delta.
 
+### 2026-08-30 — S01b/S02 hardened + patch re-upload (quota still 0)
+- S01 log: CPU, 126.3 s/study, no PATCH. Fold0 GPU probe 4.9 s/study. Budget: decode-once+5×GPU ≈ 6–12 s/study → 9h covers ~2.7k–5.4k studies.
+- Code: `require_cuda` + progress ETA; kernels use known-path lookup (no DICOM rglob); baked `configs/s02_v6c_blend_weights.json`.
+- Uploaded new `rsna-knee-rank1-patch`; CPU smoke S01b/S02 both resolve PATCH+5 ckpts and refuse CUDA-less runs.
+- conclusion: iterate — on **2026-09-05** re-push with `enable_gpu=true` via `push_kaggle_kernels.py`, run S01b, competition-submit; S02 only if LB ≥ 0.690.
+
+### 2026-08-30 — Rank1 matched-4 gold OOF KILL lean (−0.024 vs v6c)
+- OOF: `train-b-fold{0..3}-rank1-v6c` vs `train-b-fold{0..3}-weak-v6c`; targets = 46 experts in folds 0–3 of `folds_v1.csv`.
+- Macro gold: rank1 **0.7124** vs v6c **0.7365** (Δ **−0.0241**, margin 0.005) → **KILL**. Bootstrap CI rank1 [0.665, 0.759] overlaps heavily; point estimate decisive under rule.
+- Worst labels: MCL **0.465** (−0.297), Synovitis −0.099, MedOA −0.084, Contusion −0.076. Plane routing helped LatOA/LatMen/ACL but destroyed MCL.
+- Arithmetic: fold4's 12 experts need ≈+0.12 gold vs v6c to flip full-58 keep — not credible.
+- Audit: `docs/audit/rank1_matched4_keepkill.json`. Kernels for S01b/fold4 still ready; quota refresh 2026-09-05.
+- conclusion: **KILL lean** on rank1 plane+pw. On reset prioritize **S01b** (v6c 5-fold GPU decode-once); skip fold4 unless formal full-58 stamp wanted.
+
+### 2026-08-30 — Rank1 folds 0–3 COMPLETE; GPU quota exhausted
+- FINAL: f0 **0.7558** (−0.012 vs 0.7683), f1 **0.7640** (+0.015 vs 0.7493), f2 **0.7706** (+0.008 vs 0.7624), f3 **0.7606** (−0.003 vs 0.7636). Fold4 not trained.
+- Fold4 + S01b pushes **rejected**: weekly GPU 30h used (refresh 2026-09-05).
+- conclusion: weak-val looked **KEEP lean**; superseded by matched-4 gold kill (entry above).
+
+### 2026-08-30 — Rank1 fold2+3 mid-train ep5–6
+- RUNNING. Best: fold2 **0.7706** (+0.009 vs v6c ~0.762), fold3 **0.7606** (−0.003 vs ~0.764). GPU 3.7h left.
+- conclusion: iterate — push fold4 on COMPLETE; quota watch.
+
+### 2026-08-30 — Rank1 fold0+1 COMPLETE; fold2+3 launched
+- FINAL weak-val: fold0 **0.7558** (−0.012 vs 0.7683), fold1 **0.7640** (**+0.015** vs 0.7493).
+- Outputs downloaded (ckpt + OOF). Fold2+3 **RUNNING**. Fold4 after they finish.
+- conclusion: **KEEP lean** on rank1 (fold1 smoke pass); full-58 gold gate pending.
+
+### 2026-08-29 — Rank1 fold0+1 ep10/9; fold2+3 pushed
+- Still RUNNING. Best: fold0 **0.7558** (ep10), fold1 **0.7640** (ep6, ep9 **0.7636**). Fold1 **+0.015** vs v6c 0.7493 → smoke pass.
+- Fold1 **+0.015** vs v6c → smoke pass. Folds 2–3 push **blocked** (GPU full); retry on COMPLETE.
+- conclusion: iterate — provisional KEEP; wait COMPLETE + folds 2–4.
+
+### 2026-08-29 — Rank1 fold0+1 late-train: fold1 beats v6c
+- Still RUNNING. Best: fold0 **0.7545** (ep7, −0.014 vs 0.7683), fold1 **0.7640** (ep6, **+0.015** vs 0.7493).
+- Fold1 smoke-bar pass. Finish remaining epochs then push folds 2–4 if fold0 closes or holds; decide keep on full-58 gold ≥ 0.7073.
+- S01b deferred (do not steal GPU from a live win).
+- conclusion: iterate — provisional KEEP lean on rank1 image lever.
+
+### 2026-08-29 — Rank1 fold0+1 mid-train ep2–3
+- Still RUNNING. Best so far: fold0 **0.7416** (ep2), fold1 **0.7215** (ep2) vs v6c 0.7683 / 0.7493 (Δ −0.027 / −0.028).
+- Climbing but trailing; ~8–9 epochs left. S01b still GPU-slot blocked.
+- conclusion: iterate — wait for finish; provisional lean if final best stays < v6c − 0.005.
+
+### 2026-08-29 — Rank1 fold0+1 TRAINING (ep0 interim weak-val)
+- Live: both RUNNING; `label_plane_routing=True`; folds/code/cache/weights resolved correctly.
+- epoch 0 weak-val: fold0 **0.6847**, fold1 **0.6822** (vs v6c 0.7683 / 0.7493). Too early to keep/kill.
+- S01b GPU submit still waiting on free slot. S01 timeout unchanged (no score).
+- conclusion: iterate — wait for ≥epoch 6–12; then compare weak-val and launch folds 2–4 only if promising.
+
+### 2026-08-29 — S01 TIMED OUT (no score); rank1 GPU launched; S01b decode-once queued
+- S01 ref **55851760** COMPLETE with empty publicScore — runtime exceeded on hidden test (CPU ~126s/study × 5 ckpts). Ensemble hypothesis **not killed**.
+- Fix: `run_model_submission` decode-once; full `src/rsna_knee` + folds in `rsna-knee-rank1-patch`; GPU submit kernel; `push_kaggle_kernels.py`.
+- Rank1: fold0+1 pushed/running after import+folds path fixes. Gate: full-58 gold ≥ 0.7073.
+- S02 still queued pending a scored S01b ≥ 0.690.
+- conclusion: iterate — wait rank1 weak-val; free a GPU slot for S01b submit then competition re-submit.
+
+### 2026-08-29 — GPU launch queue: rank1 train + S02 submit kernel
+- code: `run_model_submission` in `infer.py` (uniform + per-label AUC blend from OOF); S02 kernel `submit-v6c-5fold-s02`; rank1 fold2–4 kernels + metadata; `scripts/push_kaggle_kernels.py`, `scripts/package_rank1_patch.py`.
+- tests: `tests/test_infer.py` (OOF weight normalization + submission schema); 36 passed locally.
+- blocked: Kaggle token not in cloud env — user must `export KAGGLE_API_TOKEN=...` then push/launch.
+- conclusion: iterate — launch rank1 fold0+1 on GPU; queue S02 when S01 LB ≥ 0.690.
+
+### 2026-08-28 — S01 SUBMITTED: 5-fold v6c uniform blend (LB pending)
+- experiment **S01**: hypothesis fold0-only LB 0.682 understates 5-fold; expect **~0.70–0.72**.
+- kernel `girishbose/submit-v6c-5fold` v1 COMPLETE (5 checkpoints, uniform mean, 379s on 3-study dry run).
+- **competition submit:** ref **55851760**, message "S01: 5-fold v6c uniform blend", status **PENDING** (2026-08-28).
+- baseline: fold0-only **0.682** (ref 55818692). Kill if LB < **0.690**.
+- note: v1 ran on CPU (GPU quota); re-push GPU metadata for faster/full test if needed.
+- conclusion: iterate — record public score; queue S02 if ≥ 0.690.
+
+### 2026-08-28 — Rank-1 image stack (plane routing + cache_v3 + ensemble submit)
+- code: label plane routing (`LABEL_PLANE_PRIOR` → per-label series attention), ACL sagittal slice bias, `rank1_v6c.yaml`, `infer_ensemble.py`, Kaggle patch `rsna-knee-rank1-patch`.
+- train kernels prepared; **GPU quota blocked push**.
+- keep rule unchanged: full-58 gold vs v6c **0.7023**, margin **0.005**.
+- conclusion: iterate when quota resets — rank1 is the registered hardest in-repo path toward 0.95; success not guaranteed.
+
+### 2026-08-28 — GCE v6c KILL (fold0+1 identical to BCE; GCE never applied)
+- fold0+1 v4 COMPLETE. Weak-val GCE = BCE (0.7683/0.7493). fold0+1 gold OOF **0.7358** vs BCE **0.7358** (Δ 0.0); OOF max abs diff **0.0**.
+- Root cause: Kaggle `rsna-knee-code` trainer uses `masked_bce_with_logits`; loss-gce patch only shadowed `loss.py`.
+- folds 2–4 not launched. Audit: `docs/audit/gce_v6c_fold01_keepkill.json`.
+- conclusion: **KILL GCE** as implemented. Label lever exhausted with v8. Next real lever = image/backbone (user steer).
+
+### 2026-08-27 — GCE v6c fold0+1 v4 RUNNING (v1–v3 empty-script failures fixed)
+- kernels `train-b-fold{0,1}-gce-v6c` v1–v3: **0-byte scripts** → instant COMPLETE, no outputs. Real scripts in `kernels/train-b-fold*-gce-v6c.py`.
+- fold0 **v4 RUNNING**; fold1 **v4 pushed + RUNNING** (22:15 UTC). fold2–4 dirs prepared, not launched.
+- yunus screened: strict intersect +0; naive gap +24,628 mostly neg → no train.
+- conclusion: iterate — compare weak-val vs v6c BCE (0.7683/0.7493); launch folds 2–4 if promising; full-58 gold vs 0.7023 when 5 folds done.
+
+### 2026-08-27 — GCE loss A/B on v6c labels (fold0+1 RUNNING)
+- code: `configs/v6c_gce.yaml` (GCE q=0.7, smoothing 0.05); Kaggle dataset `girishbose/rsna-knee-loss-gce` shadows stale code `loss.py`.
+- kernels: `train-b-fold{0,1}-gce-v6c` (v2 with patch dataset). v1 may fail — missing patch at launch.
+- yunus screened: strict intersect +0 cells; naive gap +24,628 (mostly neg) → no train.
+- conclusion: iterate — measure GCE vs v6c BCE on full-58 gold; do not yunus gap-fill.
+
+### 2026-08-27 — v8 KILL (full-58 gold 0.6935 < v6c 0.7023)
+- fold4 COMPLETE (weak-val 0.7420). Full 5-fold OOF vs 58 gold: **v8 0.6935 vs v6c 0.7023 (Δ −0.0088) → KILL** (margin 0.005).
+- Per-label vs v6c: Effusion +0.043, MedMen +0.020; losses MCL −0.051, LatOA −0.040, Fracture −0.032, ACL −0.020.
+- Matched 4-fold already −0.024; weak-val lift was confounded by +495 TR/EL cells on dropped coin-flip cols.
+- conclusion: **KILL v8**. Keep adopted **v6c** + LB calibration 0.682. Do not probe v8. Next levers: yunus-consensus teacher or image plan — not more consensus gap-fills on ACL/MCL/LatOA.
+
+### 2026-08-27 — v8 folds 0–3 COMPLETE; matched 4-fold gold LOSES to v6c
+- weak-val: f0 0.785 / f1 0.783 / f2 0.781 / f3 0.767 (all ≥ v6c counterparts). fold4 QUEUED.
+- **Matched 4-fold gold (n=46): v6c 0.7365 → v8 0.7127 (−0.024).** Regressions: MCL −0.08, Fracture −0.07, Baker's −0.06, MedOA −0.04; small gains Effusion/PF OA.
+- Earlier fold0+1 gold +0.01 was noise (same failure mode as v6d). Weak-val lift confounded by +495 TR/EL cells on ACL/MCL/LatOA.
+- conclusion: provisional **KILL lean** on v8; confirm on full-58 after fold4. Do not LB-probe v8. Additive gap-fill of consensus onto dropped coin-flip labels likely re-poisoned training.
+
+### 2026-08-27 — v8 train fold0+1 COMPLETE (interim; full-58 pending)
+- kernels: `train-b-fold{0,1}-weak-v8` COMPLETE; fold2+3 RUNNING.
+- weak-val (confounded): f0 **0.7853** / f1 **0.7827** vs v6c 0.7683 / 0.7493 (+0.017 / +0.033).
+- gold fold0+1 (n=24, noisy): v6c 0.7358 → v8 **0.7459** (+0.010). Per-label swings large (MCL −0.17, LatOA +0.14) — expected noise at this n.
+- conclusion: iterate — **do not keep/kill**; wait for folds 2–4 + full-58 gold vs 0.7023 (±0.005 rule). Projected LB ≈ OOF − 0.02.
+
+### 2026-08-27 — In-domain cross-check + v8 candidate (additive TR/EL consensus)
+- LB API confirm: submission 55818692 publicScore **0.682**.
+- Cross-check (`scripts/crosscheck_labels.py`, soft lo/hi 0.2/0.7): yunus **91.2%** agree, dread 80.9% (MCL 38%), barun pseudo unusable (≈0.5 mass).
+- v8: `build_weak_labels_v8.py` default = **additive gap-fill** of v7∩Qwen onto v6c for TR/EL only. Agree 85.1% (2593/3048). +495 cells (ACL+108, MCL+120, LatOA+267). Uploaded `girishbose/rsna-knee-weak-v8`.
+- Gold n on TR/EL = 9 → cannot keep/kill from label audit alone.
+- conclusion: iterate — **retrain frozen-B 5-fold on v8**; keep iff full-58 gold OOF ≥ 0.7023+0.005. No new LB probe yet. Rotate pasted token.
+
+### 2026-08-27 — LB probe v6c fold0 = public **0.682** (CALIBRATION)
+- submit: `girishbose/rsna-knee-submit-v6c` Version 1 Succeeded; images-only frozen DINOv2-B **v6c fold0**, cache_v1 3×12×224.
+- **public LB: 0.682**
+- vs full-58 gold OOF v6c **0.7023** → gold overstates public by **~0.020**
+- vs weak-label OOF ~0.75 → weak overstates by **~0.07** (do not use for decisions)
+- vs public top ~0.94 → gap **~0.26**; single fold0 probe may slightly understate a 5-fold blend, but not enough to change strategy
+- conclusion: **KEEP gold-OOF as internal ruler** (apply ≈−0.02 for LB projection). **DO NOT final** this submission. Next: v8 consensus / in-domain competitor-label cross-check; retrain only with full-58 keep rule vs 0.7023; no further LB until projected LB clears a deliberate bar. Still need Kaggle token in cloud env to execute.
+
+### 2026-08-27 — v8 consensus tooling + in-domain cross-check CLI (code-only)
+- code: `src/rsna_knee/text/label_consensus.py` (`intersect_labels`, `agreement_stats`, `overlay_consensus`); `scripts/build_weak_labels_v8.py` (v6c base ⊕ v7∩Qwen, optional TR/EL lang filter via `detect_language`); `scripts/crosscheck_labels.py` (ours vs named competitor CSVs + optional gold audit).
+- tests: `tests/test_label_consensus.py` (4) — agreement-only keep, outer unilateral→NaN, stats rates, overlay overwrite vs gap-fill. Related suite 13 passed.
+- CLI smoke (synthetic): intersect agree 5/7; crosscheck found 1 disagreement cell as expected.
+- **no competition scores** — blocked on rotated Kaggle token + human LB Submit on `rsna-knee-submit-v6c`. Next measure: download real v7/Qwen/v6c + competitor sets, build v8, full-58 gold OOF vs 0.7023.
+- conclusion: iterate — tooling ready; do not retrain until auth + (preferably) LB calibration.
+
 ### 2026-08-27 — External ACL ruler (KneeMRI) — NEGATIVE (domain shift)
 - Option #2: use external expert-labeled knee MRI as an unbiased ACL ruler. MRNet is gated (Stanford DUA; only a 22-byte Kaggle stub). KneeMRI (Croatia) IS on Kaggle (`sohaibanwaar1203/kneemridataset`): 736 sagittal volumes accessible, ACL 0/1/2, binary-positive prevalence 24.8% (representative, unlike the 58's 41%).
 - Built `girishbose/knee-acl-ruler-v6c`: run our v6c fold0 model on KneeMRI as a 1-series sagittal study.

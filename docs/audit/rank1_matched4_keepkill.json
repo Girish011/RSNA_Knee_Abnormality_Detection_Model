@@ -1,0 +1,52 @@
+{
+  "date": "2026-08-30",
+  "scope": "matched_4fold_folds0_3",
+  "n_experts": 46,
+  "rank1_matched4_gold": 0.7123740718248482,
+  "v6c_matched4_gold": 0.7365034048480257,
+  "delta": -0.024129333023177435,
+  "margin": 0.005,
+  "verdict": "kill",
+  "rationale": "delta -0.0241 < margin 0.0050",
+  "rank1_bootstrap": {
+    "mean": 0.7126987034602079,
+    "lo": 0.664555063407567,
+    "hi": 0.758528283411471,
+    "std": 0.023299532648084757
+  },
+  "v6c_bootstrap": {
+    "mean": 0.7371318374986299,
+    "lo": 0.6877111659692288,
+    "hi": 0.785059421056664,
+    "std": 0.024802538022723124
+  },
+  "rank1_per_label": {
+    "ACL": 0.7480769230769231,
+    "MCL": 0.4652014652014652,
+    "Medial Meniscus": 0.7123809523809523,
+    "Lateral Meniscus": 0.7301587301587302,
+    "Medial OA": 0.8531468531468531,
+    "Lateral OA": 0.8018018018018017,
+    "PF OA": 0.7,
+    "Effusion": 0.7903846153846154,
+    "Synovitis": 0.7371428571428571,
+    "Baker's": 0.8388157894736842,
+    "Contusion": 0.573529411764706,
+    "Fracture": 0.5978494623655914
+  },
+  "v6c_per_label": {
+    "ACL": 0.7153846153846153,
+    "MCL": 0.7619047619047619,
+    "Medial Meniscus": 0.7390476190476191,
+    "Lateral Meniscus": 0.6468253968253967,
+    "Medial OA": 0.9370629370629371,
+    "Lateral OA": 0.6486486486486487,
+    "PF OA": 0.7250000000000001,
+    "Effusion": 0.7807692307692308,
+    "Synovitis": 0.8361904761904762,
+    "Baker's": 0.7976973684210527,
+    "Contusion": 0.6495098039215687,
+    "Fracture": 0.6
+  },
+  "note": "Provisional only; registered keep/kill remains full-58 after fold4. Matched-4 loss magnitude matches v8 kill pattern."
+}

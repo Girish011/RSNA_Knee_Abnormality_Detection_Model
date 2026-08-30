@@ -1,0 +1,24 @@
+{
+  "experiment": "gce_v6c_ab",
+  "date": "2026-08-28",
+  "verdict": "KILL",
+  "reason": "Identical to v6c BCE — GCE loss never applied (stale Kaggle train_baseline_fold.py uses masked_bce_with_logits, ignores loss.mode in yaml)",
+  "baseline": {
+    "recipe": "v6c BCE frozen DINOv2-B 8ep",
+    "full58_gold_macro_auc": 0.7023,
+    "weak_val_fold0": 0.7683,
+    "weak_val_fold1": 0.7493
+  },
+  "candidate": {
+    "recipe": "v6c + GCE q=0.7 smoothing 0.05 (intended)",
+    "weak_val_fold0": 0.7683,
+    "weak_val_fold1": 0.7493,
+    "fold01_gold_macro_auc": 0.7358,
+    "oof_max_abs_diff_vs_bce": 0.0
+  },
+  "delta_fold01_gold": 0.0,
+  "margin": 0.005,
+  "folds_2_4_launched": false,
+  "root_cause": "rsna-knee-code/scripts/train_baseline_fold.py calls masked_bce_with_logits; rsna-knee-loss-gce only patched loss.py",
+  "retest_requires": "Fold train_baseline_fold.py GCE support into rsna-knee-code or rsna-knee-loss-gce patch dataset"
+}
