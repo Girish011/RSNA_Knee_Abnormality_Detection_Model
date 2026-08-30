@@ -198,9 +198,9 @@ v6b was a legitimate, fully-gated supervision win (beat label gate + all 5 folds
 - Config: `configs/labels_v3_robust.yaml` (frozen-B + weak_v3 + GCE + smoothing).
 
 ## Next 3 actions
-1. **Confirm rank1 fold0+1 train** past epoch 0; push folds 2–4 if weak-val beats v6c (0.768/0.749).
-2. **When a GPU slot frees:** push/run GPU `submit-v6c-5fold` (S01b decode-once) → competition submit when COMPLETE.
-3. **S02** only after S01b scores ≥ 0.690 (or kill ensemble-weighting if S01b < 0.690).
+1. **Monitor fold2+3 rank1** → push fold4 when slots free.
+2. **After 5-fold rank1:** aggregate OOF, full-58 gold vs 0.7023 (keep if ≥ 0.7073).
+3. **S01b GPU submit** when a slot frees (decode-once 5-fold blend) — ensemble hypothesis still untested on LB.
 
 ## Do not
 - Select v6c fold0 (0.682) as a final; burn LB probes without a gold-OOF rule win
