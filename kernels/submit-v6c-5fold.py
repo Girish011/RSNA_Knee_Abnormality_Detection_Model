@@ -1,9 +1,9 @@
 # S01b — RSNA Knee 5-fold v6c ensemble submit (uniform mean, decode-once, GPU)
 # S01 (ref 55851760) TIMED OUT on hidden test (~126s/study on CPU, 5× DICOM decode).
-# Fix: GPU + decode each study once then run all 5 models; attach rank1-patch for infer.
+# Fix: require GPU + decode-once infer via rank1-patch; never INPUT.rglob the DICOM tree.
 # Attach: competition + rsna-knee-code + dinov2-vitb14-rsna-knee + rsna-knee-rank1-patch
 #   kernel_sources: train-b-fold{0..4}-weak-v6c
-# GPU T4, internet OFF.
+# GPU T4, internet OFF. On Sep-5 push with enable_gpu=true (repo metadata).
 
 from __future__ import annotations
 
@@ -17,95 +17,93 @@ INPUT = Path("/kaggle/input")
 WORK = Path("/kaggle/working")
 
 
-def locate(name, contains=None, want_dir=False):
-    for p in INPUT.rglob(name):
-        if want_dir and not p.is_dir():
-            continue
-        if contains and contains.lower() not in str(p).lower():
-            continue
-        return p
+def first_existing(*cands: Path) -> Path | None:
+    for p in cands:
+        if p is not None and p.exists():
+            return p
     return None
 
 
-def locate_all_checkpoints() -> list[Path]:
+def locate_fold_checkpoints() -> list[Path]:
     found: dict[int, Path] = {}
-    for p in INPUT.rglob("fold*_best.pt"):
-        name = p.name
-        if not name.startswith("fold") or not name.endswith("_best.pt"):
+    roots: list[Path] = []
+    for base in [INPUT, INPUT / "datasets", INPUT / "kernels"]:
+        if not base.exists():
             continue
-        try:
-            fold = int(name.replace("fold", "").replace("_best.pt", ""))
-        except ValueError:
-            continue
-        if 0 <= fold <= 4:
-            found[fold] = p
+        for p in base.iterdir():
+            if p.is_dir() and "train-b-fold" in p.name:
+                roots.append(p)
+    for root in roots:
+        for p in root.rglob("fold*_best.pt"):
+            name = p.name
+            if not (name.startswith("fold") and name.endswith("_best.pt")):
+                continue
+            try:
+                fold = int(name[4:-8])
+            except ValueError:
+                continue
+            if 0 <= fold <= 4:
+                found[fold] = p
     if len(found) == 5:
         return [found[i] for i in range(5)]
-    if found:
-        return [found[k] for k in sorted(found)]
-    return []
+    return [found[k] for k in sorted(found)]
 
 
-CODE = next(
-    (p for p in [INPUT / "datasets/girishbose/rsna-knee-code", INPUT / "rsna-knee-code"] if (p / "src").exists()),
-    None,
+CODE = first_existing(INPUT / "datasets/girishbose/rsna-knee-code", INPUT / "rsna-knee-code")
+PATCH = first_existing(
+    INPUT / "datasets/girishbose/rsna-knee-rank1-patch",
+    INPUT / "rsna-knee-rank1-patch",
 )
-if CODE is None:
-    hit = locate("train_baseline_fold.py")
-    CODE = hit.parents[1] if hit else None
-
-PATCH = next(
-    (
-        p
-        for p in [
-            INPUT / "datasets/girishbose/rsna-knee-rank1-patch",
-            INPUT / "rsna-knee-rank1-patch",
-        ]
-        if (p / "src").exists() or (p / "src/rsna_knee/infer.py").exists()
-    ),
-    None,
+COMP = first_existing(
+    INPUT / "rsna-knee-abnormality-detection",
+    INPUT / "competitions/rsna-knee-abnormality-detection",
 )
-if PATCH is None:
-    hit = locate("infer.py", contains="rank1")
-    PATCH = hit.parents[2] if hit else None
+WEIGHTS = first_existing(
+    INPUT / "dinov2-vitb14-rsna-knee" / "dinov2_vitb14_pretrain.pth",
+    INPUT / "datasets/girishbose/dinov2-vitb14-rsna-knee" / "dinov2_vitb14_pretrain.pth",
+)
+if WEIGHTS is None:
+    for root in [
+        INPUT / "dinov2-vitb14-rsna-knee",
+        INPUT / "datasets/girishbose/dinov2-vitb14-rsna-knee",
+    ]:
+        if root.exists():
+            hits = list(root.rglob("dinov2_vitb14_pretrain.pth"))
+            if hits:
+                WEIGHTS = hits[0]
+                break
 
-# Prefer patch infer (decode-once) over stale code dataset.
+if CODE is None or PATCH is None or COMP is None:
+    raise SystemExit(f"FATAL missing inputs CODE={CODE} PATCH={PATCH} COMP={COMP}")
+
 sys.path.insert(0, str(CODE / "src"))
-if PATCH is not None and (PATCH / "src").exists():
-    sys.path.insert(0, str(PATCH / "src"))
+sys.path.insert(0, str(PATCH / "src"))
 dino = CODE / "third_party" / "dinov2"
 if (dino / "hubconf.py").exists():
     os.environ["DINOV2_REPO"] = str(dino)
 
 from rsna_knee.infer import baseline_constant_submission, run_model_submission
+import torch
 
-test_csv = locate("test.csv", contains="rsna-knee")
-comp = test_csv.parent
-series_csv = comp / "test_series.csv"
-if not series_csv.exists():
-    series_csv = locate("test_series.csv")
-series_root = comp / "test_series"
-if not series_root.exists():
-    series_root = locate("test_series", want_dir=True)
-
-WEIGHTS = locate("dinov2_vitb14_pretrain.pth")
-CHECKPOINTS = locate_all_checkpoints()
+test_csv = COMP / "test.csv"
+series_csv = COMP / "test_series.csv"
+series_root = COMP / "test_series"
+CHECKPOINTS = locate_fold_checkpoints()
 
 for n, p in [
     ("CODE", CODE),
     ("PATCH", PATCH),
+    ("COMP", COMP),
     ("test_csv", test_csv),
     ("series_csv", series_csv),
     ("series_root", series_root),
     ("WEIGHTS", WEIGHTS),
 ]:
-    print(n, p, flush=True)
-print("CHECKPOINTS", len(CHECKPOINTS), "cuda?", flush=True)
-import torch
-
+    print(n, p, "ok" if p is not None and Path(p).exists() else "MISSING", flush=True)
+print("CHECKPOINTS", len(CHECKPOINTS), flush=True)
 print("torch.cuda.is_available()", torch.cuda.is_available(), flush=True)
 for i, ck in enumerate(CHECKPOINTS):
-    print(f"  fold{i}", ck, ck.stat().st_size if ck.exists() else 0, flush=True)
+    print(f"  fold{i}", ck, ck.stat().st_size, flush=True)
 
 cfg = WORK / "infer_v6c_5fold.yaml"
 cfg.write_text(
@@ -114,8 +112,10 @@ cfg.write_text(
 )
 
 try:
-    if len(CHECKPOINTS) < 1:
-        raise RuntimeError(f"Need >=1 checkpoint, found {len(CHECKPOINTS)}")
+    if len(CHECKPOINTS) < 5:
+        raise RuntimeError(f"Need 5 checkpoints, found {len(CHECKPOINTS)}")
+    if not torch.cuda.is_available():
+        raise RuntimeError("S01b requires GPU; S01 CPU path timed out at ~126s/study")
     summary = run_model_submission(
         test_csv=test_csv,
         series_csv=series_csv,
@@ -128,9 +128,11 @@ try:
         batch_size=1,
         num_workers=2,
         blend="uniform",
+        require_cuda=True,
+        log_every=25,
     )
-    summary["n_checkpoints"] = len(CHECKPOINTS)
     summary["experiment"] = "S01b_v6c_5fold_gpu_decode_once"
+    summary["patch"] = str(PATCH)
     print(json.dumps(summary, indent=2), flush=True)
     if float(summary["runtime_s"]) >= 9 * 60 * 60:
         raise RuntimeError("Exceeded 9h limit")

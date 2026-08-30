@@ -19,6 +19,7 @@ INCLUDE = [
     "scripts/build_cache.py",
     "scripts/infer_ensemble.py",
     "configs/rank1_v6c.yaml",
+    "configs/s02_v6c_blend_weights.json",
     "data/folds/folds_v1.csv",
 ]
 
@@ -78,7 +79,7 @@ def main() -> None:
                 "-p",
                 str(upload_dir),
                 "-m",
-                "decode-once infer + plane routing",
+                "decode-once infer + S02 baked blend weights",
                 "--dir-mode",
                 "zip",
             ]

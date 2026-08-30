@@ -10,10 +10,10 @@ GitHub branch: **`cursor/rank1-gpu-launch-1252`** (PR #5).
 ## TL;DR / immediate next action
 
 1. **GPU weekly quota exhausted** until **2026-09-05** (`kaggle quota`). Used ~33h / 30h.
-2. **Rank1 matched-4 gold = KILL lean:** 0.7124 vs v6c 0.7365 (Δ **−0.024**). MCL collapsed to 0.465. Skip fold4 by default.
-3. **When quota resets:** run **S01b first** (GPU decode-once 5-fold v6c submit), then competition submit. Queue S02 if LB ≥ 0.690.
-4. **S01** (ref **55851760**) **TIMED OUT** on hidden test (no score). Baseline LB still **0.682**.
-5. **Adopted:** v6c labels, frozen DINOv2-B, cache_v1. **Killed / kill-lean:** v8, GCE, yunus, label micro-tune, **rank1 plane+pw**.
+2. **Rank1 matched-4 gold = KILL lean:** 0.7124 vs v6c 0.7365 (Δ **−0.024**). Skip fold4 by default.
+3. **S01b ready:** patch re-uploaded (decode-once + baked S02 weights); kernels require CUDA+PATCH; sources pushed (GPU run blocked until reset).
+4. **When quota resets:** run **S01b first**, competition-submit, queue S02 if LB ≥ 0.690.
+5. **Adopted:** v6c + frozen-B + cache_v1. **Killed / kill-lean:** v8, GCE, yunus, rank1 plane+pw.
 
 ```bash
 export PATH="$HOME/.local/bin:$PATH"
@@ -23,9 +23,9 @@ mkdir -p ~/.kaggle && printf '%s' "$KAGGLE_API_TOKEN" > ~/.kaggle/access_token &
 kaggle quota
 kaggle competitions submissions rsna-knee-abnormality-detection -v
 
-# After 2026-09-05 — S01b FIRST (not fold4):
+# After 2026-09-05 — S01b FIRST (re-push with GPU from repo metadata):
 python3 scripts/push_kaggle_kernels.py submit-v6c-5fold-metadata.json
-# when COMPLETE:
+# when COMPLETE and summary shows device=cuda + decode_once:
 kaggle competitions submit rsna-knee-abnormality-detection \
   -k girishbose/submit-v6c-5fold -m "S01b: 5-fold v6c GPU decode-once"
 # If LB ≥ 0.690 → queue S02 (submit-v6c-5fold-s02)

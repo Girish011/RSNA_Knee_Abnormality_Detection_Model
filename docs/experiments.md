@@ -137,6 +137,12 @@ Append one row (or block) per run. Never delete history.
 - **v7 vs Qwen cross-check: 88.2% agreement on Turkish (2107 cells), 76.8% on Greek (482).** Two independent methods concur → both capture real signal; the agreement cells are high-precision.
 - conclusion: v7 is a validated independent multilingual labeler. Its highest-value use is a **v7∩Qwen consensus** (label where both agree, else abstain) for high-precision TR/EL supervision — not v7 alone. Blocker remains measurement: 6+3 TR/EL gold can't validate model impact → need an external ruler (MRNet/KneeMRI) before trusting a retrain delta.
 
+### 2026-08-30 — S01b/S02 hardened + patch re-upload (quota still 0)
+- S01 log: CPU, 126.3 s/study, no PATCH. Fold0 GPU probe 4.9 s/study. Budget: decode-once+5×GPU ≈ 6–12 s/study → 9h covers ~2.7k–5.4k studies.
+- Code: `require_cuda` + progress ETA; kernels use known-path lookup (no DICOM rglob); baked `configs/s02_v6c_blend_weights.json`.
+- Uploaded new `rsna-knee-rank1-patch`; CPU smoke S01b/S02 both resolve PATCH+5 ckpts and refuse CUDA-less runs.
+- conclusion: iterate — on **2026-09-05** re-push with `enable_gpu=true` via `push_kaggle_kernels.py`, run S01b, competition-submit; S02 only if LB ≥ 0.690.
+
 ### 2026-08-30 — Rank1 matched-4 gold OOF KILL lean (−0.024 vs v6c)
 - OOF: `train-b-fold{0..3}-rank1-v6c` vs `train-b-fold{0..3}-weak-v6c`; targets = 46 experts in folds 0–3 of `folds_v1.csv`.
 - Macro gold: rank1 **0.7124** vs v6c **0.7365** (Δ **−0.0241**, margin 0.005) → **KILL**. Bootstrap CI rank1 [0.665, 0.759] overlaps heavily; point estimate decisive under rule.

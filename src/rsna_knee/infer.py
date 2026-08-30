@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import time
 from pathlib import Path
 from typing import Any
@@ -183,6 +184,18 @@ def load_oof_blend_weights(
     return weights
 
 
+def load_blend_weights_json(path: Path) -> np.ndarray:
+    """Load baked ``(n_models, n_labels)`` blend weights from a JSON payload."""
+    payload = json.loads(Path(path).read_text())
+    weights = np.asarray(payload["weights"], dtype=np.float64)
+    if weights.ndim != 2 or weights.shape[1] != len(LABEL_COLS):
+        raise ValueError(f"bad blend weights shape {weights.shape}")
+    col_sums = weights.sum(axis=0, keepdims=True)
+    if not np.allclose(col_sums, 1.0, atol=1e-3):
+        weights = weights / np.clip(col_sums, 1e-12, None)
+    return weights
+
+
 def run_model_submission(
     *,
     test_csv: Path,
@@ -200,6 +213,8 @@ def run_model_submission(
     oof_csvs: list[Path] | None = None,
     train_csv: Path | None = None,
     weak_csv: Path | None = None,
+    require_cuda: bool = False,
+    log_every: int = 25,
 ) -> dict[str, Any]:
     """Run live DICOM inference and write submission.csv.
 
@@ -213,6 +228,8 @@ def run_model_submission(
     import torch
 
     t0 = time.perf_counter()
+    if require_cuda and not torch.cuda.is_available():
+        raise RuntimeError("CUDA required (S01 CPU path timed out at ~126s/study)")
     cfg = yaml.safe_load(config_path.read_text())
     data_cfg = cfg.get("data", {})
     model_cfg = cfg.get("model", {})
@@ -226,6 +243,11 @@ def run_model_submission(
     test = pd.read_csv(test_csv)
     series = pd.read_csv(series_csv)
     uids = test[SUBMISSION_ID_COL].astype(str).tolist()
+    print(
+        f"infer: n_studies={len(uids)} n_ckpt={len(checkpoints)} device={device} "
+        f"decode_once=True blend={blend}",
+        flush=True,
+    )
 
     # Load all models first, then decode each study once (critical for 9h limit).
     models = [
@@ -259,6 +281,7 @@ def run_model_submission(
     )
 
     pred_lists: list[list[np.ndarray]] = [[] for _ in models]
+    n_done = 0
     with torch.no_grad():
         for batch in loader:
             images = batch["images"].to(device)
@@ -270,6 +293,16 @@ def run_model_submission(
             for mi, model in enumerate(models):
                 logits = model(images, plane_ids, fluid, fat_sup, series_mask, slice_mask)
                 pred_lists[mi].append(torch.sigmoid(logits).cpu().numpy())
+            n_done += int(images.shape[0])
+            if log_every > 0 and (n_done % log_every == 0 or n_done == len(uids)):
+                elapsed = time.perf_counter() - t0
+                rate = elapsed / max(n_done, 1)
+                eta = rate * max(len(uids) - n_done, 0)
+                print(
+                    f"infer progress {n_done}/{len(uids)} "
+                    f"({rate:.2f}s/study, ETA {eta/60:.1f} min)",
+                    flush=True,
+                )
 
     preds = [np.concatenate(pl, axis=0) for pl in pred_lists]
 

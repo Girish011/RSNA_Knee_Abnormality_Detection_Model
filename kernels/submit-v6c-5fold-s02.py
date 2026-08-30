@@ -1,8 +1,7 @@
-# S02 — RSNA Knee 5-fold v6c per-label AUC-weighted blend
-# Hypothesis: weight each fold by its per-label val AUC (from OOF) beats uniform S01.
-# Attach: competition + rsna-knee-code + dinov2-vitb14-rsna-knee + rsna-knee-weak-v6c
-#   kernel_sources: train-b-fold{0..4}-weak-v6c (fold{F}_best.pt + fold{F}_oof.csv each)
-# GPU T4, internet OFF.
+# S02 — RSNA Knee 5-fold v6c per-label AUC-weighted blend (GPU decode-once)
+# Prefer baked weights in rank1-patch (configs/s02_v6c_blend_weights.json).
+# Queue only after scored S01b LB ≥ 0.690. Never INPUT.rglob the DICOM tree.
+# GPU T4, internet OFF. On Sep-5 push with enable_gpu=true (repo metadata).
 
 from __future__ import annotations
 
@@ -16,94 +15,84 @@ INPUT = Path("/kaggle/input")
 WORK = Path("/kaggle/working")
 
 
-def locate(name, contains=None, want_dir=False):
-    for p in INPUT.rglob(name):
-        if want_dir and not p.is_dir():
-            continue
-        if contains and contains.lower() not in str(p).lower():
-            continue
-        return p
+def first_existing(*cands: Path) -> Path | None:
+    for p in cands:
+        if p is not None and p.exists():
+            return p
     return None
 
 
-def locate_checkpoints_and_oof() -> tuple[list[Path], list[Path]]:
-    ckpts: dict[int, Path] = {}
-    oofs: dict[int, Path] = {}
-    for p in INPUT.rglob("fold*_best.pt"):
-        try:
-            fold = int(p.name.replace("fold", "").replace("_best.pt", ""))
-        except ValueError:
+def locate_fold_checkpoints() -> list[Path]:
+    found: dict[int, Path] = {}
+    roots: list[Path] = []
+    for base in [INPUT, INPUT / "datasets", INPUT / "kernels"]:
+        if not base.exists():
             continue
-        if 0 <= fold <= 4:
-            ckpts[fold] = p
-    for p in INPUT.rglob("fold*_oof.csv"):
-        try:
-            fold = int(p.name.replace("fold", "").replace("_oof.csv", ""))
-        except ValueError:
-            continue
-        if 0 <= fold <= 4:
-            oofs[fold] = p
-    folds = sorted(set(ckpts) & set(oofs))
-    return [ckpts[i] for i in folds], [oofs[i] for i in folds]
+        for p in base.iterdir():
+            if p.is_dir() and "train-b-fold" in p.name:
+                roots.append(p)
+    for root in roots:
+        for p in root.rglob("fold*_best.pt"):
+            name = p.name
+            if not (name.startswith("fold") and name.endswith("_best.pt")):
+                continue
+            try:
+                fold = int(name[4 : -len("_best.pt")])
+            except ValueError:
+                continue
+            if 0 <= fold <= 4:
+                found[fold] = p
+    if len(found) == 5:
+        return [found[i] for i in range(5)]
+    return [found[k] for k in sorted(found)]
 
 
-CODE = next(
-    (p for p in [INPUT / "datasets/girishbose/rsna-knee-code", INPUT / "rsna-knee-code"] if (p / "src").exists()),
-    None,
+CODE = first_existing(INPUT / "datasets/girishbose/rsna-knee-code", INPUT / "rsna-knee-code")
+PATCH = first_existing(
+    INPUT / "datasets/girishbose/rsna-knee-rank1-patch",
+    INPUT / "rsna-knee-rank1-patch",
 )
-if CODE is None:
-    hit = locate("train_baseline_fold.py")
-    CODE = hit.parents[1] if hit else None
-# Prefer patch infer (decode-once) over stale code dataset.
-PATCH = next(
-    (
-        p
-        for p in [
-            INPUT / "datasets/girishbose/rsna-knee-rank1-patch",
-            INPUT / "rsna-knee-rank1-patch",
-        ]
-        if (p / "src").exists() or (p / "src/rsna_knee/infer.py").exists()
-    ),
-    None,
+COMP = first_existing(
+    INPUT / "rsna-knee-abnormality-detection",
+    INPUT / "competitions/rsna-knee-abnormality-detection",
 )
+WEIGHTS = first_existing(
+    INPUT / "dinov2-vitb14-rsna-knee" / "dinov2_vitb14_pretrain.pth",
+    INPUT / "datasets/girishbose/dinov2-vitb14-rsna-knee" / "dinov2_vitb14_pretrain.pth",
+)
+
+if CODE is None or PATCH is None or COMP is None:
+    raise SystemExit(f"FATAL missing inputs CODE={CODE} PATCH={PATCH} COMP={COMP}")
+
 sys.path.insert(0, str(CODE / "src"))
-if PATCH is not None and (PATCH / "src").exists():
-    sys.path.insert(0, str(PATCH / "src"))
+sys.path.insert(0, str(PATCH / "src"))
 dino = CODE / "third_party" / "dinov2"
 if (dino / "hubconf.py").exists():
     os.environ["DINOV2_REPO"] = str(dino)
 
-from rsna_knee.infer import baseline_constant_submission, run_model_submission
+from rsna_knee.infer import (
+    baseline_constant_submission,
+    load_blend_weights_json,
+    run_model_submission,
+)
+import torch
 
-test_csv = locate("test.csv", contains="rsna-knee")
-comp = test_csv.parent
-series_csv = comp / "test_series.csv"
-if not series_csv.exists():
-    series_csv = locate("test_series.csv")
-series_root = comp / "test_series"
-if not series_root.exists():
-    series_root = locate("test_series", want_dir=True)
-
-train_csv = comp / "train.csv"
-if not train_csv.exists():
-    train_csv = locate("train.csv", contains="rsna-knee")
-WEAK = locate("weak_labels_v6c_candidate.csv")
-WEIGHTS = locate("dinov2_vitb14_pretrain.pth")
-CHECKPOINTS, OOF_CSVS = locate_checkpoints_and_oof()
+test_csv = COMP / "test.csv"
+series_csv = COMP / "test_series.csv"
+series_root = COMP / "test_series"
+CHECKPOINTS = locate_fold_checkpoints()
+BAKED = first_existing(PATCH / "configs" / "s02_v6c_blend_weights.json")
 
 for n, p in [
     ("CODE", CODE),
     ("PATCH", PATCH),
+    ("COMP", COMP),
     ("test_csv", test_csv),
-    ("series_csv", series_csv),
-    ("series_root", series_root),
-    ("train_csv", train_csv),
-    ("WEAK", WEAK),
     ("WEIGHTS", WEIGHTS),
+    ("BAKED", BAKED),
 ]:
-    print(n, p, flush=True)
-print("CHECKPOINTS", len(CHECKPOINTS), "OOF_CSVS", len(OOF_CSVS), flush=True)
-import torch
+    print(n, p, "ok" if p is not None and Path(p).exists() else "MISSING", flush=True)
+print("CHECKPOINTS", len(CHECKPOINTS), flush=True)
 print("torch.cuda.is_available()", torch.cuda.is_available(), flush=True)
 
 cfg = WORK / "infer_v6c_5fold.yaml"
@@ -113,8 +102,13 @@ cfg.write_text(
 )
 
 try:
-    if len(CHECKPOINTS) < 1:
-        raise RuntimeError(f"Need >=1 checkpoint, found {len(CHECKPOINTS)}")
+    if len(CHECKPOINTS) < 5:
+        raise RuntimeError(f"Need 5 checkpoints, found {len(CHECKPOINTS)}")
+    if not torch.cuda.is_available():
+        raise RuntimeError("S02 requires GPU; S01 CPU path timed out at ~126s/study")
+    if BAKED is None:
+        raise RuntimeError("Missing baked S02 weights in rank1-patch")
+    blend_weights = load_blend_weights_json(BAKED)
     summary = run_model_submission(
         test_csv=test_csv,
         series_csv=series_csv,
@@ -127,11 +121,12 @@ try:
         batch_size=1,
         num_workers=2,
         blend="per_label_auc",
-        oof_csvs=OOF_CSVS if OOF_CSVS else None,
-        train_csv=train_csv,
-        weak_csv=WEAK,
+        blend_weights=blend_weights,
+        require_cuda=True,
+        log_every=25,
     )
     summary["experiment"] = "S02_v6c_5fold_per_label_auc"
+    summary["baked_weights"] = str(BAKED)
     print(json.dumps(summary, indent=2), flush=True)
     if float(summary["runtime_s"]) >= 9 * 60 * 60:
         raise RuntimeError("Exceeded 9h limit")

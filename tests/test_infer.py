@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import json
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -39,3 +42,28 @@ def test_write_submission_schema(tmp_path):
     path = write_submission(uids, probs, tmp_path / "sub.csv")
     df = pd.read_csv(path)
     assert list(df.columns) == [SUBMISSION_ID_COL] + LABEL_COLS
+
+
+def test_load_blend_weights_json_normalizes(tmp_path):
+    from rsna_knee.infer import load_blend_weights_json
+
+    raw = np.ones((5, len(LABEL_COLS)), dtype=np.float64) * 2.0
+    path = tmp_path / "w.json"
+    path.write_text(json.dumps({"weights": raw.tolist(), "labels": list(LABEL_COLS)}))
+    w = load_blend_weights_json(path)
+    assert w.shape == (5, len(LABEL_COLS))
+    assert np.allclose(w.sum(axis=0), 1.0)
+
+
+def test_baked_s02_weights_in_repo():
+    from rsna_knee.infer import load_blend_weights_json
+
+    path = Path(__file__).resolve().parents[1] / "configs" / "s02_v6c_blend_weights.json"
+    assert path.exists(), "configs/s02_v6c_blend_weights.json missing"
+    w = load_blend_weights_json(path)
+    assert w.shape == (5, len(LABEL_COLS))
+    assert np.allclose(w.sum(axis=0), 1.0, atol=1e-5)
+    assert (w > 0).all()
+    # Near-uniform: no fold should dominate any label after weak-AUC weighting.
+    assert (w.max(axis=0) < 0.35).all()
+    assert (w.min(axis=0) > 0.10).all()

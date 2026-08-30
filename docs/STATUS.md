@@ -1,6 +1,18 @@
 # STATUS
 
-Last updated: 2026-08-30 (rank1 matched-4 gold KILL lean; GPU quota until 2026-09-05)
+Last updated: 2026-08-30 (S01b/S02 hardened; patch re-uploaded; GPU until 2026-09-05)
+
+## 2026-08-30 — S01b/S02 launch hardening (no GPU)
+- **S01 autopsy:** visible-test log shows **CPU**, **126.3 s/study**, 5 ckpts, **no PATCH** (`experiment=S01_v6c_5fold`). Fold0 GPU probe was **4.9 s/study** (1 ckpt). Hidden-test size unknown (visible=3).
+- **Runtime budget (decode-once + 5 GPU forwards):** expect ~**6–12 s/study** → ≤~2700–5400 studies in 9h. If hidden ≈ train (4.4k), still within budget at ≤7.5 s/study.
+- **Shipped:**
+  - `require_cuda` + progress ETA in `infer.run_model_submission`
+  - S01b/S02 kernels: known-path lookup (no DICOM `rglob`), refuse missing PATCH/CUDA, baked S02 weights
+  - `configs/s02_v6c_blend_weights.json` (5×12, near-uniform ~0.15–0.25)
+  - Re-uploaded `girishbose/rsna-knee-rank1-patch` (decode-once infer + baked weights)
+  - CPU smoke: S01b v3 + S02 v4 COMPLETE — both find PATCH+5 ckpts+baked weights, correctly fall back with `requires GPU` (do not competition-submit these CPU versions)
+- Tests: `test_infer`+`test_evaluation` **9 passed**.
+- **Sep-5:** `python3 scripts/push_kaggle_kernels.py submit-v6c-5fold-metadata.json` (repo metadata has `enable_gpu=true` + T4 pin) → wait COMPLETE → competition submit.
 
 ## 2026-08-30 — Rank1 matched-4 gold OOF = KILL lean (−0.024 vs v6c)
 - Downloaded OOF from `train-b-fold{0..3}-rank1-v6c` + v6c baselines; scored vs 46 experts in `folds_v1.csv` (folds 0–3).
