@@ -96,9 +96,27 @@ article h2 {
   margin-top: 2rem;
 }
 
-article .todo {
-  border-left: 3px solid var(--rule);
-  padding-left: 0.75rem;
-  color: var(--muted);
-  font-style: italic;
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+  margin: 1rem 0 1.5rem;
+}
+
+th,
+td {
+  border-bottom: 1px solid var(--rule);
+  text-align: left;
+  vertical-align: top;
+  padding: 0.45rem 0.5rem 0.45rem 0;
+}
+
+th {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+code {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 0.88em;
 }

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>01 — Imaging Playbook — RSNA Knee</title>
+  <title>01: Imaging Playbook - RSNA Knee</title>
   <link rel="stylesheet" href="../css/style.css" />
 </head>
 <body>
@@ -18,40 +18,136 @@
 
   <main>
     <article>
-      <p class="meta">Post 01 · outline stub</p>
+      <p class="meta">Post 01</p>
       <h1>An Imaging Playbook for RSNA Knee Abnormality Detection</h1>
-      <p class="todo">
-        Draft the full post in
-        <code>site/posts/01-imaging-playbook.md</code>, then mirror finished sections here (or we add a build step later).
-      </p>
-
-      <h2>1. Series framing</h2>
-      <p class="todo">TODO</p>
-
-      <h2>2. What the problem actually is</h2>
-      <p class="todo">TODO</p>
-
-      <h2>3. The two exams problem</h2>
-      <p class="todo">TODO — include brief multilingual teacher teaser</p>
-
-      <h2>4. Foundations remapped</h2>
-      <p class="todo">TODO</p>
-
-      <h2>5. Four-step agent workflow</h2>
-      <p class="todo">TODO</p>
-
-      <h2>6. Constraints from prior probes (kill ledger)</h2>
-      <p class="todo">TODO — constraints only, not continuing scoreboard</p>
-
-      <h2>7. Greenfield thesis</h2>
-      <p class="todo">TODO</p>
-
-      <h2>8. Series roadmap</h2>
-      <p class="todo">TODO</p>
-
-      <h2>9. Attribution</h2>
-      <p class="todo">TODO</p>
+      <p>This series takes ideas from top Kaggle competitors and applies them to <a href="https://www.kaggle.com/competitions/rsna-knee-abnormality-detection">RSNA Knee Abnormality Detection</a>.</p>
+      <p><strong>RSNA</strong> is the Radiological Society of North America. This contest is about finding knee problems in <strong>MRI</strong> scans (magnetic resonance imaging: detailed hospital scans of soft tissue). It is a <strong>code competition</strong>: you submit a program that runs on hidden data, not a spreadsheet of answers. It is <strong>not</strong> a classic table-of-numbers (tabular) contest.</p>
+      <p>We follow two NVIDIA writeups for how to work, not for copy-paste tricks meant for tables:</p>
+      <ul>
+        <li><a href="https://developer.nvidia.com/blog/the-kaggle-grandmasters-playbook-7-battle-tested-modeling-techniques-for-tabular-data/">The Kaggle Grandmasters Playbook: 7 Battle-Tested Modeling Techniques for Tabular Data</a></li>
+        <li><a href="https://developer.nvidia.com/blog/winning-a-kaggle-competition-with-generative-ai-assisted-coding/">Winning a Kaggle Competition with Generative AI-Assisted Coding</a></li>
+      </ul>
+      <p>What we keep from them: try ideas quickly, trust a careful local score before believing the public scoreboard, use coding assistants to move faster, and always save each experiment’s predictions. What we do <strong>not</strong> keep: recipes built for rows and columns. A knee exam is a stack of scan sequences, not one spreadsheet row.</p>
+      <p>This series starts <strong>from scratch</strong>. Older trial runs on this contest are only a list of what already failed, not a finished system we keep using.</p>
+      <h2>What the problem actually is</h2>
+      <p><strong>Job:</strong> look at one knee MRI <strong>exam</strong> (one scanning visit for one knee) and output <strong>12 numbers</strong> between 0 and 1. Each number is “how likely is this finding present?”</p>
+      <p><strong>Score:</strong> <strong>macro AUC</strong>. <strong>AUC</strong> means area under the <strong>ROC</strong> curve (receiver operating characteristic: a standard plot of true-positive rate vs false-positive rate; AUC summarizes how well the model ranks true cases above false ones). <strong>Macro</strong> means: compute AUC for each of the 12 labels, then average those 12 scores. If the model is great on fluid around the joint but useless on a torn <strong>ACL</strong> (anterior cruciate ligament) or on fracture, the average still suffers.</p>
+      <table>
+        <thead><tr><th>Piece</th><th>In plain terms</th></tr></thead>
+        <tbody>
+          <tr><td>Training exams</td><td>About 4,400 visits (<code>train.csv</code>)</td></tr>
+          <tr><td>Expert-checked exams</td><td>Only 58 visits have full expert labels (~1.3%)</td></tr>
+          <tr><td>Hidden test exams</td><td>About 1,300 (the public test file is almost empty)</td></tr>
+          <tr><td>Raw scans</td><td>Hundreds of gigabytes of <strong>DICOM</strong> files (the hospital image format) on Kaggle</td></tr>
+          <tr><td>Sequences per exam</td><td>Usually several (about 5.5 on average; from 3 to 14)</td></tr>
+        </tbody>
+      </table>
+      <p>One exam is <strong>not</strong> one photo. It is several <strong>series</strong> (scan sequences) from different <strong>planes</strong> (view directions: side/sagittal, front/coronal, top-down/axial), plus flags such as fluid-sensitive or fat-suppressed imaging.</p>
+      <p><strong>Training data</strong> includes written radiology reports in many languages, but most of the 12 label columns are empty except for those 58 expert exams. <strong>Test data</strong> has exam IDs, series info, and DICOM images, and <strong>no reports</strong>. So you cannot use report text when the final program runs. Building a system that needs reports at test time would also leak information that will not exist later.</p>
+      <h3>Contest rules: paid online language models (training only)</h3>
+      <p>An <strong>LLM</strong> is a large language model (a text AI such as a chat model). An <strong>API</strong> is a remote service you call over the internet.</p>
+      <p>The hosts say you <strong>may</strong> send training report text to a commercial LLM or similar service to help build labels, if that service follows the <a href="https://www.kaggle.com/competitions/rsna-knee-abnormality-detection/rules">Competition Rules</a>, including section <strong>2.6.b (External Data and Tools)</strong>: it must be <strong>reasonably available to everyone</strong> and <strong>not expensive</strong>. Doing that is <strong>not</strong>, by itself, illegal “private sharing” of contest data outside your team. Private sharing still means: do not team up or trade contest work with people outside your registered team. The hosts can still ban a service that is unfair, locked away, or too costly.</p>
+      <p>For this series: using an affordable, public LLM service to help create training labels offline is allowed. Calling such a service <strong>inside the final submission notebook</strong> is not (no internet; no reports on the test set).</p>
+      <h3>Contest rules: KneeCoT is banned</h3>
+      <p><a href="https://huggingface.co/datasets/YiHui0124/KneeCoT">KneeCoT</a> is an outside knee dataset on Hugging Face. Access is gated. The license is <strong>CC BY-NC 4.0</strong> (Creative Commons Attribution NonCommercial), and users must sign a formal ethics agreement with the hospital that owns the data.</p>
+      <p>The hosts decided KneeCoT is <strong>not allowed</strong>. Reason: that agreement can favor people who can get institutional approval over people who cannot, which breaks the “equally accessible” idea in the rules. Unless the hosts change their mind, we will <strong>not</strong> train or copy knowledge from KneeCoT.</p>
+      <p>This is still a <strong>code competition</strong>: your notebook must finish within <strong>9 hours</strong>, with the internet turned off. Uploading a hand-made answer file is rejected. There are <strong>two finals</strong>: one for highest accuracy (AUC), and one for <strong>efficiency</strong> (good enough accuracy plus how fast the run is).</p>
+      <p>The <strong>CSV</strong> files (comma-separated values: simple spreadsheet-like text tables) only describe the exams. The real data is the images.</p>
+      <h2>The two exams problem</h2>
+      <p>Most failed ideas come from training and scoring on different “exams”:</p>
+      <ul>
+        <li><strong>What you train on:</strong> imperfect labels taken from radiology reports written in many languages (plus those 58 expert exams).</li>
+        <li><strong>What Kaggle scores:</strong> expert radiologists judging the <strong>images</strong> on a hidden test set.</li>
+      </ul>
+      <p>You never directly optimize the exact thing the scoreboard uses. So choosing <em>how</em> you measure progress is as important as choosing a model.</p>
+      <table>
+        <thead><tr><th>Yardstick</th><th>Honest use</th></tr></thead>
+        <tbody>
+          <tr><td>Weak-label validation AUC</td><td>Quick smoke check only; it usually looks better than the public scoreboard</td></tr>
+          <tr><td>Full-58 expert macro AUC</td><td>Main keep-or-kill score (single labels are noisy at this tiny size; use the average of all 12)</td></tr>
+          <tr><td>Public <strong>LB</strong> (leaderboard)</td><td>Reality check only; tiny score changes are often noise</td></tr>
+          <tr><td>Top of the leaderboard (~0.94)</td><td>The real gap we must close</td></tr>
+        </tbody>
+      </table>
+      <p>From older trials (not this series’ current standing): weak-label scores can sit about 0.07 above the public leaderboard; the 58-expert score can sit about 0.02 above it. Use those as rough offsets for the yardsticks, not as a claim that a new system is already there.</p>
+      <p>One more host detail: borderline findings (“maybe / on the fence”) are marked <strong>negative</strong>. The hosts prefer fewer false alarms. Also, the 58 expert exams are <strong>not</strong> a mini copy of the full report set (for example, ACL tears are much more common in the 58 than in the reports). Do not use those 58 exams to set probability cutoffs. Use them only as a ranking yardstick, with a firm margin before you call a change a win.</p>
+      <h3>Multilingual reports (short)</h3>
+      <p>Reports appear in French (many), Turkish (about 600), Spanish, German, Greek (about 320), Dutch, and English. Saying “no” is not always English-shaped. In Turkish, the denial often comes <strong>after</strong> the noun (for example, wording like “efüzyon izlenmedi” means roughly “effusion not seen”). Tools that only search English keywords miss a lot.</p>
+      <p>How we build language recipes in detail comes in a later post. Here the point is simple: the text teacher speaks many languages and is imperfect.</p>
+      <h2>Two foundations, remapped</h2>
+      <p>The Grandmasters Playbook rests on two habits. Here they mean:</p>
+      <p><strong>Try ideas fast.</strong> The full image set does not fit a normal laptop. We keep small tables locally, and we decode images, train, and submit on Kaggle, under weekly <strong>GPU</strong> limits (graphics processing unit: the chip used to train deep models quickly) and session caps. Speed means: (1) a reusable image cache that is cheap to rebuild, (2) submission code that opens known folders instead of blindly searching the whole scan tree, and (3) coding assistants that write boilerplate so people spend time on scoring rules and kill decisions.</p>
+      <p><strong>Validate carefully.</strong> Match the yardstick to what the contest grades. Policy for this series:</p>
+      <ul>
+        <li>Keep or kill using <strong>full-58 expert macro AUC</strong>, needing at least a <strong>0.005</strong> gain.</li>
+        <li>Do not ship a change based only on weak-label scores.</li>
+        <li>Do not flip a decision because one single label jumped on only 58 exams.</li>
+        <li>The public leaderboard confirms; it does not choose the winner for us.</li>
+      </ul>
+      <h2>Four-step assistant workflow</h2>
+      <p>Chris Deotte’s post on AI-assisted coding describes a four-step loop where software assistants write code and a person steers. For knee MRI:</p>
+      <ol>
+        <li><strong>EDA</strong> (exploratory data analysis: looking carefully at the data before modeling): How many exams and series? Which view directions? What is missing at test time? Where do reports disagree with experts? Do hospitals and scanners differ?</li>
+        <li><strong>Baselines:</strong> Train a first full pipeline (often with <strong>k-fold</strong> validation: split data into k parts, hold one part out each time). Save <strong>OOF</strong> predictions (out-of-fold: scores on data the model did not train on in that fold) and test predictions with clear file names. Print the metric every fold.</li>
+        <li><strong>Improve:</strong> Change <strong>one</strong> thing per run (how much of the scan we load, how we combine slices, which text labels we trust, or the loss). Keep winners. Write down losers.</li>
+        <li><strong>Combine:</strong> Blend or stack models only after one model is strong enough, and only if the blend still fits inside the 9-hour limit.</li>
+      </ol>
+      <p>Assistants speed up coding. Yardsticks decide what we keep. Every run leaves prediction files behind, including failures.</p>
+      <h2>What already failed (kill list)</h2>
+      <p>Older work on this contest produced a clear “do not repeat” list. This series treats it as design input, not as the system we are shipping.</p>
+      <table>
+        <thead><tr><th>What was tried</th><th>What happened, and the rule we take</th></tr></thead>
+        <tbody>
+          <tr><td>Unfreezing the whole image backbone aggressively</td><td>Expert score collapsed → keep the backbone frozen by default; unfreeze only in a careful, gated trial</td></tr>
+          <tr><td>Naively loading more series and more slices</td><td>Score got worse than a thinner cache → “more pixels” without a plan is not a plan</td></tr>
+          <tr><td>Fine-tuning only the last layer on the 58 experts</td><td>No lasting win → those 58 exams are too small to be the main training set</td></tr>
+          <tr><td>Using a public outside KneeMRI set as the score or as extra training</td><td>About chance-level on ACL (different hospitals and scan layouts) → outside MRI is not a stand-in yardstick</td></tr>
+          <tr><td>Gated KneeCoT (Hugging Face + hospital agreement)</td><td>Host banned it as unfair access → never use it for extra training</td></tr>
+          <tr><td>Clever per-plane routing plus class weights</td><td>Expert score fell; <strong>MCL</strong> (medial collateral ligament) got worse → routing must prove itself under the same yardstick</td></tr>
+          <tr><td>Endless tiny label edits without a hard quality gate</td><td>Random wrong fills hurt ligament labels → build at most one fair LLM/keyword teacher, check it on the 58 experts, then <strong>lock</strong> it</td></tr>
+          <tr><td>Thin fixed cache such as 3 series × 12 slices × 224 pixels</td><td>Stuck far below leaders → the remaining gap is how much of the MRI the model actually sees</td></tr>
+          <tr><td>Multi-model ensemble decoding on <strong>CPU</strong> (central processing unit: normal computer chip, slower for this)</td><td>Timed out on the full hidden test size → submission speed is a hard product requirement from day one</td></tr>
+        </tbody>
+      </table>
+      <p>Leaders sit near about 0.94 on the public leaderboard. Thin frozen-image setups with noisy text labels historically sat in the high 0.60s. Closing that gap is mostly an <strong>image system</strong> problem under a locked text teacher, not another spreadsheet of labels.</p>
+      <h2>Starting plan (from scratch)</h2>
+      <p>Given that kill list, this series bets on a different design:</p>
+      <ol>
+        <li><strong>Lock a fair text teacher.</strong> During training only, we may use affordable, open LLM services (or public local models) under rule 2.6.b to help turn reports into labels. Check quality once on the 58 experts, write down which service we used so others could afford the same path, then lock it. Never call outside APIs from the submission notebook.</li>
+        <li><strong>Make the MRI the main product.</strong> Stop using one thin, uniform crop of the exam. Prefer a smart sampling plan: more side-view slices for ligaments and menisci; enough front and top-down views for arthritis, fluid, and bone. Decode each scan once. Leave time budget before any five-model blend.</li>
+        <li><strong>One strong exam model before blends.</strong> The model should see slices in order (short “video-like” or attention-over-slices designs). Beat a high full-58 expert bar with <strong>one</strong> model before blending folds or views.</li>
+        <li><strong>Build the fast student at the same time.</strong> Same cache and same labels; smaller or faster model for the efficiency final. Do not leave that prize as an afterthought.</li>
+        <li><strong>Treat submission as part of the design.</strong> Use known DICOM folders, decode on GPU once, do not blindly search the whole tree, and time the run on more than three tiny placeholder exams. At test time: images and series info only.</li>
+      </ol>
+      <p>Later posts build and measure this plan step by step.</p>
+      <h2>Series roadmap</h2>
+      <table>
+        <thead><tr><th>Idea from the tabular playbook</th><th>What it means for knee MRI</th><th>Post</th></tr></thead>
+        <tbody>
+          <tr><td>Core foundations</td><td>Fast Kaggle loop + full-58 expert yardstick</td><td>01 (this post)</td></tr>
+          <tr><td>Smarter EDA</td><td>Exams, view planes, multilingual reports, hospital shift</td><td>02</td></tr>
+          <tr><td>Diverse baselines</td><td>New simple baselines (from scratch, not the old stack)</td><td>03</td></tr>
+          <tr><td>Feature engineering</td><td>Smart sampling of the MRI volume</td><td>04</td></tr>
+          <tr><td>Pseudo-labeling</td><td>Fair text teacher (rule 2.6.b) + quality gate, then lock</td><td>05</td></tr>
+          <tr><td>Hill climb / stacking</td><td>Only after one model is strong; stay under 9 hours</td><td>06</td></tr>
+          <tr><td>Extra training</td><td>More random seeds / all training data after the yardstick says yes</td><td>07</td></tr>
+          <tr><td>Combine / ship</td><td>Best-AUC final + efficiency student</td><td>08</td></tr>
+        </tbody>
+      </table>
+      <p>Code and posts live in one public repository: <a href="https://github.com/Girish011/RSNA_Knee_Abnormality_Detection_Model">RSNA_Knee_Abnormality_Detection_Model</a>.</p>
+      <h2>Attribution</h2>
+      <p>Method sources:</p>
+      <ul>
+        <li><a href="https://developer.nvidia.com/blog/the-kaggle-grandmasters-playbook-7-battle-tested-modeling-techniques-for-tabular-data/">Grandmasters Playbook</a> (Onodera, Viel, Titericz, Deotte)</li>
+        <li><a href="https://developer.nvidia.com/blog/winning-a-kaggle-competition-with-generative-ai-assisted-coding/">Winning with Generative AI-Assisted Coding</a> (Deotte)</li>
+      </ul>
+      <p>Competition: <a href="https://www.kaggle.com/competitions/rsna-knee-abnormality-detection">RSNA Knee Abnormality Detection</a>. Rules: <a href="https://www.kaggle.com/competitions/rsna-knee-abnormality-detection/rules">Competition Rules</a> section 2.6.b (external data and tools), including the host notes on commercial LLMs for training-time report work and on banning KneeCoT.</p>
+      <p>Numbers from older trials are <strong>history used for redesign</strong>. They are not this series’ published leaderboard standing.</p>
     </article>
   </main>
+
+  <footer class="site-footer">
+    <p><a href="../index.html">Back to series hub</a></p>
+  </footer>
 </body>
 </html>
