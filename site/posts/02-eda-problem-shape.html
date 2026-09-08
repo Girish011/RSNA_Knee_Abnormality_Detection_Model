@@ -47,7 +47,12 @@
         <li><strong>Coronal</strong> = front view</li>
         <li><strong>Axial</strong> = top-down view</li>
       </ul>
-      <figure class="post-figure"><img src="../assets/eda_planes.png" alt="Train series by anatomical plane" loading="lazy" /><figcaption>Train series by anatomical plane</figcaption></figure>
+      <div style="display: flex; justify-content: center;">
+        <figure class="post-figure" style="margin: 0; max-width: 100%;">
+          <img src="../assets/eda_planes.png" alt="Train series by anatomical plane" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 0 auto;" />
+          <figcaption>Train series by anatomical plane</figcaption>
+        </figure>
+      </div>
       <table>
         <thead><tr><th>Plane</th><th>Series count</th><th>Share of all series</th></tr></thead>
         <tbody>
@@ -111,7 +116,9 @@ python notebooks/01_data_audits.py</code></pre>
       </ul>
       <p>Code lives in the public monorepo: <a href="https://github.com/Girish011/RSNA_Knee_Abnormality_Detection_Model">RSNA_Knee_Abnormality_Detection_Model</a>.</p>
       <h2>Attribution</h2>
-      <p>Series context: <a href="01-imaging-playbook.html">Post 01: An Imaging Playbook for RSNA Knee Abnormality Detection</a>.</p>
+      <div style="width:100%; box-sizing:border-box;">
+        <p>Series context: <a href="01-imaging-playbook.html">Post 01: An Imaging Playbook for RSNA Knee Abnormality Detection</a>.</p>
+      </div>
       <p>Competition: <a href="https://www.kaggle.com/competitions/rsna-knee-abnormality-detection">RSNA Knee Abnormality Detection</a>.</p>
       <p>Method habit (look before you model): <a href="https://developer.nvidia.com/blog/the-kaggle-grandmasters-playbook-7-battle-tested-modeling-techniques-for-tabular-data/">The Kaggle Grandmasters Playbook</a>.</p>
     </article>
