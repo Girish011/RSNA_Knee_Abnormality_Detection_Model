@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>02: Looking at the data carefully - RSNA Knee</title>
+  <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body>
+  <header class="site-header">
+    <p class="brand">RSNA Knee Imaging Playbook</p>
+    <nav>
+      <a href="../index.html">Series</a>
+      <a href="../about.html">About</a>
+      <a href="https://github.com/Girish011/RSNA_Knee_Abnormality_Detection_Model">Code</a>
+    </nav>
+  </header>
+
+  <main>
+    <article>
+      <p class="meta">Post 02</p>
+      <h1>Looking Carefully at the Knee MRI Data (EDA)</h1>
+      <p>This is Post 02 of the <a href="../index.html">RSNA Knee Imaging Playbook</a>. <strong>RSNA</strong> is the Radiological Society of North America. The contest is <a href="https://www.kaggle.com/competitions/rsna-knee-abnormality-detection">RSNA Knee Abnormality Detection</a>.</p>
+      <p><strong>EDA</strong> means exploratory data analysis: looking carefully at the data <em>before</em> building a model. Here we only use the public <strong>CSV</strong> tables (comma-separated values: spreadsheet-like text files). We do not open the huge <strong>DICOM</strong> image folders yet (DICOM is the hospital scan file format).</p>
+      <p>All numbers below come from <code>notebooks/01_data_audits.py</code> run on local copies of <code>train.csv</code> and <code>train_series.csv</code>.</p>
+      <h2>What one exam looks like</h2>
+      <p>In this contest, one training row is not one photo. It is one <strong>study</strong>: one scanning visit for one knee, identified by <code>StudyInstanceUID</code>.</p>
+      <p>Each study contains several <strong>series</strong> (scan sequences). Each series has:</p>
+      <ul>
+        <li>a plane (view direction)</li>
+        <li>flags for fluid-sensitive imaging and fat suppression</li>
+      </ul>
+      <table>
+        <thead><tr><th>Fact</th><th>Value from our audit</th></tr></thead>
+        <tbody>
+          <tr><td>Train studies</td><td>4,407</td></tr>
+          <tr><td>Train series</td><td>24,371</td></tr>
+          <tr><td>Series per study</td><td>min 3, mean 5.53, max 14</td></tr>
+          <tr><td>Expert-gold studies</td><td>58 (1.32% of train)</td></tr>
+        </tbody>
+      </table>
+      <p>So a typical exam is about five to six sequences, not one image. Any model that keeps only a tiny fixed crop of the exam is throwing most of the visit away on purpose.</p>
+      <h2>Planes (view directions)</h2>
+      <p><strong>Plane</strong> = which way the scanner cuts through the knee:</p>
+      <ul>
+        <li><strong>Sagittal</strong> = side view</li>
+        <li><strong>Coronal</strong> = front view</li>
+        <li><strong>Axial</strong> = top-down view</li>
+      </ul>
+      <figure class="post-figure"><img src="../assets/eda_planes.png" alt="Train series by anatomical plane" loading="lazy" /><figcaption>Train series by anatomical plane</figcaption></figure>
+      <table>
+        <thead><tr><th>Plane</th><th>Series count</th><th>Share of all series</th></tr></thead>
+        <tbody>
+          <tr><td>Sagittal</td><td>9,864</td><td>40.5%</td></tr>
+          <tr><td>Coronal</td><td>8,609</td><td>35.3%</td></tr>
+          <tr><td>Axial</td><td>5,898</td><td>24.2%</td></tr>
+        </tbody>
+      </table>
+      <p>More important than the mix: <strong>every</strong> train study has at least one Sagittal, one Coronal, and one Axial series (4,407 / 4,407 for each). So “hard labels” such as <strong>ACL</strong> (anterior cruciate ligament) are not failing because the side-view plane is missing from the metadata.</p>
+      <h2>Fluid-sensitive and fat-suppression flags</h2>
+      <p>Two columns appear on every series row:</p>
+      <ul>
+        <li><strong>Fluid_Sensitive</strong>: sequence that makes fluid stand out</li>
+        <li><strong>Fat_Suppression</strong>: technique that darkens fat so other tissue is clearer</li>
+      </ul>
+      <p>In this training CSV they are <strong>always paired</strong>:</p>
+      <ul>
+        <li>both 0 on 10,361 series</li>
+        <li>both 1 on 14,010 series</li>
+        <li>never one without the other</li>
+      </ul>
+      <p>For modeling, treat them as one combined style flag in this dataset, not as two independent switches.</p>
+      <h2>The 58 expert-gold exams</h2>
+      <p>Only <strong>58</strong> training studies have all 12 labels filled by experts (~1.32% of train). Everyone else has empty label cells in <code>train.csv</code> and must be supervised later from reports (or left unused for supervised training).</p>
+      <figure class="post-figure"><img src="../assets/eda_gold_rates.png" alt="Expert-gold positive rate for each of 12 labels" loading="lazy" /><figcaption>Expert-gold positive rate for each of 12 labels</figcaption></figure>
+      <p>Positive rate means: share of those 58 exams where the label is 1 (finding present). Examples from the chart:</p>
+      <ul>
+        <li><strong>Effusion</strong> (extra joint fluid) is common in gold</li>
+        <li><strong>ACL</strong> is about <strong>41%</strong> positive in gold</li>
+        <li>rarer labels such as <strong>MCL</strong> (medial collateral ligament) and fracture sit much lower</li>
+      </ul>
+      <p>That ACL rate is a warning. Host and prior notes say report-based ACL rates in the wider corpus are closer to ~20%. The gold 58 are <strong>not</strong> a mini copy of “average” training exams. Use them as a ranking yardstick (full-58 <strong>macro AUC</strong>), not as a normal sample for probability calibration. <strong>AUC</strong> means area under the ROC curve (a ranking score); <strong>macro</strong> means average the 12 label AUCs.</p>
+      <p>Host rule reminder: borderline / “on the fence” findings are graded <strong>negative</strong> (prefer fewer false alarms).</p>
+      <h2>Train vs test (what we did not audit yet)</h2>
+      <p>This post audited <strong>train</strong> metadata only.</p>
+      <table>
+        <thead><tr><th>Split</th><th>What we have in this audit</th></tr></thead>
+        <tbody>
+          <tr><td>Train</td><td>Full <code>train.csv</code> + <code>train_series.csv</code></td></tr>
+          <tr><td>Public test CSV</td><td>Not used here; in the contest it is basically a tiny placeholder</td></tr>
+          <tr><td>Hidden test</td><td>About 1,300 exams: images + series info, <strong>no radiology reports</strong></td></tr>
+        </tbody>
+      </table>
+      <p>So any system that needs report text at test time cannot ship. Labels from reports can only help <strong>training</strong>.</p>
+      <p>We also did not run language detection on the <code>Report</code> column in this step. Multilingual reports (French, Turkish, and others) remain a Post 05 topic.</p>
+      <h2>What this means for the greenfield plan</h2>
+      <ol>
+        <li><strong>Structure is rich.</strong> Every exam has all three planes and several series. A thin fixed cache such as “3 series × 12 slices” is a severe downsample, not a full exam reader.</li>
+        <li><strong>ACL difficulty is not “missing sagittal.”</strong> The side-view plane is present for every train study in metadata.</li>
+        <li><strong>Expert labels are rare and skewed.</strong> Lock a careful keep/kill rule on full-58 macro AUC; do not overfit tiny label edits to these 58 rows.</li>
+        <li><strong>Next coding lever is sampling.</strong> Post 03 / 04: build a first model path and an efficiency-aware plan for <em>which</em> series and slices to keep under the 9-hour submit limit.</li>
+      </ol>
+      <h2>How to reproduce</h2>
+      <pre><code># from the repo root, with pandas + matplotlib installed
+python notebooks/01_data_audits.py</code></pre>
+      <p>Outputs:</p>
+      <ul>
+        <li><code>outputs/eda/step_a_summary.txt</code></li>
+        <li><code>site/assets/eda_planes.png</code></li>
+        <li><code>site/assets/eda_gold_rates.png</code></li>
+      </ul>
+      <p>Code lives in the public monorepo: <a href="https://github.com/Girish011/RSNA_Knee_Abnormality_Detection_Model">RSNA_Knee_Abnormality_Detection_Model</a>.</p>
+      <h2>Attribution</h2>
+      <p>Series context: <a href="01-imaging-playbook.html">Post 01: An Imaging Playbook for RSNA Knee Abnormality Detection</a>.</p>
+      <p>Competition: <a href="https://www.kaggle.com/competitions/rsna-knee-abnormality-detection">RSNA Knee Abnormality Detection</a>.</p>
+      <p>Method habit (look before you model): <a href="https://developer.nvidia.com/blog/the-kaggle-grandmasters-playbook-7-battle-tested-modeling-techniques-for-tabular-data/">The Kaggle Grandmasters Playbook</a>.</p>
+    </article>
+  </main>
+
+  <footer class="site-footer">
+    <p><a href="../index.html">Back to series hub</a> · <a href="01-imaging-playbook.html">Post 01</a></p>
+  </footer>
+</body>
+</html>

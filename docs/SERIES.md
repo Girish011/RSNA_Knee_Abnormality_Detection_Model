@@ -53,6 +53,7 @@ Full locked plan (recovered from the original planning chat): [`docs/rsna_playbo
 - Submit notebook: offline, no reports.
 - Prefer external assets that are public, offline-bundleable for submit, and license-documented without one-off institutional approvals.
 
-## Drafting Post 01
+## Drafting
 
-Post 01 draft is filled in [`site/posts/01-imaging-playbook.md`](../site/posts/01-imaging-playbook.md) and mirrored to [`site/posts/01-imaging-playbook.html`](../site/posts/01-imaging-playbook.html).
+- Post 01: filled in [`site/posts/01-imaging-playbook.md`](../site/posts/01-imaging-playbook.md)
+- Post 02: filled in [`site/posts/02-eda-problem-shape.md`](../site/posts/02-eda-problem-shape.md) (from Step A audit + plots)

@@ -1,0 +1,8 @@
+RSNA Knee — Step A data audit (metadata only)
+train studies: 4407
+train series: 24371
+series per study: min=3, mean=5.53, max=14
+planes (series counts): {'Sagittal': 9864, 'Coronal': 8609, 'Axial': 5898}
+expert-gold studies: 58 (1.32% of train)
+studies with Sagittal/Coronal/Axial: 4407/4407/4407 of 4407
+Fluid_Sensitive==Fat_Suppression always paired: True in this CSV

@@ -156,3 +156,10 @@ Append one row (or block) per run. Never delete history.
 - runtime_s (cold): 
 - conclusion: keep / kill / iterate because ...
 ```
+
+### 2026-09-08 — Step A metadata EDA (local CSVs)
+- code: `notebooks/01_data_audits.py`
+- data: local `train.csv` + `train_series.csv` (Downloads); no DICOM decode
+- findings: 4407 studies, 24371 series, series/study 3–14 (mean 5.53); planes Sag 9864 / Cor 8609 / Ax 5898; all studies have all 3 planes; Fluid_Sensitive paired with Fat_Suppression; gold-58 = 1.32%, ACL+ rate 0.414 in gold
+- artifacts: `outputs/eda/step_a_summary.txt`, `site/assets/eda_planes.png`, `site/assets/eda_gold_rates.png`
+- conclusion: keep as Post 02 evidence; next = greenfield baseline planning (Post 03 / Step B), not resume old thin-cache stack
