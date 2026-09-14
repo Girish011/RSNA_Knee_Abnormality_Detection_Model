@@ -1,0 +1,20 @@
+{
+  "weak_val_best_macro_auc_from_ckpt": 0.7043286553550252,
+  "gold58_macro_auc": 0.6925480002466476,
+  "per_label_auc": {
+    "ACL": 0.6568627450980392,
+    "MCL": 0.4308390022675737,
+    "Medial Meniscus": 0.657451923076923,
+    "Lateral Meniscus": 0.7428571428571429,
+    "Medial OA": 0.8294573643410853,
+    "Lateral OA": 0.7640232108317214,
+    "PF OA": 0.7181467181467182,
+    "Effusion": 0.7527950310559007,
+    "Synovitis": 0.6977299880525687,
+    "Baker's": 0.7481884057971014,
+    "Contusion": 0.6761133603238867,
+    "Fracture": 0.6361111111111111
+  },
+  "baseline_v0_gold58": 0.7281,
+  "keep_threshold": 0.7331
+}
