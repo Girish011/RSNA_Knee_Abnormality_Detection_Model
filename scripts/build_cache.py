@@ -17,8 +17,37 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
+from rsna_knee.constants import PLANE_TO_ID
 from rsna_knee.data.dicom import load_series_volume, sample_slice_indices
-from rsna_knee.data.series import rank_and_select_series
+from rsna_knee.data.series import SeriesChoice, rank_and_select_series
+
+_PLANE_ORDER = ("Sagittal", "Coronal", "Axial")
+
+
+def _choices_from_picks(picks_df: pd.DataFrame, study_uid: str) -> list[SeriesChoice]:
+    """Use a precomputed picks table (exact series UIDs) for reproducible caches."""
+    sub = picks_df[picks_df["StudyInstanceUID"].astype(str) == str(study_uid)].copy()
+    if sub.empty:
+        return []
+    # Prefer canonical plane order when present.
+    order = {p: i for i, p in enumerate(_PLANE_ORDER)}
+    sub["_ord"] = sub["Anatomical_Plane"].map(lambda p: order.get(str(p), 99))
+    sub = sub.sort_values("_ord")
+    choices: list[SeriesChoice] = []
+    for _, row in sub.iterrows():
+        plane = str(row["Anatomical_Plane"])
+        choices.append(
+            SeriesChoice(
+                study_uid=str(study_uid),
+                series_uid=str(row["SeriesInstanceUID"]),
+                plane=plane,
+                plane_id=PLANE_TO_ID.get(plane, PLANE_TO_ID["Unknown"]),
+                fluid_sensitive=int(row.get("Fluid_Sensitive", 0) or 0),
+                fat_suppression=int(row.get("Fat_Suppression", 0) or 0),
+                score=0.0,
+            )
+        )
+    return choices
 
 
 def build_study_cache(
@@ -30,9 +59,13 @@ def build_study_cache(
     max_series: int = 3,
     n_slices: int = 12,
     image_size: int = 224,
+    picks_df: pd.DataFrame | None = None,
 ) -> dict:
     """Write one npz per study: images uint8 (S,N,H,W) + metadata arrays."""
-    choices = rank_and_select_series(series_df, study_uid, max_series=max_series)
+    if picks_df is not None:
+        choices = _choices_from_picks(picks_df, study_uid)
+    else:
+        choices = rank_and_select_series(series_df, study_uid, max_series=max_series)
     s, n, h = max_series, n_slices, image_size
     images = np.zeros((s, n, h, h), dtype=np.uint8)
     plane_ids = np.zeros((s,), dtype=np.int64)
@@ -87,19 +120,33 @@ def main() -> None:
     parser.add_argument("--max-series", type=int, default=3)
     parser.add_argument("--n-slices", type=int, default=12)
     parser.add_argument("--image-size", type=int, default=224)
+    parser.add_argument(
+        "--picks-csv",
+        type=Path,
+        default=None,
+        help="Optional series picks CSV (StudyInstanceUID, SeriesInstanceUID, Anatomical_Plane, ...)",
+    )
     parser.add_argument("--limit", type=int, default=0, help="Optional study cap for smoke tests")
     parser.add_argument("--study-list", type=Path, default=None, help="Optional txt of StudyInstanceUIDs")
     args = parser.parse_args()
 
     train = pd.read_csv(args.train_csv)
     series = pd.read_csv(args.series_csv)
+    picks_df = pd.read_csv(args.picks_csv) if args.picks_csv else None
     uids = train["StudyInstanceUID"].astype(str).tolist()
+    if picks_df is not None:
+        uids = picks_df["StudyInstanceUID"].astype(str).unique().tolist()
     if args.study_list and args.study_list.exists():
         uids = [ln.strip() for ln in args.study_list.read_text().splitlines() if ln.strip()]
     if args.limit and args.limit > 0:
         uids = uids[: args.limit]
 
     args.out_dir.mkdir(parents=True, exist_ok=True)
+    print(
+        f"studies={len(uids)} max_series={args.max_series} "
+        f"n_slices={args.n_slices} image_size={args.image_size} "
+        f"picks={'yes' if picks_df is not None else 'rank'}"
+    )
     manifest = []
     for uid in tqdm(uids, desc="cache"):
         out_path = args.out_dir / f"{uid}.npz"
@@ -115,6 +162,7 @@ def main() -> None:
                 max_series=args.max_series,
                 n_slices=args.n_slices,
                 image_size=args.image_size,
+                picks_df=picks_df,
             )
             manifest.append(entry)
         except Exception as e:  # noqa: BLE001 — keep building despite bad series

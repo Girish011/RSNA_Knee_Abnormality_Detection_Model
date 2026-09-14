@@ -81,6 +81,13 @@ def main() -> None:
     )
     print("device", device)
 
+    seed = int(cfg.get("train", {}).get("seed", 42))
+    torch.manual_seed(seed)
+    np.random.seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed)
+    print("seed", seed)
+
     train = pd.read_csv(args.train_csv)
     train = merge_weak_labels(train, args.weak_csv)
     train = attach_folds(train, args.folds)
