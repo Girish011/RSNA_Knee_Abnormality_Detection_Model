@@ -46,6 +46,7 @@ outputs/checkpoints/
 outputs/logs/
 outputs/submissions/
 outputs/kaggle_code_upload/
+outputs/kaggle_upload/
 !outputs/experiments/.gitkeep
 !data/folds/.gitkeep
 !data/folds/*.csv

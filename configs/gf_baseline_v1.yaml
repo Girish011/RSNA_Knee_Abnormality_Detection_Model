@@ -1,32 +1,31 @@
 # gf = greenfield (new plan, not the old stack)
-# v0 = first simple baseline
+# v1 = volume iterate #1: same series picks as v0, more slices
 
 # Words to know
 # YAML: settings written as key: value (indentation matters; use spaces, not tabs)
 # backbone: the pretrained image network (here DINOv2-S)
-# frozen: backbone weights stay fixed; only a small head learns at first
+# frozen: backbone weights stay fixed; only a small head learns
 # ruler: how we decide keep vs kill
 
 experiment:
-  id: gf_baseline_v0
+  id: gf_baseline_v1
   track: main
-  notes: "Greenfield v0: 1 sag + 1 cor + 1 ax, 12 slices, 224px, frozen DINOv2-S"
+  notes: "Greenfield v1 volume: same 1 sag+cor+ax picks as v0, 24 slices, 224px, frozen DINOv2-S"
 
 paths:
-  # On Kaggle these paths will change; for now document the plan
   train_csv: /kaggle/input/competitions/rsna-knee-abnormality-detection/train.csv
   train_series_csv: /kaggle/input/competitions/rsna-knee-abnormality-detection/train_series.csv
   folds: data/folds/folds_v1.csv
   weak_labels: data/processed/weak_labels_v1.csv
   series_picks: outputs/eda/gf_v0_series_picks.csv
-  cache_dir: /kaggle/input/datasets/girishbose/rsna-knee-cache-gf-v0/cache_gf_v0
-  output_dir: outputs/experiments/gf_baseline_v0
+  cache_dir: /kaggle/input/datasets/girishbose/rsna-knee-cache-gf-v1/cache_gf_v1
+  output_dir: outputs/experiments/gf_baseline_v1
   backbone_weights: null
 
 data:
-  # Volume recipe for v0
+  # Single-axis change vs v0: n_slices 12 -> 24 (same planes / size / teacher)
   max_series: 3
-  n_slices: 12
+  n_slices: 24
   image_size: 224
   center_bias: true
   require_plane_coverage: true
@@ -40,7 +39,6 @@ model:
   pretrained: true
 
 train:
-  # Fold 0 only for the first real train run
   n_folds: 5
   fold: 0
   seed: 42
@@ -57,7 +55,8 @@ loss:
   pos_weight: 1.0
 
 ruler:
-  # Keep/kill on full-58 gold macro AUC; weak-val is smoke only
+  # Keep if full-58 gold macro AUC >= v0 floor 0.7281 + 0.005
   primary: full58_gold_macro_auc
+  baseline_gold58: 0.7281
   margin: 0.005
   smoke: weak_label_val_auc

@@ -1,36 +1,46 @@
 # STATUS
 
-Last updated: 2026-09-10
+Last updated: 2026-09-14
 
 ## Phase
-**Greenfield Imaging Playbook** (learn + implement from scratch).
-Blog Posts 01–02 done. Coding Step B in progress.
-Do not resume the old label/cache campaign as the active plan.
+**Greenfield Imaging Playbook**. Blog Posts 01–03 done.
+Coding: **gf_baseline_v1 (24 slices) KILLED**. Active floor remains **gf_v0 gold-58 = 0.7281**.
 
 ## Done
-- Post 01 playbook + Post 02 EDA (site/)
-- Step A: metadata audit (`notebooks/01_data_audits.py`)
-- B.1–B.2: plane-covered series picker → `outputs/eda/gf_v0_series_picks.csv` (4407 studies × 3)
-- B.3: `configs/gf_baseline_v0.yaml`
+- Post 01–03 (`site/`)
+- gf_baseline_v0 fold0 + full-58 gold **0.7281** (weak-val smoke 0.718)
+- Volume iterate #1: `gf_baseline_v1` 12→24 slices → gold **0.7089** → **KILL**
 
-## Active design (gf_baseline_v0)
-- Series: 1 Sagittal + 1 Coronal + 1 Axial (prefer fluid-sensitive)
-- Cache plan: 3 × 12 slices × 224 (`cache_gf_v0`, not old cache_v1)
-- Labels for v0: `data/processed/weak_labels_v1.csv` (temporary teacher)
-- Model: frozen DINOv2-S, fold 0 first
-- Ruler: full-58 gold macro AUC, margin 0.005; weak-val is smoke only
+## Active design (still gf_baseline_v0)
+- 1 Sag + 1 Cor + 1 Ax; cache `cache_gf_v0` (3×12×224)
+- Temporary teacher: `weak_labels_v1.csv`
+- Frozen DINOv2-S; fold 0; no unfreeze
+- Ruler: full-58 gold macro AUC, margin 0.005
+
+## Gold-58 comparison
+| Run | Weak-val best | Gold-58 macro | Verdict |
+|---|---|---|---|
+| gf_v0 (12 slices) | 0.718 | **0.7281** | floor / KEEP |
+| gf_v1 (24 slices) | 0.723 | **0.7089** | KILL (Δ -0.019) |
 
 ## Next 3 actions
-1. B.4.1 local cache dry-run (`notebooks/03_cache_dry_run.py`)
-2. B.4.2 build `cache_gf_v0` on Kaggle (DICOMs)
-3. B.5 fold-0 train + log OOF / full-58 gold in `docs/experiments.md`
+1. Next volume lever: **resolution 224→336**, keep **12 slices** + same v0 series picks (single-axis).
+2. Build `cache_gf_v2` + fold0 train+gold; keep if gold ≥ 0.7331.
+3. Do not default to 24-slice cache; no LB until an OOF win over v0.
 
-## Blockers
-- Full DICOMs only on Kaggle (not on laptop)
-- Multi-machine: git push/pull + this STATUS/HANDOFF before switching
+## Kaggle artifacts (slugs)
+- v0 cache (active): `girishbose/rsna-knee-cache-gf-v0`
+- v0 meta: `girishbose/rsna-knee-gf-v0-meta`
+- v0 fold0: `girishbose/rsna-knee-gf-v0-fold0`
+- v1 meta: `girishbose/rsna-knee-gf-v1-meta`
+- v1 cache kernel (killed recipe): `girishbose/gf-cache-v1`
+- v1 train kernel (killed): `girishbose/gf-baseline-v1-fold0`
+- Competition: `rsna-knee-abnormality-detection`
 
 ## Do not
-- Use reports at test time
-- KneeCoT or other gated hospital-agreement datasets
-- Call commercial LLMs from the submit notebook
-- Treat old v6* / cache_v1 scores as the thing to continue
+- Reports at test time; KneeCoT; LLM APIs in submit
+- Treat weak-val as the ship ruler (v1 weak looked fine while gold fell)
+- Adopt 24-slice as default after this kill
+- Resume old v6c / cache_v1 as the active path
+- Unfreeze backbone yet
+- Push GPU scripts without `machine_shape: NvidiaTeslaT4`

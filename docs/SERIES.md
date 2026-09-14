@@ -57,3 +57,4 @@ Full locked plan (recovered from the original planning chat): [`docs/rsna_playbo
 
 - Post 01: filled in [`site/posts/01-imaging-playbook.md`](../site/posts/01-imaging-playbook.md)
 - Post 02: filled in [`site/posts/02-eda-problem-shape.md`](../site/posts/02-eda-problem-shape.md) (from Step A audit + plots)
+- Post 03: filled in [`site/posts/03-first-simple-models.md`](../site/posts/03-first-simple-models.md) (gf_v0 fold0; gold-58 ≈ 0.728)

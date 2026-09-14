@@ -87,3 +87,13 @@ Format: date | decision | why | rejected
 - **Decision:** Default train recipe keeps DINOv2 backbone frozen for all epochs; unfreeze only as a deliberate later experiment with tiny LR / last-block-only.
 - **Why:** B fold0 freeze→×0.05 LR unfreeze collapsed 0.729→0.615 (same as early S).
 - **Rejected:** Staged unfreeze as the default main-track schedule.
+
+## 2026-09-13 — Greenfield volume iterate #1 = more slices (not more series / not unfreeze)
+- **Decision:** Next greenfield experiment after gf_v0 is `gf_baseline_v1`: **same series picks**, `n_slices` 12→**24**, image_size 224, frozen DINOv2-S, weak_v1, fold0. Keep if full-58 gold macro ≥ v0 0.7281 + 0.005.
+- **Why:** v0 weak spots are ACL/MCL/Contusion; thin depth along each plane is the clearest single volume lever. Old cache_v2 (4×16) already failed on the prior stack, so do not jump to more series first. Unfreeze remains blocked by the 2026-08-12 decision.
+- **Rejected:** Multi-fold-first before any volume change; 224→336 as the first volume lever; adding a 4th series; unfreeze-on-v1.
+
+## 2026-09-14 — Kill gf_v1 24-slice; next try resolution 336
+- **Decision:** **KILL** `gf_baseline_v1` / `cache_gf_v1` as default. Keep `gf_v0` (3×12×224) as the gold floor. Next single-axis volume experiment = **image_size 224→336**, keep **12 slices** and the same v0 series picks.
+- **Why:** fold0 gold-58 fell 0.7281 → **0.7089** (Δ -0.019); MCL 0.451 (below chance). Weak-val (0.723) was misleading. Doubling slices without other changes hurt the ruler.
+- **Rejected:** Adopting 24-slice despite weak-val; jumping to more series next; unfreeze.

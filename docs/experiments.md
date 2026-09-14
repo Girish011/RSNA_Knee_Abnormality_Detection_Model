@@ -163,3 +163,45 @@ Append one row (or block) per run. Never delete history.
 - findings: 4407 studies, 24371 series, series/study 3–14 (mean 5.53); planes Sag 9864 / Cor 8609 / Ax 5898; all studies have all 3 planes; Fluid_Sensitive paired with Fat_Suppression; gold-58 = 1.32%, ACL+ rate 0.414 in gold
 - artifacts: `outputs/eda/step_a_summary.txt`, `site/assets/eda_planes.png`, `site/assets/eda_gold_rates.png`
 - conclusion: keep as Post 02 evidence; next = greenfield baseline planning (Post 03 / Step B), not resume old thin-cache stack
+
+### 2026-09-13 — gf_baseline_v0 fold0 train (Kaggle GPU, interactive)
+- config: `configs/gf_baseline_v0.yaml`
+- cache: `girishbose/rsna-knee-cache-gf-v0` (4407 npz, 3×12×224, plane-covered)
+- meta: `girishbose/rsna-knee-gf-v0-meta` (weak_v1 + folds_v1 + src)
+- fold 0; epochs 5; freeze_epochs 5; dinov2_vits14; lr 3e-4; pos_weight 1.0
+- studies with any weak label: 2449; train/val 1953/496 (all cached)
+- weak-val macro_auc by epoch: 0.670 → 0.701 → 0.732 → **0.742** → 0.741 (best ep3)
+- artifacts: **not persisted** (interactive `/kaggle/working` only; later gold cell FileNotFound)
+- conclusion: pipeline works; weak-val smoke only; need Save Version / Dataset for ckpt.
+
+### 2026-09-13 — gf_baseline_v0 fold0 retrain + gold-58 (API kernel)
+- kernel: `girishbose/gf-baseline-v0-fold0` v2 (`machine_shape: NvidiaTeslaT4`; v1 P100 failed CUDA)
+- same config/cache/meta/fold/epochs as above; no fixed seed (weak-val ≠ prior 0.742)
+- weak-val by epoch: 0.657 → 0.677 → 0.710 → 0.713 → **0.718** (best ep4)
+- **gold-58 macro_auc: 0.7281** (n=58, all 12 labels defined)
+- per-label gold: Effusion 0.903, Medial OA 0.870, Synovitis 0.792, PF OA 0.786, Lateral OA 0.758, Fracture 0.731, Baker's 0.696, Med Men 0.695, Lat Men 0.665, ACL 0.654, Contusion 0.628, MCL 0.560
+- artifacts Dataset: `girishbose/rsna-knee-gf-v0-fold0` (`fold0_best.pt`, OOF, `fold0_gold58_*.{csv,json}`)
+- local copy: `outputs/kaggle_download/gf-baseline-v0-fold0/gf_baseline_v0/`
+- conclusion: **first greenfield gold ruler = 0.728**. Weak spots MCL/ACL/Contusion. Next = Post 03 + choose volume iterate vs multi-fold; no LB until OOF win.
+
+### 2026-09-13 — gf_baseline_v1 volume iterate launched (12→24 slices)
+- decision: volume axis first (Post 04 writeup later); single change vs v0
+- config: `configs/gf_baseline_v1.yaml` (same 1 sag+cor+ax picks as v0, **n_slices=24**, 224, frozen DINOv2-S, weak_v1, fold0, seed=42)
+- keep/kill: gold-58 macro ≥ **0.7281 + 0.005 = 0.7331**
+- not changing: series count, resolution, teacher, unfreeze (DECISIONS: no unfreeze yet)
+- code: `scripts/build_cache.py` gains `--picks-csv` for exact v0 series UIDs
+- meta Dataset: `girishbose/rsna-knee-gf-v1-meta`
+- cache kernel: `girishbose/gf-cache-v1` (CPU; writes `/kaggle/working/cache_gf_v1`)
+- train+gold kernel (queued after cache): `girishbose/gf-baseline-v1-fold0` (T4; kernel_sources cache output)
+- conclusion: **running** — await cache then fold0 gold vs v0 floor.
+
+### 2026-09-14 — gf_baseline_v1 fold0 + gold-58 → **KILL**
+- kernel: `girishbose/gf-baseline-v1-fold0` COMPLETE (T4; cache from `girishbose/gf-cache-v1`)
+- cache: 4407 npz, shape (3, 24, 224, 224); same picks as v0
+- seed 42; frozen DINOv2-S 5ep; weak_v1
+- weak-val by epoch: 0.683 → 0.716 → 0.723 → 0.722 → **0.723** (best ep4)
+- **gold-58 macro_auc: 0.7089** (n=58) vs v0 **0.7281** (Δ **-0.019**); keep threshold was 0.7331
+- per-label gold: Effusion 0.847, PF OA 0.802, Synovitis 0.793, Lat OA 0.778, Contusion 0.753, Med OA 0.750, Baker's 0.717, Lat Men 0.691, Fracture 0.660, Med Men 0.649, ACL 0.615, **MCL 0.451**
+- vs v0: Contusion up; OA/Effusion/ACL/MCL down; MCL below chance
+- artifacts local: `outputs/kaggle_download/gf-baseline-v1-fold0/gf_baseline_v1/`
+- conclusion: **KILL 24-slice volume**. Do not make cache_gf_v1 the default. Next volume lever = **resolution 224→336** (same 12 slices / same picks), not more series.
