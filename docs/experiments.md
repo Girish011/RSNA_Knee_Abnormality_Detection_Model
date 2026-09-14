@@ -205,3 +205,21 @@ Append one row (or block) per run. Never delete history.
 - vs v0: Contusion up; OA/Effusion/ACL/MCL down; MCL below chance
 - artifacts local: `outputs/kaggle_download/gf-baseline-v1-fold0/gf_baseline_v1/`
 - conclusion: **KILL 24-slice volume**. Do not make cache_gf_v1 the default. Next volume lever = **resolution 224→336** (same 12 slices / same picks), not more series.
+
+### 2026-09-14 — gf_baseline_v2 volume iterate launched (224→336)
+- config: `configs/gf_baseline_v2.yaml` (same picks as v0, **12 slices**, **image_size=336**, frozen DINOv2-S, weak_v1, fold0, seed=42)
+- keep/kill: gold-58 ≥ **0.7331**
+- meta: `girishbose/rsna-knee-gf-v2-meta`
+- cache kernel: `girishbose/gf-cache-v2`
+- train kernel (after cache): `girishbose/gf-baseline-v2-fold0` (T4)
+- conclusion: **running**
+
+### 2026-09-14 — gf_baseline_v2 fold0 + gold-58 → **KILL**
+- kernel: `girishbose/gf-baseline-v2-fold0` COMPLETE (T4; cache from `gf-cache-v2`)
+- cache: 4407 npz, shape (3, 12, 336, 336); same picks as v0
+- xFormers missing warnings: ignore (expected without xformers)
+- weak-val by epoch: 0.685 → 0.673 → 0.703 → 0.698 → **0.704** (best ep4)
+- **gold-58 macro_auc: 0.6925** vs v0 **0.7281** (Δ **-0.036**); keep threshold 0.7331
+- per-label gold: Med OA 0.829, Lat OA 0.764, Effusion 0.753, Baker's 0.748, Lat Men 0.743, PF OA 0.718, Synovitis 0.698, Contusion 0.676, Med Men 0.657, ACL 0.657, Fracture 0.636, **MCL 0.431**
+- artifacts local: `outputs/kaggle_download/gf-baseline-v2-fold0/gf_baseline_v2/`
+- conclusion: **KILL 336px volume**. Both single-axis volume levers (slices, res) lost vs v0. Stop pure volume on 3-series recipe; next = multi-fold OOF on v0 or better teacher/labels.

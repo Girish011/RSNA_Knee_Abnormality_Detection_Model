@@ -10,27 +10,23 @@ Paste into a **new chat**. Source of truth: this file + `docs/STATUS.md` + `docs
 4. Tail of `docs/experiments.md`
 
 ## Where we are
-- **gf_v0 floor:** gold-58 ≈ **0.728** (Post 03 drafted).
-- User chose volume iterate. **gf_v1 (24 slices) KILLED:** gold **0.7089** (Δ -0.019 vs v0).
-- Weak-val on v1 looked OK (~0.723) while gold fell — another reminder weak is smoke only.
-- Active cache remains `cache_gf_v0` (3×12×224). Do not ship 24-slice.
+- **gf_v0 floor:** gold-58 ≈ **0.728**
+- **gf_v1 (24 slices) KILLED:** gold 0.709
+- **gf_v2 (336px) KILLED:** gold **0.693** (Δ -0.036 vs v0); MCL 0.431
+- xFormers warnings on Kaggle are harmless
+- Stop pure volume A/B on the 3-series recipe
 
-## Immediate next task
-**Volume iterate #2: resolution 224→336**, same 12 slices + same v0 picks, frozen-S, weak_v1, fold0.
-Keep if gold-58 ≥ **0.7331**.
+## Immediate next task (pick one)
+1. **Multi-fold OOF on gf_v0** (same 12×224 cache) → stabler gold read before any LB
+2. **Teacher/labels** (Post 05 track): better train-time report labels; never in submit
 
-## Key paths
-| Item | Location |
-|---|---|
-| Active floor config | `configs/gf_baseline_v0.yaml` |
-| Killed v1 config | `configs/gf_baseline_v1.yaml` |
-| v0 cache | `/kaggle/input/datasets/girishbose/rsna-knee-cache-gf-v0/cache_gf_v0` |
-| v1 local results | `outputs/kaggle_download/gf-baseline-v1-fold0/gf_baseline_v1/` |
+Keep threshold vs v0 remains gold ≥ **0.7331** for recipe changes.
 
 ## Do not
-- Resume old v6c / cache_v1; KneeCoT; reports at inference
-- Treat 24-slice as a win; unfreeze yet; LB before OOF win
+- Resume old v6*; KneeCoT; reports at inference
+- Adopt 24-slice or 336 caches; LB before OOF win
+- Blind “more volume” without a new hypothesis
 
-## New-chat opener (copy/paste)
-> Read `docs/STATUS.md`, `docs/HANDOFF.md`, and `docs/SERIES.md`.
-> gf_v1 24-slice KILLED (gold 0.709 < v0 0.728). Next = resolution 224→336 with 12 slices / same picks. Keep threshold 0.7331. Post 04 later.
+## New-chat opener
+> Read `docs/STATUS.md`, `docs/HANDOFF.md`, `docs/SERIES.md`.
+> gf_v1 and gf_v2 volume KILLED; floor is gf_v0 gold 0.728. Next = multi-fold OOF on v0 OR labels track. Post 04 later.

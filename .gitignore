@@ -42,6 +42,8 @@ data/external/
 *.ckpt
 *.bin
 *.onnx
+*.csv
+*.log
 outputs/checkpoints/
 outputs/logs/
 outputs/submissions/

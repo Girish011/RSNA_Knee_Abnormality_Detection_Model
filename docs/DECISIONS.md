@@ -97,3 +97,14 @@ Format: date | decision | why | rejected
 - **Decision:** **KILL** `gf_baseline_v1` / `cache_gf_v1` as default. Keep `gf_v0` (3×12×224) as the gold floor. Next single-axis volume experiment = **image_size 224→336**, keep **12 slices** and the same v0 series picks.
 - **Why:** fold0 gold-58 fell 0.7281 → **0.7089** (Δ -0.019); MCL 0.451 (below chance). Weak-val (0.723) was misleading. Doubling slices without other changes hurt the ruler.
 - **Rejected:** Adopting 24-slice despite weak-val; jumping to more series next; unfreeze.
+
+## 2026-09-14 — Launch gf_v2 = 336px (same 12 slices / picks)
+- **Decision:** Run `gf_baseline_v2` as the next greenfield volume A/B: same v0 picks, n_slices=12, image_size=**336**, frozen-S, weak_v1, fold0, seed 42. Keep if gold-58 ≥ 0.7331.
+- **Why:** v1 kill leaves resolution as the unused single-axis volume lever; 336 is divisible by DINOv2 patch 14.
+- **Rejected:** Retrying 24 slices; adding series; unfreeze.
+
+## 2026-09-14 — Kill gf_v2 336px; stop pure volume A/B
+- **Decision:** **KILL** `gf_baseline_v2` / `cache_gf_v2`. Keep `gf_v0` (3×12×224) as the only greenfield floor. **Do not** spend the next iterate on more slices, higher res, or more series on this same thin recipe without a new hypothesis.
+- **Why:** gold-58 fell 0.7281 → **0.6925** (Δ -0.036); MCL 0.431. Combined with v1 kill, both volume axes failed.
+- **Rejected:** Adopting 336 as default; trying 448 next; adding a 4th series as the immediate follow-up.
+- **Next preferred axes:** 5-fold OOF on v0 (measurement) or fairer train-time teacher/labels (Post 05 track).

@@ -1,0 +1,56 @@
+# gf = greenfield (new plan, not the old stack)
+# v2 = volume iterate #2: same series picks + 12 slices as v0, higher resolution
+
+experiment:
+  id: gf_baseline_v2
+  track: main
+  notes: "Greenfield v2 volume: same picks as v0, 12 slices, 336px, frozen DINOv2-S"
+
+paths:
+  train_csv: /kaggle/input/competitions/rsna-knee-abnormality-detection/train.csv
+  train_series_csv: /kaggle/input/competitions/rsna-knee-abnormality-detection/train_series.csv
+  folds: data/folds/folds_v1.csv
+  weak_labels: data/processed/weak_labels_v1.csv
+  series_picks: outputs/eda/gf_v0_series_picks.csv
+  cache_dir: /kaggle/input/datasets/girishbose/rsna-knee-cache-gf-v2/cache_gf_v2
+  output_dir: outputs/experiments/gf_baseline_v2
+  backbone_weights: null
+
+data:
+  # Single-axis change vs v0: image_size 224 -> 336 (same planes / slices / teacher)
+  max_series: 3
+  n_slices: 12
+  image_size: 336
+  center_bias: true
+  require_plane_coverage: true
+  plane_order: ["Sagittal", "Coronal", "Axial"]
+  prefer_fluid_sensitive: true
+
+model:
+  backbone: dinov2_vits14
+  freeze_backbone_epochs: 5
+  dropout: 0.1
+  pretrained: true
+
+train:
+  n_folds: 5
+  fold: 0
+  seed: 42
+  epochs: 5
+  batch_size: 2
+  lr: 3.0e-4
+  weight_decay: 0.05
+  amp: true
+  num_workers: 2
+
+loss:
+  type: masked_bce
+  use_confidence: true
+  pos_weight: 1.0
+
+ruler:
+  # Keep if full-58 gold macro AUC >= v0 floor 0.7281 + 0.005
+  primary: full58_gold_macro_auc
+  baseline_gold58: 0.7281
+  margin: 0.005
+  smoke: weak_label_val_auc
