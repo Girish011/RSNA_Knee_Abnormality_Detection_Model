@@ -1,32 +1,24 @@
-# Handoff — greenfield campaign (2026-09-14)
-
-Paste into a **new chat**. Source of truth: this file + `docs/STATUS.md` + `docs/SERIES.md`
-+ latest entries in `docs/experiments.md`.
+# Handoff — greenfield campaign (2026-09-15)
 
 ## Read first
 1. `docs/STATUS.md`
 2. `docs/SERIES.md`
-3. `configs/gf_baseline_v0.yaml` (still the floor)
+3. `configs/gf_baseline_v0.yaml`
 4. Tail of `docs/experiments.md`
 
 ## Where we are
-- **gf_v0 floor:** gold-58 ≈ **0.728**
-- **gf_v1 (24 slices) KILLED:** gold 0.709
-- **gf_v2 (336px) KILLED:** gold **0.693** (Δ -0.036 vs v0); MCL 0.431
-- xFormers warnings on Kaggle are harmless
-- Stop pure volume A/B on the 3-series recipe
+- Volume iterates v1/v2 **KILLED**; floor recipe = gf_v0 3×12×224
+- **5-fold OOF running:** `girishbose/gf-baseline-v0-5fold`
+- Goal: true OOF gold-58 (honest floor). Prior 0.7281 was fold0→all58 (slightly optimistic)
 
-## Immediate next task (pick one)
-1. **Multi-fold OOF on gf_v0** (same 12×224 cache) → stabler gold read before any LB
-2. **Teacher/labels** (Post 05 track): better train-time report labels; never in submit
+## Immediate next (when user says the kernel is done)
+1. Download outputs from `girishbose/gf-baseline-v0-5fold`
+2. Read `oof_gold58_metrics.json` + `oof_weak_metrics.json`
+3. Update STATUS / experiments; no LB yet
 
-Keep threshold vs v0 remains gold ≥ **0.7331** for recipe changes.
-
-## Do not
-- Resume old v6*; KneeCoT; reports at inference
-- Adopt 24-slice or 336 caches; LB before OOF win
-- Blind “more volume” without a new hypothesis
+## Working rule (locked)
+- **Do not poll or watch Kaggle jobs.** Push/launch, log the slug in STATUS/HANDOFF, wait for the user to report done or paste logs.
+- Same rule lives in `.cursor/rules/rsna-knee.mdc`.
 
 ## New-chat opener
-> Read `docs/STATUS.md`, `docs/HANDOFF.md`, `docs/SERIES.md`.
-> gf_v1 and gf_v2 volume KILLED; floor is gf_v0 gold 0.728. Next = multi-fold OOF on v0 OR labels track. Post 04 later.
+> Read STATUS/HANDOFF/SERIES. gf_v0 5-fold OOF is the active job (`gf-baseline-v0-5fold`). I will tell you when it finishes — do not poll Kaggle.

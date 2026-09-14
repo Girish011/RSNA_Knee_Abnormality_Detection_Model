@@ -24,6 +24,11 @@ alwaysApply: true
 - Architecture/data policy changes: append `docs/DECISIONS.md`.
 - Prefer repo files over chat history as source of truth.
 
+## Kaggle jobs
+- **Do not** background-poll / watch Kaggle kernel status for completion.
+- Launch or push jobs, record the slug + what to pull in STATUS/HANDOFF, then stop.
+- User will paste results or say the job is done; only then download outputs and update docs.
+
 ## Data/compute
 - Full 569 GB data lives on Kaggle (or external storage), not assumed on the local Mac.
 - Prefer versioned resized caches over re-decoding raw DICOMs every run.

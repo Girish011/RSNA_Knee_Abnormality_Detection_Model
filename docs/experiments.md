@@ -223,3 +223,11 @@ Append one row (or block) per run. Never delete history.
 - per-label gold: Med OA 0.829, Lat OA 0.764, Effusion 0.753, Baker's 0.748, Lat Men 0.743, PF OA 0.718, Synovitis 0.698, Contusion 0.676, Med Men 0.657, ACL 0.657, Fracture 0.636, **MCL 0.431**
 - artifacts local: `outputs/kaggle_download/gf-baseline-v2-fold0/gf_baseline_v2/`
 - conclusion: **KILL 336px volume**. Both single-axis volume levers (slices, res) lost vs v0. Stop pure volume on 3-series recipe; next = multi-fold OOF on v0 or better teacher/labels.
+
+### 2026-09-15 — gf_v0 5-fold OOF launched
+- recipe: same `cache_gf_v0` / weak_v1 / frozen DINOv2-S / 5ep / seed **42**
+- kernel: `girishbose/gf-baseline-v0-5fold` (T4; trains folds 0–4 then aggregates)
+- meta updated with seed-enabled `train_baseline_fold.py`
+- metric of interest: **true OOF gold-58** (holdout-fold preds only); also weak OOF macro
+- note: prior 0.7281 was fold0 model on all 58 (some gold were in fold0 train)
+- conclusion: **running**

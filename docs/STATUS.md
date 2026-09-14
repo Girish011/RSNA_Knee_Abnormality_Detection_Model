@@ -1,46 +1,43 @@
 # STATUS
 
-Last updated: 2026-09-14
+Last updated: 2026-09-15
 
 ## Phase
 **Greenfield Imaging Playbook**. Blog Posts 01–03 done.
-Coding: **gf_v1 + gf_v2 volume iterates both KILLED**. Active floor = **gf_v0 gold-58 = 0.7281**.
+Coding: **gf_v0 5-fold OOF running** (true OOF gold-58). Floor recipe unchanged: 3×12×224.
 
 ## Done
 - Post 01–03 (`site/`)
-- gf_baseline_v0 fold0 + full-58 gold **0.7281**
-- Volume #1 (24 slices): gold **0.7089** → KILL
-- Volume #2 (336px): gold **0.6925** → KILL
+- gf_v0 fold0 all-58 gold **0.7281** (not true OOF; model saw some gold in train)
+- Volume #1/#2 both KILLED
+- Launched `girishbose/gf-baseline-v0-5fold` (T4; seed 42; folds 0–4 sequential)
 
-## Active design (still gf_baseline_v0)
-- 1 Sag + 1 Cor + 1 Ax; cache `cache_gf_v0` (3×12×224)
-- Temporary teacher: `weak_labels_v1.csv`
-- Frozen DINOv2-S; fold 0; no unfreeze
-- Ruler: full-58 gold macro AUC, margin 0.005
+## Active design (gf_baseline_v0)
+- Cache `cache_gf_v0` (3×12×224); weak_v1; frozen DINOv2-S; seed 42
+- Ruler for this run: **true OOF full-58 gold macro AUC** (each gold study scored by its holdout fold)
+- Gold per fold: 13 / 11 / 10 / 12 / 12
 
-## Gold-58 comparison
-| Run | Weak-val best | Gold-58 macro | Verdict |
+## Gold-58 comparison (so far)
+| Run | Weak | Gold-58 | Notes |
 |---|---|---|---|
-| gf_v0 (12×224) | 0.718 | **0.7281** | floor / KEEP |
-| gf_v1 (24×224) | 0.723 | **0.7089** | KILL (Δ -0.019) |
-| gf_v2 (12×336) | 0.704 | **0.6925** | KILL (Δ -0.036) |
+| gf_v0 fold0 model→all58 | 0.718 | **0.7281** | optimistic (train leak on some gold) |
+| gf_v0 5-fold OOF | — | — | **running** |
+| gf_v1 24-slice | 0.723 | 0.7089 | KILL |
+| gf_v2 336px | 0.704 | 0.6925 | KILL |
 
 ## Next 3 actions
-1. **Stop pure volume A/B** on this thin 3-series recipe (slices and res both lost).
-2. Prefer next: **5-fold OOF on gf_v0** (stabilize gold floor) **or** Post 05-style teacher/labels (not more series yet).
-3. No LB until an OOF win over v0 gold floor.
+1. User watches `girishbose/gf-baseline-v0-5fold`; when done, agent pulls true OOF gold + weak OOF.
+2. Treat that OOF gold as the honest v0 floor for future keep/kill.
+3. No LB until a later recipe beats this OOF gold by ≥0.005.
 
-## Kaggle artifacts (slugs)
-- Active floor cache: `girishbose/rsna-knee-cache-gf-v0`
-- Active floor fold0: `girishbose/rsna-knee-gf-v0-fold0`
-- Killed v1: `girishbose/gf-cache-v1`, `girishbose/gf-baseline-v1-fold0`
-- Killed v2: `girishbose/gf-cache-v2`, `girishbose/gf-baseline-v2-fold0`
+## Kaggle artifacts
+- Cache: `girishbose/rsna-knee-cache-gf-v0`
+- Meta (seed trainer): `girishbose/rsna-knee-gf-v0-meta`
+- **5-fold kernel:** `girishbose/gf-baseline-v0-5fold`
 - Competition: `rsna-knee-abnormality-detection`
 
 ## Do not
+- **Poll / background-watch Kaggle kernels** (user reports when jobs finish)
 - Reports at test time; KneeCoT; LLM APIs in submit
-- Treat weak-val as the ship ruler
-- Adopt killed 24-slice or 336 caches
-- Burn more GPU on “just add volume” without a new hypothesis
-- Resume old v6c / cache_v1 as the active path
-- Push GPU scripts without `machine_shape: NvidiaTeslaT4`
+- Adopt killed volume caches; LB before OOF win
+- Confuse fold0-all58 gold with true OOF gold
