@@ -108,3 +108,24 @@ Format: date | decision | why | rejected
 - **Why:** gold-58 fell 0.7281 → **0.6925** (Δ -0.036); MCL 0.431. Combined with v1 kill, both volume axes failed.
 - **Rejected:** Adopting 336 as default; trying 448 next; adding a 4th series as the immediate follow-up.
 - **Next preferred axes:** 5-fold OOF on v0 (measurement) or fairer train-time teacher/labels (Post 05 track).
+
+## 2026-09-15 — True OOF gold is the ship ruler (supersedes fold0→all58)
+- **Decision:** Going forward, keep/kill uses **5-fold OOF full-58 gold macro AUC**. The gf_v0 OOF gold floor is **0.6144**. The earlier fold0-checkpoint-on-all-58 score (**0.7281**) is retired as optimistic (gold studies in that fold’s train set were not held out).
+- **Why:** OOF gold 0.614 vs fold0→all58 0.728 (Δ −0.114) proved the optimistic ruler. Weak OOF 0.685 also sits well above true gold.
+- **Rejected:** Shipping or ranking recipes against fold0→all58; public LB before beating OOF gold 0.6144 + 0.005.
+- **Next:** Teacher/labels (Post 05), not more volume on 3×12×224.
+
+## 2026-09-15 — Labels iterate #1 = ligament gap-fill on weak_v1 (not full v2 redo)
+- **Decision:** Build `weak_labels_gf_lig1` by **only filling NaN** ACL/MCL/Medial Meniscus cells on top of weak_v1 (v7 TR/EL + EN injury/grade patches). Same image recipe; measure with true OOF gold vs 0.6144+0.005.
+- **Why:** OOF gold blindness is concentrated in those labels; weak_v1 coverage there is thin (ACL 429 / MCL 262). Full weak_v2 was already killed for noise; gap-fill avoids rewriting committed v1 cells.
+- **Rejected:** Retraining on full weak_v2; jumping straight to paid LLM fills for this first greenfield label A/B.
+
+## 2026-09-15 — Kill gf_labels_lig1; next tighten fills (drop MCL)
+- **Decision:** **KILL** `gf_labels_lig1` as training teacher. Keep weak_v1 + gf_v0 OOF gold floor **0.6144**. Next label A/B should **not** include the current MCL gap-fills (gold fill-prec ~0.53); prefer Med Men-only or Med Men+ACL with higher precision gate.
+- **Why:** OOF gold 0.6144 → **0.6019** despite Med Men +0.128 and small ACL/MCL lifts; Effusion/Lat OA/Synovitis regressions dominated macro.
+- **Rejected:** Shipping lig1 because weak OOF rose to 0.707; adding more aggressive fills without a precision gate.
+
+## 2026-09-15 — Labels iterate #2 = Med-Men-only gap-fill (drop MCL and ACL)
+- **Decision:** Build `weak_labels_gf_lig2` by filling NaN **Medial Meniscus** cells only on weak_v1. Do not fill MCL (gold fill-prec ~0.53) or ACL on this A/B. Same image recipe; keep if true OOF gold ≥ 0.6194.
+- **Why:** lig1’s only large gold win was Med Men (+0.128); MCL fills were the noisiest; ACL fill was smaller and may have contributed to the Effusion/OA macro collapse. One-axis ablate.
+- **Rejected:** Shipping lig1; jumping to Med Men+ACL in the same run; raising min_conf before measuring Med-Men-only.

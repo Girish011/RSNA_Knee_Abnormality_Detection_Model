@@ -231,3 +231,42 @@ Append one row (or block) per run. Never delete history.
 - metric of interest: **true OOF gold-58** (holdout-fold preds only); also weak OOF macro
 - note: prior 0.7281 was fold0 model on all 58 (some gold were in fold0 train)
 - conclusion: **running**
+
+### 2026-09-15 — gf_v0 5-fold OOF COMPLETE (honest floor)
+- kernel: `girishbose/gf-baseline-v0-5fold` COMPLETE (~3.8h wall)
+- weak OOF macro AUC: **0.6855**
+- **true OOF gold-58 macro AUC: 0.6144** (n=58, all 12 labels)
+- per-fold weak-val best: f0 0.725 / f1 0.688 / f2 0.743 / f3 0.724 / f4 0.690
+- per-label gold OOF: Effusion 0.889, Baker's 0.723, Synovitis 0.677, Lat Men 0.647, PF OA 0.624, Med OA 0.620, Contusion 0.607, Fracture 0.594, Lat OA 0.592, Med Men **0.486**, ACL **0.473**, MCL **0.440**
+- vs prior fold0→all58 gold 0.7281: Δ **-0.114** (that number was optimistic)
+- artifacts: `outputs/kaggle_download/gf-baseline-v0-5fold/gf_baseline_v0_5fold/`
+- conclusion: **adopt 0.614 as honest v0 floor**. No LB. Next lever = labels/teacher (volume already failed); ACL/MCL/meniscus near chance on gold.
+
+### 2026-09-15 — gf_labels_lig1 teacher built + 5-fold OOF launched
+- teacher: `weak_labels_gf_lig1.csv` = weak_v1 + gap-fill only NaN cells for **ACL / MCL / Medial Meniscus**
+- fills: `weak_labels_v7` (TR/EL) + patched EN injury/grade patterns; expert override on gold-58
+- coverage: ACL 429→1254 (+825), MCL 262→700 (+438), Med Men 866→1460 (+594); any-label 2449→3235
+- pure extractor on gold (conf≥0.5): ACL prec/rec 0.77/0.89; MCL 0.53/1.00 (watch noise); Med Men 0.71/0.94
+- train: same cache_gf_v0, frozen-S, seed 42, 5-fold OOF
+- kernel: `girishbose/gf-labels-lig1-5fold`; meta `girishbose/rsna-knee-gf-lig1-meta`
+- keep if OOF gold ≥ **0.6194**
+- conclusion: **running** — user will report when done (no poll).
+
+### 2026-09-15 — gf_labels_lig1 5-fold OOF COMPLETE → **KILL**
+- kernel: `girishbose/gf-labels-lig1-5fold` COMPLETE
+- weak OOF macro: **0.7073** (vs v0 0.685)
+- **true OOF gold-58: 0.6019** vs floor **0.6144** (Δ **−0.0125**); keep thr 0.6194 → KILL
+- focus labels vs v0 OOF gold: Med Men 0.486→**0.614** (+0.128), ACL 0.473→0.516 (+0.043), MCL 0.440→0.476 (+0.036)
+- regressions: Effusion 0.889→0.697, Lat OA 0.592→0.484, Synovitis 0.677→0.607, PF OA 0.624→0.582
+- artifacts: `outputs/kaggle_download/gf-labels-lig1-5fold/` (download pending if not local yet)
+- conclusion: **KILL lig1-as-shipped**. Gap-fill helped target labels but hurt macro via label noise / distribution shift. Next = drop MCL fills (and maybe tighten ACL) or Med-Men-only gap-fill A/B.
+
+### 2026-09-15 — gf_labels_lig2 teacher built + 5-fold OOF launched
+- teacher: `weak_labels_gf_lig2.csv` = weak_v1 + gap-fill only NaN cells for **Medial Meniscus** (no ACL, no MCL)
+- fills: same v7+patches extractor as lig1; expert override on gold-58
+- coverage: Med Men 866→1460 (+594, same as lig1); ANY 2449→3023 (lig1 was 3235); non-gold ACL/MCL identical to weak_v1
+- gold audit (conf≥0.5): Med Men prec/rec 0.71/0.94
+- train: same cache_gf_v0, frozen-S, seed 42, 5-fold OOF
+- kernel: `girishbose/gf-labels-lig2-5fold`; meta `girishbose/rsna-knee-gf-lig2-meta`
+- keep if OOF gold ≥ **0.6194**
+- conclusion: **running** — user will report when done (no poll).
