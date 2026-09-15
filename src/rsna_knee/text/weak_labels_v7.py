@@ -89,8 +89,19 @@ EL_UNCERTAIN = re.compile(
 # "anat" needs an abnormality cue in-sentence to fire positive; "self" terms are
 # themselves the finding (their presence, unless normalized, is positive).
 TR_LABELS: dict[str, dict[str, str]] = {
-    "ACL": {"anat": r"(ön\s+çapraz|on\s+capraz|öçb|oçb|anterior\s+krusiat)"},
-    "MCL": {"anat": r"(iç\s+yan\s+bağ|ic\s+yan\s+bag|medial\s+kollateral|iç\s+kollateral)"},
+    # Real reports often write Latin "Anterior çapraz bağ" rather than "ön çapraz".
+    "ACL": {
+        "anat": (
+            r"(ön\s+çapraz|on\s+capraz|öçb|oçb|anterior\s+krusiat|"
+            r"anterior\s+çapraz|çapraz\s+bağ)"
+        )
+    },
+    "MCL": {
+        "anat": (
+            r"(iç\s+yan\s+bağ|ic\s+yan\s+bag|medial\s+kollateral|iç\s+kollateral|"
+            r"medial\s+collateral)"
+        )
+    },
     "Medial Meniscus": {"anat": r"((iç|medial|medyal)\s+menisk)"},
     "Lateral Meniscus": {"anat": r"((dış|dis|lateral)\s+menisk)"},
     "Medial OA": {"anat": r"(medial|medyal|iç\s+kompartman)"},

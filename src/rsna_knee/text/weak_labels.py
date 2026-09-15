@@ -54,8 +54,10 @@ def _pats(*exprs: str) -> list[re.Pattern[str]]:
 # Positive patterns: EN, ES, FR, DE, PT, NL. Prefer precision.
 PATTERNS: dict[str, list[re.Pattern[str]]] = {
     "ACL": _pats(
-        r"\b(acl|anterior\s+cruciate)\b.{0,50}\b(tear|torn|rupture|discontinuity)\b",
-        r"\b(tear|torn|rupture|discontinuity)\b.{0,50}\b(acl|anterior\s+cruciate)\b",
+        r"\b(acl|anterior\s+cruciate)\b.{0,50}\b(tear|torn|rupture|discontinuity|injury|sprain)\b",
+        r"\b(tear|torn|rupture|discontinuity|injury|sprain)\b.{0,50}\b(acl|anterior\s+cruciate)\b",
+        r"\b(acl|anterior\s+cruciate)\b.{0,40}\bgrade\s*[1-3i]+\b",
+        r"\bgrade\s*[1-3i]+\b.{0,40}\b(acl|anterior\s+cruciate)\b",
         r"\b(rotura|ruptura|desgarro)\b.{0,40}\b(lca|ligamento\s+cruzado\s+anterior)\b",
         r"\b(lca|ligamento\s+cruzado\s+anterior)\b.{0,40}\b(rotura|ruptura|desgarro)\b",
         r"\b(rupture|d[eé]chirure)\b.{0,40}\b(lca|ligament\s+crois[eé]\s+ant[eé]rieur)\b",
@@ -66,14 +68,18 @@ PATTERNS: dict[str, list[re.Pattern[str]]] = {
         r"\b(voorste\s+kruisband|vkb)\b.{0,40}\b(scheur|ruptuur)\b",
     ),
     "MCL": _pats(
-        r"\b(mcl|medial\s+collateral)\b.{0,50}\b(tear|torn|rupture|sprain)\b",
-        r"\b(tear|torn|rupture|sprain)\b.{0,50}\b(mcl|medial\s+collateral)\b",
-        r"\b(rotura|ruptura|desgarro)\b.{0,40}\b(lcm|ligamento\s+colateral\s+medial)\b",
-        r"\b(lcm|ligamento\s+colateral\s+medial)\b.{0,40}\b(rotura|ruptura|desgarro)\b",
-        r"\b(rupture|d[eé]chirure)\b.{0,40}\b(ll[ií]|ligament\s+lat[eé]ral\s+interne|ligament\s+collat[eé]ral\s+m[eé]dial)\b",
-        r"\b(ll[ií]|ligament\s+lat[eé]ral\s+interne|ligament\s+collat[eé]ral\s+m[eé]dial)\b.{0,40}\b(rupture|d[eé]chirure)\b",
+        r"\b(mcl|medial\s+collateral)\b.{0,50}\b(tear|torn|rupture|sprain|injury)\b",
+        r"\b(tear|torn|rupture|sprain|injury)\b.{0,50}\b(mcl|medial\s+collateral)\b",
+        r"\b(mcl|medial\s+collateral)\b.{0,40}\bgrade\s*[1-3i]+\b",
+        r"\bgrade\s*[1-3i]+\b.{0,40}\b(mcl|medial\s+collateral)\b",
+        r"\b(rotura|ruptura|desgarro|esguince)\b.{0,40}\b(lcm|ligamento\s+colateral\s+medial)\b",
+        r"\b(lcm|ligamento\s+colateral\s+medial)\b.{0,40}\b(rotura|ruptura|desgarro|esguince)\b",
+        r"\b(rupture|d[eé]chirure|entorse)\b.{0,40}\b(ll[ií]|ligament\s+lat[eé]ral\s+interne|ligament\s+collat[eé]ral\s+m[eé]dial)\b",
+        r"\b(ll[ií]|ligament\s+lat[eé]ral\s+interne|ligament\s+collat[eé]ral\s+m[eé]dial)\b.{0,40}\b(rupture|d[eé]chirure|entorse)\b",
         r"\b(riss|ruptur)\b.{0,40}\b(innenband|mediales?\s+kollateralband)\b",
         r"\b(innenband|mediales?\s+kollateralband)\b.{0,40}\b(riss|ruptur)\b",
+        r"\b(mediale\s+collaterale)\b.{0,40}\b(scheur|ruptuur|verdikt|oedeem)\b",
+        r"\b(scheur|ruptuur|verdikt|oedeem)\b.{0,40}\b(mediale\s+collaterale)\b",
     ),
     "Medial Meniscus": _pats(
         r"\bmedial\s+meniscus\b.{0,50}\b(tear|torn|truncated)\b",
