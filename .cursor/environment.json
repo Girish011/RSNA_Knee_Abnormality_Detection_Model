@@ -1,0 +1,4 @@
+{
+  "name": "RSNA Knee",
+  "install": "pip install -e \".[dev,kaggle]\""
+}
