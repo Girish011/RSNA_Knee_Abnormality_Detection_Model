@@ -41,6 +41,13 @@ def main() -> None:
     parser.add_argument("--out-dir", type=Path, required=True)
     parser.add_argument("--device", default=None)
     parser.add_argument("--expert-only", action="store_true", help="Train only on 58 expert studies")
+    parser.add_argument(
+        "--save-epoch-oof",
+        action="store_true",
+        help="Also write val predictions after every epoch, so checkpoint-selection "
+        "policies (best-on-weak-val, final, last-k average) can be compared offline "
+        "from a single run. Off by default so the default path is unchanged.",
+    )
     args = parser.parse_args()
 
     import torch
@@ -202,6 +209,10 @@ def main() -> None:
         score = summary["macro_auc"]
         print(f"epoch {epoch}: loss={np.mean(losses):.4f} val_macro_auc={score}")
         history.append({"epoch": epoch, "loss": float(np.mean(losses)), "val_macro_auc": score})
+        if args.save_epoch_oof:
+            val_df[["StudyInstanceUID"]].assign(
+                **{c: p[:, i] for i, c in enumerate(LABEL_COLS)}
+            ).to_csv(args.out_dir / f"fold{args.fold}_ep{epoch}_oof.csv", index=False)
         if np.isfinite(score) and score > best:
             best = score
             torch.save(
