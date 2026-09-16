@@ -269,4 +269,67 @@ Append one row (or block) per run. Never delete history.
 - train: same cache_gf_v0, frozen-S, seed 42, 5-fold OOF
 - kernel: `girishbose/gf-labels-lig2-5fold`; meta `girishbose/rsna-knee-gf-lig2-meta`
 - keep if OOF gold ≥ **0.6194**
-- conclusion: **running** — user will report when done (no poll).
+- conclusion: launched; result below.
+
+### 2026-09-16 — gf_labels_lig2 5-fold OOF COMPLETE → **KILL** (but inside ruler noise)
+- kernel: `girishbose/gf-labels-lig2-5fold` COMPLETE (~15,990 s wall)
+- weak OOF macro: **0.6774** (v0 0.6855, lig1 0.7073)
+- **true OOF gold-58: 0.6103** vs floor **0.6144** (Δ **−0.0042**); keep thr 0.6194 → **KILL** by the rule
+- per-label gold OOF: Effusion 0.734, Med OA 0.671, Baker's 0.674, Lat OA 0.644, **Med Men 0.623**, Lat Men 0.619, Contusion 0.611, Fracture 0.590, ACL 0.583, Synovitis 0.570, PF OA 0.537, MCL 0.467
+- Med Men reproduces the lig1 gain: v0 0.486 → **0.623 (+0.137)**; lig1 was +0.129
+- artifacts: `outputs/kaggle_download/gf-labels-lig2-5fold/gf_labels_lig2_5fold/`
+- conclusion: **KILL lig2-as-shipped**, but see the ruler-noise entry below — this Δ is not distinguishable from noise.
+
+### 2026-09-16 — Ruler noise audit: the 58-gold OOF ruler cannot resolve 0.005
+- code: `scripts/gold_oof_ab.py` (paired study-level bootstrap on the shared 58 gold studies, 5000 draws)
+- **paired bootstrap deltas (candidate − baseline):**
+  | A/B | Δ macro | 95% CI | P(cand > base) |
+  |---|---|---|---|
+  | lig2 vs v0 | −0.0042 | [−0.049, +0.041] | 0.435 |
+  | lig1 vs v0 | −0.0126 | [−0.055, +0.030] | 0.276 |
+  | lig2 vs lig1 | +0.0084 | [−0.043, +0.058] | 0.623 |
+- delta sd ≈ **0.022**; single-run bootstrap sd ≈ **0.027**. Our keep margin is **0.005** → the instrument is ~4–5× coarser than the effect we are trying to read. **Both lig1 and lig2 "kills" are coin flips.**
+- **direct noise proof (macro-level version of the 2026-08-27 finding):** lig2 changed *only* the Medial Meniscus teacher column, yet labels with **byte-identical** teacher cells moved wildly — ACL **0.473 → 0.583 (+0.110)**, Effusion **0.889 → 0.734 (−0.155)**, Synovitis −0.108, PF OA −0.088. The 11 unchanged labels have delta sd **0.079**, max |delta| 0.155.
+- **only reproducible effect in the campaign so far:** Med Men gap-fill, +0.129 (lig1) and +0.137 (lig2) across two independent runs.
+- **confound found in both gap-fill A/Bs:** filling NaN cells also *adds studies to training* (any-label 2449 → 3235 lig1 / 3023 lig2), so neither run was a single-factor label change; the new studies carry one supervised label each and shift the shared trunk.
+- **variance source found:** weak-val is still **rising at the final epoch** in 8/10 folds (5 epochs = undertrained), and the shipped checkpoint is chosen by best weak-val, a ruler that disagrees with gold. Adjacent-epoch weak-val gaps are 0.005–0.041 while gold swings ±0.1.
+- conclusion: **stop A/B-ing teachers against this ruler.** Next step must either quieten the ruler (seed replicates / seed-averaged OOF, fix undertraining + checkpoint selection) or accept per-label evidence for the one reproducible effect. Do not read further sub-0.02 macro deltas as signal.
+
+### 2026-09-16 — gf_v0 seed replicates launched (measure the ruler, not a new recipe)
+- goal: measure the **seed-to-seed sd** of true OOF gold-58 macro AUC, then derive the keep margin from it and build a variance-reduced (seed-averaged) baseline.
+- recipe: identical to the seed-42 v0 5-fold in every respect — same `girishbose/rsna-knee-gf-v0-meta` code/labels, same `cache_gf_v0`, 5 epochs, frozen DINOv2-S, weak_v1. **Only `train.seed` differs.**
+- mechanism: the trainer reads `seed` from the config and has no `--seed` flag, so each kernel copies `configs/gf_baseline_v0.yaml` at runtime, rewrites the single `seed:` line, and **asserts exactly one line changed** (verified locally: `'  seed: 42' -> '  seed: 1337'`, parsed configs equal apart from seed). No dataset re-upload, so the code cannot drift from the original run.
+- kernels: `girishbose/gf-v0-seed1337-5fold`, `girishbose/gf-v0-seed2024-5fold` (both T4, RUNNING, ~4.4 h each, 2 concurrent GPU sessions)
+- analysis tool (written before results, rule pre-registered): `scripts/seed_variance_report.py`
+- **pre-registered rule:** new baseline = seed-averaged OOF gold macro over seeds {42, 1337, 2024}; new keep margin = **max(0.005, 2 × measured seed sd)**; future candidates judged as seed-averaged predictions against that threshold.
+- **expected outcome either way is informative:** small sd ⇒ the lig1/lig2 kills were real after all and 0.005 was defensible; large sd (≥0.01) ⇒ every greenfield verdict to date was noise and the margin must widen.
+- conclusion: launched; result below.
+
+### 2026-09-16 — gf_v0 seed replicates COMPLETE → **0.6144 was never a floor; it was the luckiest of three draws**
+- kernels: `gf-v0-seed1337-5fold`, `gf-v0-seed2024-5fold` both COMPLETE. Identical recipe, only `train.seed` differs.
+- **true OOF gold-58 macro by seed:**
+  | seed | gold OOF | weak OOF |
+  |---|---|---|
+  | 42 (original "floor") | **0.6144** | 0.6855 |
+  | 1337 | **0.5720** | 0.6716 |
+  | 2024 | **0.5889** | 0.6870 |
+- **mean 0.5918, sd 0.0214, range 0.0424.** Same code, same labels, same cache, same folds — the entire 0.042 spread is noise.
+- **the floor was a fluke:** the 0.6144 we have been ranking every greenfield experiment against is +1.06 sd above the recipe's own mean. The honest description of gf_v0 is **0.592 ± 0.021**.
+- **the lig1/lig2 kills were artifacts:** lig1 0.6019 and lig2 0.6103 both sit **above** the v0 seed mean 0.5918. They were killed for failing to beat a lucky draw. Neither is a proven win either (both are single-seed draws) — they are simply *indistinguishable* from v0.
+- **the "Effusion collapse" was regression to the mean:** Effusion has the worst per-label seed sd, **0.133** (seed42 0.889 vs seed1337 0.631 vs seed2024 0.707). The 0.889 that made lig1/lig2 look catastrophic on Effusion was itself the outlier. Other high-variance labels: Lateral OA 0.090, Baker's 0.086, MCL 0.080, Med Men 0.066, Contusion 0.064, Fracture 0.060. Stable: PF OA 0.012, Lat Meniscus 0.012, ACL 0.022, Synovitis 0.028.
+- **seed-averaging works:** averaging the 3 seeds' OOF probabilities gives gold macro **0.6173**, above *every* individual seed including the lucky 0.6144. Bootstrap 95% CI [0.567, 0.667].
+- **the weak ruler is 2.5× quieter than the gold ruler:** weak OOF sd **0.0085** (n≈2449) vs gold sd **0.0214** (n=58), same models. The gold ruler amplifies model-to-model differences because 58 studies give each label only ~10–25 positives. Small n, not just training stochasticity, is doing the damage.
+- **pre-registered rule now instantiated:** baseline = seed-averaged OOF gold **0.6173**; margin = max(0.005, 2 × 0.0214) = **0.0427**; single-seed keep threshold **0.6600**. A single-seed A/B would need a +0.043 gain to be credible, which is not a practical bar — hence multi-seed runs become mandatory.
+- artifacts: `docs/audit/gf_v0_seed_variance.json`, `outputs/kaggle_download/gf-v0-seed{1337,2024}-5fold/`
+- conclusion: **every greenfield keep/kill verdict to date (v1, v2, lig1, lig2) was decided inside the noise band and none of them are trustworthy.** Stop single-seed A/Bs. Report recipes as 3-seed mean ± sd and compare seed-averaged predictions.
+
+### 2026-09-16 — gf_v0c stage 1 launched: converge the recipe (paired, one seed)
+- hypothesis: the recipe is stopped mid-climb and its checkpoint is chosen badly. Weak-val was still **rising at the final epoch in 8/10 folds**, and the shipped checkpoint is the weak-val peak — a ruler that disagrees with gold. Both cost score and add variance.
+- config: `configs/gf_baseline_v0c.yaml` — identical to gf_v0 (3×12×224, frozen DINOv2-S, weak_v1, cache_gf_v0, seed 42, constant LR) with **epochs 5 → 10**; `freeze_backbone_epochs=10` so the unfreeze branch never fires (DECISIONS 2026-08-12 respected).
+- **why one seed is defensible here:** there is no LR schedule and no unfreeze, so epochs 0–4 of this run retrace the 5-epoch seed-42 run exactly. "Epoch 4 vs epoch 9" and "policy A vs policy B" are therefore **paired within one training trajectory, with zero seed noise** — unlike the cross-run deltas that misled us. The kernel prints epochs 0–4 weak-val against the recorded seed-42 values as a reproduction check.
+- code: `train_baseline_fold.py --save-epoch-oof` (new, defaults off so the old path is unchanged) writes val predictions every epoch; `src/rsna_knee/epoch_policies.py` (new, 7 unit tests) assembles OOF for any fold→epochs selection.
+- policies compared offline from the SAME trained models, no extra GPU: `best_weakval_first5` (= old recipe), `best_weakval_all10`, `final_epoch`, `avg_last3`, `avg_last5`, plus a per-epoch gold curve for all 10 epochs.
+- kernel: `girishbose/gf-v0c-conv-seed42-5fold` (T4, ~8 h est: ~9.6 min per fold-epoch × 50); meta `girishbose/rsna-knee-gf-v0c-meta`
+- ruler: seed-averaged v0 baseline **0.6173**, seed sd 0.0214, margin **0.0427**. **This single seed cannot produce a keep/kill.** If a policy shows a real paired gain, seeds 1337 + 2024 follow (~18 h) for the 3-seed verdict.
+- staged deliberately to protect the 30 h weekly quota: ~8 h now, and we only spend the remaining ~18 h if stage 1 looks promising.
+- conclusion: **ABORTED** mid-run — user reported GPU quota exhausted and asked to stop. Kernel still showed RUNNING via API; cancel requires the Kaggle UI (API token lacks `kernelSessions.cancel`). Resume same staged job when quota resets; do not re-upload meta unless code changes.

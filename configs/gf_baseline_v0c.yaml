@@ -1,0 +1,67 @@
+# gf_v0c = "converged v0". Same data/model as gf_baseline_v0; trains longer.
+#
+# Why: the 2026-09-16 seed audit showed gf_v0 is 0.592 +/- 0.021 on true OOF gold, and the
+# per-epoch histories showed weak-val still RISING at the final epoch in 8/10 folds. The
+# recipe was stopped mid-climb, and the shipped checkpoint was whichever epoch happened to
+# peak on weak-val, a ruler that disagrees with gold. Both inflate run-to-run variance.
+#
+# Only change vs gf_baseline_v0: epochs 5 -> 10 (backbone stays frozen for all of them).
+# There is no LR schedule and no unfreeze, so epochs 0-4 of this run reproduce the 5-epoch
+# run at the same seed; "5 vs 10 epochs" is therefore a PAIRED comparison with no seed noise.
+# Checkpoint-selection policies are compared offline from per-epoch OOF, not changed here.
+
+experiment:
+  id: gf_baseline_v0c
+  track: main
+  notes: "Converged v0: 3x12x224, frozen DINOv2-S, weak_v1, epochs 5->10, per-epoch OOF saved"
+
+paths:
+  train_csv: /kaggle/input/competitions/rsna-knee-abnormality-detection/train.csv
+  train_series_csv: /kaggle/input/competitions/rsna-knee-abnormality-detection/train_series.csv
+  folds: data/folds/folds_v1.csv
+  weak_labels: data/processed/weak_labels_v1.csv
+  series_picks: outputs/eda/gf_v0_series_picks.csv
+  cache_dir: /kaggle/input/datasets/girishbose/rsna-knee-cache-gf-v0/cache_gf_v0
+  output_dir: outputs/experiments/gf_baseline_v0c
+  backbone_weights: null
+
+data:
+  max_series: 3
+  n_slices: 12
+  image_size: 224
+  center_bias: true
+  require_plane_coverage: true
+  plane_order: ["Sagittal", "Coronal", "Axial"]
+  prefer_fluid_sensitive: true
+
+model:
+  backbone: dinov2_vits14
+  # == epochs, so the unfreeze branch never fires (DECISIONS 2026-08-12: stay frozen)
+  freeze_backbone_epochs: 10
+  dropout: 0.1
+  pretrained: true
+
+train:
+  n_folds: 5
+  fold: 0
+  seed: 42
+  epochs: 10
+  batch_size: 2
+  lr: 3.0e-4
+  weight_decay: 0.05
+  amp: true
+  num_workers: 2
+
+loss:
+  type: masked_bce
+  use_confidence: true
+  pos_weight: 1.0
+
+ruler:
+  primary: true_oof_gold58_macro_auc
+  # 2026-09-16: baseline is the SEED-AVERAGED v0 OOF gold; margin is 2 x measured seed sd.
+  baseline_seed_averaged_oof_gold58: 0.6173
+  baseline_single_seed_mean: 0.5918
+  measured_seed_sd: 0.0214
+  margin: 0.0427
+  smoke: weak_label_oof_auc
