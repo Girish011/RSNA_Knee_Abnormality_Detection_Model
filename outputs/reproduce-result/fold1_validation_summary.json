@@ -1,0 +1,129 @@
+{
+  "baseline": 0.7317192128450122,
+  "ordered": 0.7044535063639025,
+  "blend_50": 0.7287101476272236,
+  "fixed_route": 0.7279386528754365,
+  "fixed_route_delta_vs_baseline": -0.003780559969575714,
+  "per_label": [
+    {
+      "label": "ACL",
+      "known": 89,
+      "positives": 67,
+      "baseline": 0.7747625508819539,
+      "ordered": 0.718113975576662,
+      "blend_50": 0.7598371777476255,
+      "fixed_route": 0.7747625508819539,
+      "route": "baseline"
+    },
+    {
+      "label": "MCL",
+      "known": 52,
+      "positives": 40,
+      "baseline": 0.5541666666666667,
+      "ordered": 0.55625,
+      "blend_50": 0.55625,
+      "fixed_route": 0.55625,
+      "route": "ordered"
+    },
+    {
+      "label": "Medial Meniscus",
+      "known": 157,
+      "positives": 128,
+      "baseline": 0.6589439655172413,
+      "ordered": 0.7091864224137931,
+      "blend_50": 0.7001616379310345,
+      "fixed_route": 0.7091864224137931,
+      "route": "ordered"
+    },
+    {
+      "label": "Lateral Meniscus",
+      "known": 105,
+      "positives": 64,
+      "baseline": 0.8445121951219513,
+      "ordered": 0.7459984756097561,
+      "blend_50": 0.8014481707317073,
+      "fixed_route": 0.8445121951219513,
+      "route": "baseline"
+    },
+    {
+      "label": "Medial OA",
+      "known": 47,
+      "positives": 37,
+      "baseline": 0.7162162162162162,
+      "ordered": 0.6594594594594595,
+      "blend_50": 0.6837837837837838,
+      "fixed_route": 0.6594594594594595,
+      "route": "ordered"
+    },
+    {
+      "label": "Lateral OA",
+      "known": 32,
+      "positives": 22,
+      "baseline": 0.6954545454545454,
+      "ordered": 0.6818181818181819,
+      "blend_50": 0.7045454545454546,
+      "fixed_route": 0.6954545454545454,
+      "route": "baseline"
+    },
+    {
+      "label": "PF OA",
+      "known": 59,
+      "positives": 50,
+      "baseline": 0.6244444444444445,
+      "ordered": 0.5577777777777777,
+      "blend_50": 0.5822222222222223,
+      "fixed_route": 0.6244444444444445,
+      "route": "baseline"
+    },
+    {
+      "label": "Effusion",
+      "known": 415,
+      "positives": 268,
+      "baseline": 0.7997512437810945,
+      "ordered": 0.7877322570819373,
+      "blend_50": 0.8020611229566453,
+      "fixed_route": 0.7997512437810945,
+      "route": "baseline"
+    },
+    {
+      "label": "Synovitis",
+      "known": 95,
+      "positives": 81,
+      "baseline": 0.8165784832451499,
+      "ordered": 0.7883597883597884,
+      "blend_50": 0.8227513227513228,
+      "fixed_route": 0.7883597883597884,
+      "route": "ordered"
+    },
+    {
+      "label": "Baker's",
+      "known": 199,
+      "positives": 89,
+      "baseline": 0.7383043922369765,
+      "ordered": 0.7255873340143003,
+      "blend_50": 0.7462717058222677,
+      "fixed_route": 0.7255873340143003,
+      "route": "ordered"
+    },
+    {
+      "label": "Contusion",
+      "known": 199,
+      "positives": 97,
+      "baseline": 0.7457044673539519,
+      "ordered": 0.7776935516474631,
+      "blend_50": 0.7820901556498888,
+      "fixed_route": 0.7457044673539519,
+      "route": "baseline"
+    },
+    {
+      "label": "Fracture",
+      "known": 125,
+      "positives": 27,
+      "baseline": 0.8117913832199547,
+      "ordered": 0.7454648526077098,
+      "blend_50": 0.8030990173847317,
+      "fixed_route": 0.8117913832199547,
+      "route": "baseline"
+    }
+  ]
+}

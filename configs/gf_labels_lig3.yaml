@@ -1,0 +1,62 @@
+# Greenfield labels iterate #3: Med Men gap-fill on weak_v1, SINGLE-FACTOR.
+# Only fill studies that already have >=1 weak_v1 label (keep ANY=2449).
+# Image recipe unchanged (cache_gf_v0). Stage 1 = seed 42 only.
+#
+# Gate (pre-registered, not a macro keep/kill):
+#   Med Men gold OOF >= 0.486 + 0.08 = 0.566 (v0 seed42 Med Men was 0.486; lig1/lig2 ~0.62)
+# If gate fails: kill without seeds 1337/2024.
+# If gate passes: run seeds 1337+2024; keep if seed-averaged gold >= 0.6173 + 0.0427.
+
+experiment:
+  id: gf_labels_lig3
+  track: main
+  notes: "Same 3x12x224 frozen-S; teacher=weak_labels_gf_lig3 (Med Men fills, no new studies)"
+
+paths:
+  train_csv: /kaggle/input/competitions/rsna-knee-abnormality-detection/train.csv
+  train_series_csv: /kaggle/input/competitions/rsna-knee-abnormality-detection/train_series.csv
+  folds: data/folds/folds_v1.csv
+  weak_labels: data/processed/weak_labels_gf_lig3.csv
+  series_picks: outputs/eda/gf_v0_series_picks.csv
+  cache_dir: /kaggle/input/datasets/girishbose/rsna-knee-cache-gf-v0/cache_gf_v0
+  output_dir: outputs/experiments/gf_labels_lig3
+  backbone_weights: null
+
+data:
+  max_series: 3
+  n_slices: 12
+  image_size: 224
+  center_bias: true
+  require_plane_coverage: true
+  plane_order: ["Sagittal", "Coronal", "Axial"]
+  prefer_fluid_sensitive: true
+
+model:
+  backbone: dinov2_vits14
+  freeze_backbone_epochs: 5
+  dropout: 0.1
+  pretrained: true
+
+train:
+  n_folds: 5
+  fold: 0
+  seed: 42
+  epochs: 5
+  batch_size: 2
+  lr: 3.0e-4
+  weight_decay: 0.05
+  amp: true
+  num_workers: 2
+
+loss:
+  type: masked_bce
+  use_confidence: true
+  pos_weight: 1.0
+
+ruler:
+  primary: true_oof_gold58_macro_auc
+  stage1_gate_label: Medial Meniscus
+  stage1_gate_min: 0.566
+  baseline_seed_averaged_oof_gold58: 0.6173
+  margin: 0.0427
+  smoke: weak_label_oof_auc

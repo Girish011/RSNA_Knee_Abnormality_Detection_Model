@@ -1,0 +1,19 @@
+{
+  "id": "girishbose/rank-mri-core-384-feature-baseline-f0",
+  "title": "Rank MRI CORE 384 Feature Baseline F0",
+  "code_file": "18_train_rank_fold0.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_tpu": false,
+  "enable_internet": false,
+  "machine_shape": "NvidiaTeslaT4",
+  "dataset_sources": ["girishbose/rsna-knee-code"],
+  "competition_sources": ["rsna-knee-abnormality-detection"],
+  "kernel_sources": [
+    "girishbose/rank-cache-3x12-384-v1",
+    "girishbose/rank-features-mri-core-384"
+  ],
+  "model_sources": []
+}

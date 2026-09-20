@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>03: First simple models from scratch - RSNA Knee</title>
+  <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body>
+  <header class="site-header">
+    <p class="brand">RSNA Knee Imaging Playbook</p>
+    <nav>
+      <a href="../index.html">Series</a>
+      <a href="../about.html">About</a>
+      <a href="https://github.com/Girish011/RSNA_Knee_Abnormality_Detection_Model">Code</a>
+    </nav>
+  </header>
+
+  <main>
+    <article>
+      <p class="meta">Post 03</p>
+      <h1>First Simple Models from Scratch</h1>
+      <p>This is Post 03 of the <a href="../index.html">RSNA Knee Imaging Playbook</a>. <strong>RSNA</strong> is the Radiological Society of North America. The contest is <a href="https://www.kaggle.com/competitions/rsna-knee-abnormality-detection">RSNA Knee Abnormality Detection</a>.</p>
+      <p>After <a href="02-eda-problem-shape.html">Post 02</a> mapped the exam shape, we built a <strong>greenfield</strong> baseline: a new image path from scratch, not a restart of older thin-cache trials. The goal was not a leaderboard climb. It was a working train → cache → score loop with an honest keep-or-kill ruler.</p>
+
+      <h2>What “simple” means here</h2>
+      <p><strong>MRI</strong> means magnetic resonance imaging (hospital soft-tissue scans). One contest row is one <strong>study</strong> (one scanning visit), not one photo. Each study has several <strong>series</strong> (scan sequences) in different <strong>planes</strong> (view directions: sagittal / side, coronal / front, axial / top-down).</p>
+      <p>Our first model, <code>gf_baseline_v0</code>, keeps only a small fixed crop of each exam:</p>
+      <table>
+        <thead><tr><th>Choice</th><th>Setting</th></tr></thead>
+        <tbody>
+          <tr><td>Series</td><td>1 Sagittal + 1 Coronal + 1 Axial (prefer fluid-sensitive)</td></tr>
+          <tr><td>Slices per series</td><td>12, center-biased</td></tr>
+          <tr><td>Image size</td><td>224 × 224</td></tr>
+          <tr><td>Backbone</td><td><strong>DINOv2-S</strong> (<code>dinov2_vits14</code>), frozen for all 5 epochs</td></tr>
+          <tr><td>Teacher labels</td><td>temporary keyword weak set (<code>weak_labels_v1.csv</code>)</td></tr>
+          <tr><td>Fold</td><td>fold 0 only (train 1,953 / val 496 studies with any weak label)</td></tr>
+          <tr><td>Loss</td><td>masked binary cross-entropy; <code>pos_weight = 1.0</code></td></tr>
+        </tbody>
+      </table>
+      <p><strong>DINOv2</strong> is a public vision transformer pretrained by Meta. <strong>Frozen</strong> means the backbone weights stay fixed; only a small prediction head learns. That keeps the first run cheap and stable.</p>
+      <p>This is deliberately thin. Post 02 already showed every train study has all three planes and often five or more series. A 3×12×224 cache throws most of the visit away on purpose so we can measure a floor.</p>
+      <p>Config: <code>configs/gf_baseline_v0.yaml</code>. Cache Dataset: <code>girishbose/rsna-knee-cache-gf-v0</code> (4,407 studies). Training ran on Kaggle GPU kernel <code>girishbose/gf-baseline-v0-fold0</code> with machine shape <code>NvidiaTeslaT4</code>.</p>
+
+      <h2>Two scores, one ruler</h2>
+      <p><strong>AUC</strong> means area under the ROC curve (how well the model ranks true cases above false ones). <strong>Macro AUC</strong> averages the 12 label AUCs.</p>
+      <table>
+        <thead><tr><th>Yardstick</th><th>What it is</th><th>How we use it</th></tr></thead>
+        <tbody>
+          <tr><td>Weak-val macro AUC</td><td>Score on fold-0 validation using report-derived weak labels</td><td>Smoke check only</td></tr>
+          <tr><td>Full-58 gold macro AUC</td><td>Score on all 58 expert-labeled train studies</td><td><strong>Ship ruler</strong> (keep/kill margin 0.005)</td></tr>
+        </tbody>
+      </table>
+      <p>Weak labels and expert gold are different jobs. Weak-val can look tidy while gold (and later the public <strong>LB</strong>, leaderboard) tell a harsher story. We do not ship on weak-val alone. We also do not probe the public LB until a fuller <strong>OOF</strong> (out-of-fold: predictions on held-out folds) win clears this gold floor.</p>
+      <p>Host rule we keep in view: the submit notebook sees <strong>images + series metadata only</strong>. Radiology reports may help build training labels later. They must never be required at test time. Gated assets such as KneeCoT stay off the table.</p>
+
+      <h2>Results (fold 0, Save Version)</h2>
+      <p>Persisted run (kernel Save Version → Dataset <code>girishbose/rsna-knee-gf-v0-fold0</code>):</p>
+      <table>
+        <thead><tr><th>Metric</th><th>Value</th></tr></thead>
+        <tbody>
+          <tr><td>Weak-val best macro AUC</td><td><strong>0.718</strong> (epoch 4)</td></tr>
+          <tr><td>Full-58 gold macro AUC</td><td><strong>0.728</strong></td></tr>
+          <tr><td>Gold labels defined</td><td>all 12</td></tr>
+        </tbody>
+      </table>
+      <p>Weak-val by epoch on that run: 0.657 → 0.677 → 0.710 → 0.713 → <strong>0.718</strong>.</p>
+      <p>An earlier interactive session hit weak-val ≈ 0.742, but those weights were not saved. <code>/kaggle/working</code> does not survive a new session. Treat 0.718 / 0.728 as the official v0 numbers. Also: that interactive run and the Save Version did not share a fixed random seed, so the gap is not a clean ablation.</p>
+      <figure class="post-figure">
+        <img src="../assets/gf_v0_gold58_per_label.png" alt="Per-label gold AUC for gf_baseline_v0 fold0" loading="lazy" />
+        <figcaption>gf_baseline_v0 fold0 — per-label AUC on full-58 expert gold</figcaption>
+      </figure>
+      <table>
+        <thead><tr><th>Label</th><th>Gold AUC</th></tr></thead>
+        <tbody>
+          <tr><td>Effusion</td><td>0.903</td></tr>
+          <tr><td>Medial OA</td><td>0.870</td></tr>
+          <tr><td>Synovitis</td><td>0.792</td></tr>
+          <tr><td>PF OA</td><td>0.786</td></tr>
+          <tr><td>Lateral OA</td><td>0.758</td></tr>
+          <tr><td>Fracture</td><td>0.731</td></tr>
+          <tr><td>Baker's</td><td>0.696</td></tr>
+          <tr><td>Medial Meniscus</td><td>0.695</td></tr>
+          <tr><td>Lateral Meniscus</td><td>0.665</td></tr>
+          <tr><td>ACL</td><td>0.654</td></tr>
+          <tr><td>Contusion</td><td>0.628</td></tr>
+          <tr><td>MCL</td><td>0.560</td></tr>
+        </tbody>
+      </table>
+      <p><strong>OA</strong> means osteoarthritis. <strong>ACL</strong> / <strong>MCL</strong> are the anterior and medial collateral ligaments. <strong>PF</strong> means patellofemoral.</p>
+      <p>Pattern: fluid and OA-style labels already rank well. Ligament and trauma-style labels (MCL, Contusion, ACL) sit near the floor. That matches the Post 02 warning that hard labels are not “missing sagittal in the CSV.” The thin volume is a likelier bottleneck than plane coverage in metadata.</p>
+
+      <h2>What this run proved</h2>
+      <ol>
+        <li><strong>The greenfield loop works end to end.</strong> Series picks → resized cache → frozen DINOv2 head → weak smoke → full-58 gold score, with artifacts published as Kaggle Datasets.</li>
+        <li><strong>A tiny exam crop already beats chance on gold.</strong> Macro ≈ 0.728 on all 58 experts is a usable floor, not a finish line (public leaders sit near ~0.94).</li>
+        <li><strong>Weak-val is not the ship score.</strong> Official weak-val (0.718) and gold (0.728) sit close here; that will not always be true. Keep the ruler on gold.</li>
+        <li><strong>Persist or it did not happen.</strong> Interactive peaks without Save Version / Dataset publish are anecdotes.</li>
+      </ol>
+      <p>What it did <strong>not</strong> prove: that 3×12×224 is enough; that frozen-S is the final backbone; that weak_v1 is the final teacher; or that fold 0 alone predicts public LB.</p>
+
+      <h2>Next levers (for Post 04)</h2>
+      <p>Two honest axes from here:</p>
+      <ol>
+        <li><strong>Volume iterate</strong> (series count, slices, resolution, careful unfreeze): attack image signal, especially ACL / MCL / Contusion.</li>
+        <li><strong>Multi-fold same recipe</strong>: turn fold 0 into a full OOF gold read before any public LB probe.</li>
+      </ol>
+      <p>We will pick one axis next and measure against this gold floor with the 0.005 margin. No public submit until an OOF win.</p>
+
+      <h2>Artifacts</h2>
+      <table>
+        <thead><tr><th>Item</th><th>Slug / path</th></tr></thead>
+        <tbody>
+          <tr><td>Config</td><td><code>configs/gf_baseline_v0.yaml</code></td></tr>
+          <tr><td>Cache</td><td><code>girishbose/rsna-knee-cache-gf-v0</code></td></tr>
+          <tr><td>Code + labels meta</td><td><code>girishbose/rsna-knee-gf-v0-meta</code></td></tr>
+          <tr><td>Fold0 checkpoint + gold metrics</td><td><code>girishbose/rsna-knee-gf-v0-fold0</code></td></tr>
+          <tr><td>Train + gold kernel</td><td><code>girishbose/gf-baseline-v0-fold0</code></td></tr>
+        </tbody>
+      </table>
+      <p>Code lives in the public monorepo: <a href="https://github.com/Girish011/RSNA_Knee_Abnormality_Detection_Model">RSNA_Knee_Abnormality_Detection_Model</a>.</p>
+
+      <h2>Attribution</h2>
+      <p>Series context: <a href="01-imaging-playbook.html">Post 01</a> · <a href="02-eda-problem-shape.html">Post 02</a>.</p>
+      <p>Competition: <a href="https://www.kaggle.com/competitions/rsna-knee-abnormality-detection">RSNA Knee Abnormality Detection</a>.</p>
+      <p>Backbone: <a href="https://github.com/facebookresearch/dinov2">DINOv2</a> (Meta; public weights).</p>
+      <p>Method habit (local score before scoreboard): <a href="https://developer.nvidia.com/blog/the-kaggle-grandmasters-playbook-7-battle-tested-modeling-techniques-for-tabular-data/">The Kaggle Grandmasters Playbook</a>.</p>
+    </article>
+  </main>
+
+  <footer class="site-footer">
+    <p><a href="../index.html">Back to series hub</a> · <a href="02-eda-problem-shape.html">Post 02</a></p>
+  </footer>
+</body>
+</html>

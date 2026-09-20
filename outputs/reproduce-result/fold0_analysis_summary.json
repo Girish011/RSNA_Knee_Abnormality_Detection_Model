@@ -1,0 +1,75 @@
+{
+  "macro_auc": {
+    "seed42": 0.74223293027095,
+    "seed43": 0.7253024951504327,
+    "seed44": 0.7164584031098388,
+    "dino384_feature": 0.7226524022364793,
+    "dino384_ordered": 0.7384447527410612,
+    "dino384_label_query": 0.7148928267403343,
+    "mri_core384_feature": 0.6799707757651757,
+    "seed_ensemble": 0.7446809340414345,
+    "seed_mean": 0.7279979428437405,
+    "seed_std": 0.02810771766303148,
+    "ordered_delta_vs_seed_mean": 0.0104468098973206
+  },
+  "best_reproducible_single_seed": 0.74223293027095,
+  "three_seed_mean": 0.7279979428437405,
+  "three_seed_range": [
+    0.7164584031098388,
+    0.74223293027095
+  ],
+  "strongest_seed_variance_labels": [
+    {
+      "label": "PF OA",
+      "seed_std": 0.07074854483496956
+    },
+    {
+      "label": "Medial OA",
+      "seed_std": 0.062361875766126826
+    },
+    {
+      "label": "MCL",
+      "seed_std": 0.05687418792524224
+    },
+    {
+      "label": "Contusion",
+      "seed_std": 0.0336050157364647
+    }
+  ],
+  "ordered_wins": [
+    {
+      "label": "Synovitis",
+      "ordered_delta_vs_seed_mean": 0.15656565656565635
+    },
+    {
+      "label": "Baker's",
+      "ordered_delta_vs_seed_mean": 0.06623357228195947
+    },
+    {
+      "label": "MCL",
+      "ordered_delta_vs_seed_mean": 0.05273892773892763
+    },
+    {
+      "label": "Medial Meniscus",
+      "ordered_delta_vs_seed_mean": 0.05029885057471262
+    }
+  ],
+  "ordered_losses": [
+    {
+      "label": "Fracture",
+      "ordered_delta_vs_seed_mean": -0.05135319314641751
+    },
+    {
+      "label": "Lateral OA",
+      "ordered_delta_vs_seed_mean": -0.05047619047619045
+    },
+    {
+      "label": "ACL",
+      "ordered_delta_vs_seed_mean": -0.04200838345179525
+    },
+    {
+      "label": "PF OA",
+      "ordered_delta_vs_seed_mean": -0.03838383838383841
+    }
+  ]
+}

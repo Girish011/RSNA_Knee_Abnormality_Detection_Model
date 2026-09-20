@@ -1,0 +1,62 @@
+{
+  "stats": {
+    "ACL_filled": 825,
+    "MCL_filled": 438,
+    "Medial Meniscus_filled": 594,
+    "n_rows": 4407
+  },
+  "coverage_before": [
+    {
+      "label": "ACL",
+      "known": 429,
+      "pos": 291.0,
+      "neg": 138.0
+    },
+    {
+      "label": "MCL",
+      "known": 262,
+      "pos": 193.0,
+      "neg": 69.0
+    },
+    {
+      "label": "Medial Meniscus",
+      "known": 866,
+      "pos": 739.0,
+      "neg": 127.0
+    },
+    {
+      "label": "ANY",
+      "known": 2449,
+      "pos": NaN,
+      "neg": NaN
+    }
+  ],
+  "coverage_after": [
+    {
+      "label": "ACL",
+      "known": 1254,
+      "pos": 692.0,
+      "neg": 562.0
+    },
+    {
+      "label": "MCL",
+      "known": 700,
+      "pos": 359.0,
+      "neg": 341.0
+    },
+    {
+      "label": "Medial Meniscus",
+      "known": 1460,
+      "pos": 1202.0,
+      "neg": 258.0
+    },
+    {
+      "label": "ANY",
+      "known": 3235,
+      "pos": NaN,
+      "neg": NaN
+    }
+  ],
+  "out_csv": "/Users/girish11/RSNA_Knee_Abnormality_Detection_Model/data/processed/weak_labels_gf_lig1.csv",
+  "n_studies": 4407
+}

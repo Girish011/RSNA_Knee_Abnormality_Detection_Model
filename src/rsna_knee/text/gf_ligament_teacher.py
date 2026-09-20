@@ -9,10 +9,10 @@ Design:
 - Train-only; never used at inference / submit.
 
 Recipes:
-- lig1: ACL + MCL + Medial Meniscus (killed: OOF gold 0.6019)
-- lig2: Medial Meniscus only (drop MCL; do not fill ACL)
-
-Keep/kill is true OOF gold macro vs gf_v0 floor 0.6144 (+0.005).
+- lig1: ACL + MCL + Medial Meniscus (verdict void / noise; OOF gold 0.6019)
+- lig2: Medial Meniscus only (verdict void / noise; OOF gold 0.6103; admitted new studies)
+- lig3: Medial Meniscus only, restricted to studies that already have >=1 weak_v1 label
+  so the training set size stays 2449 (single-factor vs lig2's study-count confound)
 """
 
 from __future__ import annotations
@@ -26,6 +26,7 @@ from rsna_knee.text.weak_labels_v7 import extract_label_v7
 
 FOCUS_LABELS_LIG1 = ("ACL", "MCL", "Medial Meniscus")
 FOCUS_LABELS_LIG2 = ("Medial Meniscus",)
+FOCUS_LABELS_LIG3 = ("Medial Meniscus",)
 # Backward-compat alias for lig1 tests / callers.
 FOCUS_LABELS = FOCUS_LABELS_LIG1
 
@@ -36,13 +37,23 @@ def gap_fill_focus_labels(
     *,
     min_confidence: float = 0.5,
     focus_labels: tuple[str, ...] = FOCUS_LABELS,
+    eligible_mask: pd.Series | None = None,
 ) -> tuple[pd.DataFrame, dict[str, int]]:
-    """Return a copy of ``base`` with NaN focus labels filled from v7 extractor."""
+    """Return a copy of ``base`` with NaN focus labels filled from v7 extractor.
+
+    If ``eligible_mask`` is given (index-aligned bool Series), only those rows may
+    receive fills. Use this for lig3 to avoid admitting new studies into training.
+    """
     out = base.copy()
     stats = {f"{lab}_filled": 0 for lab in focus_labels}
-    stats["n_rows"] = int(len(out))
+    stats["n_rows"] = len(out)
+    stats["n_eligible"] = int(eligible_mask.sum()) if eligible_mask is not None else len(out)
+    stats["n_skipped_ineligible"] = 0
 
     for idx, row in out.iterrows():
+        if eligible_mask is not None and not bool(eligible_mask.loc[idx]):
+            stats["n_skipped_ineligible"] += 1
+            continue
         report = reports.loc[idx] if idx in reports.index else ""
         if pd.isna(report) or not str(report).strip():
             continue
@@ -107,6 +118,7 @@ def build_gf_gapfill(
     *,
     min_confidence: float = 0.5,
     focus_labels: tuple[str, ...] = FOCUS_LABELS,
+    only_studies_with_any_label: bool = False,
 ) -> dict:
     train = pd.read_csv(train_csv)
     base = pd.read_csv(weak_v1_csv)
@@ -114,9 +126,17 @@ def build_gf_gapfill(
     base = base.set_index("StudyInstanceUID", drop=False)
     reports = rep.reindex(base.index)
 
+    eligible = None
+    if only_studies_with_any_label:
+        eligible = base[list(LABEL_COLS)].notna().any(axis=1)
+
     before = coverage_table(base, labels=focus_labels)
     filled, stats = gap_fill_focus_labels(
-        base, reports, min_confidence=min_confidence, focus_labels=focus_labels
+        base,
+        reports,
+        min_confidence=min_confidence,
+        focus_labels=focus_labels,
+        eligible_mask=eligible,
     )
     filled = apply_expert_override(filled.reset_index(drop=True), train)
     after = coverage_table(filled, labels=focus_labels)
@@ -128,10 +148,11 @@ def build_gf_gapfill(
     return {
         "stats": stats,
         "focus_labels": list(focus_labels),
+        "only_studies_with_any_label": only_studies_with_any_label,
         "coverage_before": before.to_dict(orient="records"),
         "coverage_after": after.to_dict(orient="records"),
         "out_csv": str(out_csv),
-        "n_studies": int(len(filled)),
+        "n_studies": len(filled),
     }
 
 
@@ -164,4 +185,21 @@ def build_gf_lig2(
         out_csv,
         min_confidence=min_confidence,
         focus_labels=FOCUS_LABELS_LIG2,
+    )
+
+
+def build_gf_lig3(
+    train_csv: Path,
+    weak_v1_csv: Path,
+    out_csv: Path,
+    *,
+    min_confidence: float = 0.5,
+) -> dict:
+    return build_gf_gapfill(
+        train_csv,
+        weak_v1_csv,
+        out_csv,
+        min_confidence=min_confidence,
+        focus_labels=FOCUS_LABELS_LIG3,
+        only_studies_with_any_label=True,
     )

@@ -1,0 +1,21 @@
+{
+  "weak_oof_macro_auc": 0.685464998687162,
+  "gold58_oof_macro_auc": 0.6144479671694548,
+  "per_label_auc": {
+    "ACL": 0.4730392156862745,
+    "MCL": 0.4399092970521542,
+    "Medial Meniscus": 0.48557692307692313,
+    "Lateral Meniscus": 0.6472049689440994,
+    "Medial OA": 0.6201550387596899,
+    "Lateral OA": 0.5918762088974855,
+    "PF OA": 0.6241956241956241,
+    "Effusion": 0.8894409937888199,
+    "Synovitis": 0.6774193548387096,
+    "Baker's": 0.7228260869565216,
+    "Contusion": 0.6072874493927126,
+    "Fracture": 0.5944444444444444
+  },
+  "n_gold": 58,
+  "prior_fold0_model_on_all58_gold": 0.7281,
+  "note": "True OOF: each gold study scored by the fold that held it out"
+}

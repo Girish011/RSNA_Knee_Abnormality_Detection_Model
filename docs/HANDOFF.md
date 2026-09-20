@@ -10,7 +10,7 @@ Paste into a **new chat**. Source of truth: this file + `docs/STATUS.md` + `docs
 4. Tail of `docs/experiments.md` (from 2026-09-08 / greenfield)
 
 ## Where we are (one paragraph)
-Greenfield campaign on RSNA Knee. Blog Posts 01–03 done. Image recipe is **gf_v0**: 3 series × 12 slices × 224, frozen DINOv2-S, weak_v1, cache `girishbose/rsna-knee-cache-gf-v0`. **The defining result (2026-09-16): the 0.6144 "floor" was a fluke.** Running the identical recipe at seeds 42 / 1337 / 2024 gave 0.6144 / 0.5720 / 0.5889 — gf_v0 is really **0.592 ± 0.021**, and 0.6144 was its luckiest draw. Consequently every greenfield verdict so far (v1 24-slice, v2 336px, lig1, lig2) was decided inside the noise band and is **void**; lig1 (0.6019) and lig2 (0.6103) actually sit *above* the v0 seed mean. Single-seed A/Bs are now banned: recipes are judged as **3-seed seed-averaged OOF gold**, current baseline **0.6173**. Nothing is running.
+Greenfield on RSNA Knee. Recipe **gf_v0**: 3×12×224 frozen DINOv2-S / weak_v1. Floor 0.6144 was a fluke → **0.592 ± 0.021**; seed-avg baseline **0.6173**. Closed this cycle: train-longer KILL, lig3 GATE FAIL, **unfreeze COLLAPSE −0.114**. Live: honest 24-slice true-OOF retest (`gf-v1-true-oof-seed42-5fold`).
 
 ## Scoreboard (read the caveats)
 | Run | Weak OOF | Gold OOF | Status |
@@ -22,19 +22,23 @@ Greenfield campaign on RSNA Knee. Blog Posts 01–03 done. Image recipe is **gf_
 | **gf_v0 seed-averaged OOF** | — | **0.6173** | **current baseline to beat** |
 | gf_v1 24-slice | — | (old ruler) | verdict VOID (single seed) |
 | gf_v2 336px | — | (old ruler) | verdict VOID (single seed) |
-| gf_labels_lig1 | 0.707 | 0.6019 | verdict VOID; above v0 seed mean |
-| gf_labels_lig2 | 0.677 | 0.6103 | verdict VOID; above v0 seed mean |
+| gf_labels_lig1 | 0.707 | 0.6019 | VOID (noise); study-set confound |
+| gf_labels_lig2 | 0.677 | 0.6103 | VOID (noise); study-set confound |
+| gf_labels_lig3 | 0.682 | 0.6018 | **KILL** (Med Men gate fail) |
+| gf_v0c 10ep | — | peak ep4 0.632 | **KILL** train-longer |
+| gf_v0u unfreeze | — | frozen 0.632 → unfr 0.518 | **COLLAPSE −0.114** |
+| gf_v1 true-OOF | — | pending | stage-1 RUNNING |
 
 ## Active job
-**None.** `girishbose/gf-v0c-conv-seed42-5fold` was **ABORTED** (GPU quota exhausted).
-Meta `girishbose/rsna-knee-gf-v0c-meta` is already published — keep it.
+`girishbose/gf-v1-true-oof-seed42-5fold` RUNNING. Uses existing `gf-cache-v1` (24-slice).
+Gate vs v0 seed42 0.6144 (±0.02).
 
-If the kernel is still RUNNING in the UI: open
-https://www.kaggle.com/code/girishbose/gf-v0c-conv-seed42-5fold → **Stop Session**.
-(API cannot cancel: `kernelSessions.cancel` → 403.)
+**Unfreeze closed:** COLLAPSE −0.114 (frozen 0.632 → unfrozen 0.518). Do not retry.
 
-When quota resets: re-push / re-run the same kernel (no meta rebuild unless code changed).
-Then: download → read `convergence_report.json` → only if paired gain, run seeds 1337+2024.
+When volume done:
+1. Download → `oof_gold58_metrics.json` verdict.
+2. PROMISING → seeds 1337+2024. Else → structural / MRI-CORE.
+Do not poll.
 
 ## The ruler (use these numbers)
 | Item | Value |

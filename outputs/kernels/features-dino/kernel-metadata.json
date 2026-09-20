@@ -1,0 +1,19 @@
+{
+  "id": "girishbose/rank-features-dinov2-s-384",
+  "title": "Rank Features DINOv2-S 384",
+  "code_file": "17_build_feature_cache.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_tpu": false,
+  "enable_internet": false,
+  "machine_shape": "NvidiaTeslaT4",
+  "dataset_sources": [
+    "girishbose/rsna-knee-code",
+    "girishbose/dinov2-vits14-rsna-knee"
+  ],
+  "competition_sources": [],
+  "kernel_sources": ["girishbose/rank-cache-3x12-384-v1"],
+  "model_sources": []
+}

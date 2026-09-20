@@ -1,0 +1,63 @@
+{
+  "seed": 42,
+  "epochs": 8,
+  "freeze_epochs": 5,
+  "unfreeze_lr_mult": 0.05,
+  "per_epoch_curve": {
+    "0": {
+      "gold": 0.5807423231590246,
+      "phase": "frozen"
+    },
+    "1": {
+      "gold": 0.5956313683627925,
+      "phase": "frozen"
+    },
+    "2": {
+      "gold": 0.5950985331269439,
+      "phase": "frozen"
+    },
+    "3": {
+      "gold": 0.6000651071434681,
+      "phase": "frozen"
+    },
+    "4": {
+      "gold": 0.6317369737243821,
+      "phase": "frozen"
+    },
+    "5": {
+      "gold": 0.509449548551741,
+      "phase": "unfrozen"
+    },
+    "6": {
+      "gold": 0.5177122190632518,
+      "phase": "unfrozen"
+    },
+    "7": {
+      "gold": 0.5155921059747444,
+      "phase": "unfrozen"
+    }
+  },
+  "frozen_max_gold": 0.6317369737243821,
+  "unfrozen_max_gold": 0.5177122190632518,
+  "delta_unfrozen_minus_frozen": -0.11402475466113027,
+  "collapse_margin": 0.02,
+  "promise_margin": 0.02,
+  "verdict": "COLLAPSE",
+  "best_epoch": 4,
+  "best_epoch_gold": 0.6317369737243821,
+  "best_epoch_per_label": {
+    "ACL": 0.49264705882352944,
+    "MCL": 0.4399092970521542,
+    "Medial Meniscus": 0.5709134615384616,
+    "Lateral Meniscus": 0.6583850931677019,
+    "Medial OA": 0.6449612403100775,
+    "Lateral OA": 0.6034816247582204,
+    "PF OA": 0.6563706563706564,
+    "Effusion": 0.8683229813664596,
+    "Synovitis": 0.6821983273596177,
+    "Baker's": 0.76268115942029,
+    "Contusion": 0.5856950067476382,
+    "Fracture": 0.6152777777777777
+  },
+  "note": "Paired within-run unfreeze test. Epochs 0-4 should match gf_v0. Verdict is stage1 gate only; macro keep needs 3-seed average."
+}

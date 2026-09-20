@@ -1,0 +1,106 @@
+# Handoff — 2026-08-19
+
+Paste this into a new Cursor chat. Repo is source of truth: `docs/STATUS.md`, `docs/DECISIONS.md`, `docs/experiments.md`. Rule: `.cursor/rules/rsna-knee.mdc`.
+
+Start by reading those three docs. Pick **one** session goal from STATUS “Next 3 actions”. Do not reopen settled DECISIONS without an explicit user request.
+
+## Competition
+- Kaggle **RSNA Knee Abnormality Detection** (code notebook submit, ≤9h, no internet at submit).
+- Metric: **macro AUC** over 12 binary labels. Inference: **images + series metadata only**. Reports are train-only.
+- Dual finals: max-AUC main + separate efficiency student. **Do not submit** until OOF is far above ~0.72 (public top ~0.94). Do not burn both finals on near-identical models.
+- User: Kaggle `girishbose`. Repo: `/Users/girish11/RSNA_Knee_Abnormality_Detection_Model`.
+- Compute: Kaggle **T4 x2 only**. `CUDA_VISIBLE_DEVICES=0` (one process). Never `pip install torch`.
+- Auth: `~/.kaggle/access_token`. CLI is `.venv/bin/kaggle` (not on default PATH).
+
+## Phase
+**Supervision first; architecture search is frozen.** The image model already extracts MRI signal. It is trained to copy noisy keywords (`weak_v1` covers 2449/4407; expert recall ~0.34). Hidden-test ~0.94 is expert-quality.
+
+Reproducible S gates: seed42 **0.742**, 3-seed ensemble **0.745**, historical fold1 **0.732**. The old **0.764** was an unseeded outlier; checkpoint missing; do not use it as a gate.
+
+Keep: frozen DINOv2-B fold0 **0.759** (`main-dinov2b-fold0-weak-v1`) and the seeded S ensemble **0.745**.
+
+## Session goal (do this next)
+**Write a supervision recovery plan** before any new label-generation recipe.
+
+Latest constrained run (`girishbose/weak-labels-v6-constrained-qwen`) outcome:
+- parse **1.000** (pass)
+- combined precision **0.6826** (fail vs 0.69)
+- combined recall **0.7178** (pass)
+- llm-fill precision **0.6743**
+- known labels **7649 → 30216**
+- candidate not written (`passed: false`)
+
+So: keep training on `weak_labels_v1` until a written plan is approved. Do not 5-fold, submit, or reopen killed work.
+
+## What works (keep)
+| Artifact | Result |
+|---|---|
+| Frozen **DINOv2-S** + weak_v1 + cache_v1, seed42 FP32 | fold0 **0.742** |
+| Same, seeds 42/43/44 probability ensemble | **0.745** |
+| Frozen **DINOv2-B** 8ep never-unfreeze + weak_v1 + cache_v1 | fold0 **0.759** ← keep ckpt |
+| Historical 5-fold S frozen v1 | mean ~0.719 (f1 **0.732**) |
+| `weak_labels_v1` keywords (EN+ES) | expert prec **~0.69**, rec **~0.34**, F1 **~0.44** |
+
+**B ckpt:** `/kaggle/input/notebooks/girishbose/main-dinov2b-fold0-weak-v1/main_dinov2_b_v1_frozen/fold0/fold0_best.pt`
+
+**Train recipe that doesn’t explode:** backbone frozen all epochs; `--pos-weight 1.0`; `--seed`; `--disable-amp` to match the seeded S runs; weak_v1. Unfreeze collapsed (S 0.685→0.55; B 0.729→0.615).
+
+## Kaggle assets
+- Code dataset: `girishbose/rsna-knee-code` (package with `bash scripts/package_kaggle_datasets.sh`, then `.venv/bin/kaggle datasets version -p outputs/kaggle_code_upload/repo -r zip -m "..."`. Wait until `kaggle datasets status girishbose/rsna-knee-code` is **ready** before a kernel uses new flags.)
+- Weights S: `girishbose/dinov2-vits14-rsna-knee` (public)
+- Weights B: `girishbose/dinov2-vitb14-rsna-knee` (public)
+- Cache v1 (kernel output): `girishbose/rsna-knee-cache-v1` → `cache_v1`
+- Comp: `/kaggle/input/competitions/rsna-knee-abnormality-detection`
+- Weak labels: `data/processed/weak_labels_v1.csv` in the code dataset (Report column stripped on pack; reports come from `train.csv`)
+
+## Killed (do not reopen without new evidence)
+**Labels**
+- **weak_v2** multilingual keywords: train regression vs v1.
+- **weak_v3** mDeBERTa-XNLI: expert prec **0.47**.
+- **weak_v4** Qwen unconstrained, all 12 labels, positional JSON: LLM-only prec **0.623**, parse **0.799**. Audit bug: distributed v1 CSV already has gold on 58 experts → rejoining reported false 1.0. Historical pre-override prec **0.68755** in `docs/audit/weak_label_vs_expert.csv`.
+- **weak_v5** consensus fill (named JSON, unlabeled cells only, gold stripped): parse **0.795**, combined prec **0.6897** (missed 0.69 by 0.0003), rec **0.667** (pass), coverage 7649→23911 (pass), LLM-fill prec **0.695**. MCL LLM-fill prec **0.27**. No candidate written. Audit: `docs/audit/weak_label_v5_vs_expert.csv`. Kernel: `girishbose/weak-labels-v5-consensus-qwen`.
+
+**Architecture / cache**
+- **cache_v2** 4×16: S **0.738**.
+- **Unfreeze**, **expert head-FT**.
+- **384 rank path:** DINO feature-baseline **0.723**, ordered **0.738**, label-query **0.715**; MRI-CORE **0.680**.
+- **Routing/blend:** fold0 0.768 did not transfer; fold1 routed **0.7279** vs baseline **0.7317**.
+- **Report-alignment init:** e5 InfoNCE loss 3.52→2.36 on 4407 reports, then seed42 224 feature-baseline scratch **0.731** vs aligned **0.710**. Kill as classifier init. Do not run fold1. Kernel: `girishbose/train-aligned-dinov2-s-fold0`.
+
+## v5 design to reuse (constrained decode only)
+- Skeleton = shipped `weak_labels_v1.csv` for non-experts.
+- On 58 experts: strip gold with frozen EN+ES extractor `src/rsna_knee/text/weak_labels_v1.py` (`expert_override=False`). Current `weak_labels.py` PATTERNS are **v2** — do not use them for the skeleton.
+- LLM only for NaN cells. Named JSON, not a length-12 array. Known labels are read-only context.
+- pos ≥ **0.95**, neg ≥ **0.98**. Never overwrite skeleton non-null.
+- After pass: expert override, then write candidate. On fail: no training candidate.
+- Code: `src/rsna_knee/text/consensus_labels.py`, tests `tests/test_consensus_labels.py`, notebook `notebooks/21_consensus_labels.py`.
+
+## Why v4/v5 parse failed
+Unconstrained Qwen JSON parse was **~0.80** twice (positional arrays and named objects). That is the blocker, not coverage. Combined v5 precision was essentially a tie with v1; MCL fills were poisonous. Constrained decoding is allowed **now** because alignment already ran and failed. Do not relax 0.69 / 0.98.
+
+## Operational gotchas
+- T4x2 duplicates logs unless `CUDA_VISIBLE_DEVICES=0`.
+- Never `pip install torch`. bitsandbytes: `--no-deps`.
+- Kaggle `kernels files` sizes can be ~1KB metadata lies; real npz were fine.
+- Dataset version can be “creating” while a kernel still mounts old code — wait for **ready**.
+- Trainer must apply `--seed` (historical 0.764 was unseeded). `--disable-amp` matches the seeded S reproduction.
+- Kernel title must slug-match `id` or Kaggle creates a surprising slug (v5 became `weak-labels-v5-consensus-qwen`).
+- Package rsync includes junk (`.cursor`, `.DS_Store`); ignore unless it blocks upload.
+- To fetch a kernel log without 4407 npz: `.venv/bin/python` → `KaggleApi().kernels_logs("owner/slug")`.
+- Distributed `weak_labels_v1.csv` contains expert gold. Always strip before LLM/audit.
+
+## Code pointers
+- Train: `scripts/train_baseline_fold.py` (`--seed`, `--disable-amp`, `--init-checkpoint`, `--model-type`)
+- Consensus labels: `src/rsna_knee/text/consensus_labels.py`, `notebooks/21_consensus_labels.py` (v6 constrained JSON)
+- Frozen v1 keywords: `src/rsna_knee/text/weak_labels_v1.py`
+- Alignment (killed as init): `scripts/pretrain_report_alignment.py`, `notebooks/19_report_alignment.py`
+- Package: `bash scripts/package_kaggle_datasets.sh` → `outputs/kaggle_code_upload/repo`
+- Reproduce S: `notebooks/20_reproduce_baseline_fold0.py` / `girishbose/reproduce-dinov2-s-fold0-seeds`
+- Local OOF: `outputs/reproduce-result/reproduce_dinov2_s_fold0/seed{42,43,44}/`
+
+## Do not
+- 5-fold, public LB, or submit until a new label recipe beats expert prec **and** rec, then seeded fold0 **0.745** **and** untouched fold1 **0.732**.
+- Train on v4/v5 candidates (none shipped).
+- Reopen MRI-CORE, 384 rank, routing, unfreeze, expert head-FT, or e5 alignment init.
+- Treat Gemma/MedGemma as a submission classifier.
+- Use reports at inference.

@@ -1,0 +1,19 @@
+{
+  "id": "girishbose/reproduce-dinov2-s-fold0-seeds",
+  "title": "Reproduce DINOv2-S Fold0 Seeds",
+  "code_file": "20_reproduce_baseline_fold0.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_tpu": false,
+  "enable_internet": false,
+  "machine_shape": "NvidiaTeslaT4",
+  "dataset_sources": [
+    "girishbose/rsna-knee-code",
+    "girishbose/dinov2-vits14-rsna-knee"
+  ],
+  "competition_sources": ["rsna-knee-abnormality-detection"],
+  "kernel_sources": ["girishbose/rsna-knee-cache-v1"],
+  "model_sources": []
+}

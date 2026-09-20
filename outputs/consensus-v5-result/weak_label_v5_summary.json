@@ -1,0 +1,21 @@
+{
+  "skeleton_macro_positive_precision": 0.6865955643972885,
+  "skeleton_macro_recall": 0.3416243388783435,
+  "combined_macro_positive_precision": 0.689702810948941,
+  "combined_macro_recall": 0.6669848283549656,
+  "llm_fill_macro_positive_precision": 0.6949948199948199,
+  "llm_fill_expert_positives": 102,
+  "parse_rate": 0.7953256183344679,
+  "skeleton_known_labels": 7649,
+  "combined_known_labels": 23911,
+  "min_precision": 0.69,
+  "min_recall": 0.3440052912592958,
+  "passed": false,
+  "model": "Qwen/Qwen2.5-7B-Instruct",
+  "model_license": "Apache-2.0",
+  "reports_attempted": 4407,
+  "pos_confidence": 0.95,
+  "neg_confidence": 0.98,
+  "expert_studies": 58,
+  "never_overwrite_skeleton": true
+}

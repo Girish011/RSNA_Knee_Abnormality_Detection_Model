@@ -1,0 +1,22 @@
+{
+  "seed": 1337,
+  "weak_oof_macro_auc": 0.6715625398846979,
+  "gold58_oof_macro_auc": 0.5720213358581621,
+  "per_label_auc": {
+    "ACL": 0.4852941176470588,
+    "MCL": 0.5941043083900226,
+    "Medial Meniscus": 0.4795673076923077,
+    "Lateral Meniscus": 0.6273291925465838,
+    "Medial OA": 0.5813953488372092,
+    "Lateral OA": 0.4119922630560929,
+    "PF OA": 0.6023166023166022,
+    "Effusion": 0.6310559006211179,
+    "Synovitis": 0.6320191158900835,
+    "Baker's": 0.5760869565217391,
+    "Contusion": 0.6653171390013495,
+    "Fracture": 0.5777777777777777
+  },
+  "seed42_oof_gold58": 0.6144,
+  "delta_vs_seed42": -0.042378664141837885,
+  "note": "Ruler-noise replicate of gf_v0. Same code/labels/cache as seed 42; only train.seed differs. delta_vs_seed42 is pure run-to-run noise because the recipe is identical - it is NOT a keep/kill signal."
+}

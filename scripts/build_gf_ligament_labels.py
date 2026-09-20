@@ -15,6 +15,7 @@ from rsna_knee.constants import LABEL_COLS
 from rsna_knee.text.gf_ligament_teacher import (
     FOCUS_LABELS_LIG1,
     FOCUS_LABELS_LIG2,
+    FOCUS_LABELS_LIG3,
     build_gf_gapfill,
 )
 from rsna_knee.text.weak_labels_v7 import extract_label_v7
@@ -26,11 +27,19 @@ RECIPES = {
         "focus": FOCUS_LABELS_LIG1,
         "out_name": "weak_labels_gf_lig1.csv",
         "audit_prefix": "gf_lig1",
+        "only_any": False,
     },
     "lig2": {
         "focus": FOCUS_LABELS_LIG2,
         "out_name": "weak_labels_gf_lig2.csv",
         "audit_prefix": "gf_lig2",
+        "only_any": False,
+    },
+    "lig3": {
+        "focus": FOCUS_LABELS_LIG3,
+        "out_name": "weak_labels_gf_lig3.csv",
+        "audit_prefix": "gf_lig3",
+        "only_any": True,
     },
 }
 
@@ -83,7 +92,13 @@ def main() -> None:
     print("focus:", ", ".join(focus))
     print(pure.to_string(index=False))
 
-    summary = build_gf_gapfill(train_csv, weak_v1, out_csv, focus_labels=focus)
+    summary = build_gf_gapfill(
+        train_csv,
+        weak_v1,
+        out_csv,
+        focus_labels=focus,
+        only_studies_with_any_label=bool(spec["only_any"]),
+    )
     print("\n=== gap-fill stats ===")
     print(json.dumps(summary["stats"], indent=2))
     print("\ncoverage before:")
@@ -101,11 +116,10 @@ def main() -> None:
             print("OVERRIDE FAIL", lab)
     print("expert override ok on focus labels:", ok)
 
-    # lig2 must not change ACL/MCL vs weak_v1 except expert gold override.
-    if args.recipe == "lig2":
-        v1 = pd.read_csv(weak_v1)
-        gold_uids = set(gold["StudyInstanceUID"].astype(str))
-        cmp = v1.merge(ship, on="StudyInstanceUID", suffixes=("_v1", "_s"))
+    v1 = pd.read_csv(weak_v1)
+    gold_uids = set(gold["StudyInstanceUID"].astype(str))
+    cmp = v1.merge(ship, on="StudyInstanceUID", suffixes=("_v1", "_s"))
+    if args.recipe in ("lig2", "lig3"):
         for lab in ("ACL", "MCL"):
             non_gold = ~cmp["StudyInstanceUID"].astype(str).isin(gold_uids)
             left = cmp.loc[non_gold, f"{lab}_v1"]
@@ -118,7 +132,20 @@ def main() -> None:
             if n_diff:
                 ok = False
 
-    print("wrote", out_csv)
+    if args.recipe == "lig3":
+        any_v1 = cmp[[f"{c}_v1" for c in LABEL_COLS]].notna().any(axis=1)
+        any_s = cmp[[f"{c}_s" for c in LABEL_COLS]].notna().any(axis=1)
+        # Studies with no weak_v1 label must stay unlabeled (except expert gold override).
+        non_gold = ~cmp["StudyInstanceUID"].astype(str).isin(gold_uids)
+        newly = non_gold & (~any_v1) & any_s
+        print(f"non-gold studies newly admitted to training: {int(newly.sum())} (want 0)")
+        if newly.any():
+            ok = False
+        any_before = int(any_v1.sum())
+        any_after = int(any_s.sum())
+        print(f"ANY known: {any_before} -> {any_after} (lig3 should keep non-gold pool flat)")
+
+    print("wrote", out_csv, "ok=", ok)
     (audit_dir / f"{spec['audit_prefix']}_build_summary.json").write_text(
         json.dumps(summary, indent=2)
     )

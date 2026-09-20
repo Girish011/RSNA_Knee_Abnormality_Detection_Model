@@ -1,0 +1,22 @@
+{
+  "id": "girishbose/train-aligned-dinov2-s-fold0",
+  "title": "train-aligned-dinov2-s-fold0",
+  "code_file": "22_train_aligned_fold0.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_tpu": false,
+  "enable_internet": false,
+  "machine_shape": "NvidiaTeslaT4",
+  "dataset_sources": [
+    "girishbose/rsna-knee-code"
+  ],
+  "competition_sources": [
+    "rsna-knee-abnormality-detection"
+  ],
+  "kernel_sources": [
+    "girishbose/report-align-dinov2-s-cachev1"
+  ],
+  "model_sources": []
+}

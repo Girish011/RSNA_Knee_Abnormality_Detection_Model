@@ -1,0 +1,26 @@
+{
+  "seed": 42,
+  "weak_oof_macro_auc": 0.6823239133665792,
+  "gold58_oof_macro_auc": 0.6018116979591279,
+  "per_label_auc": {
+    "ACL": 0.4583333333333333,
+    "MCL": 0.46031746031746035,
+    "Medial Meniscus": 0.48677884615384626,
+    "Lateral Meniscus": 0.6596273291925466,
+    "Medial OA": 0.5534883720930233,
+    "Lateral OA": 0.6073500967117988,
+    "PF OA": 0.5894465894465895,
+    "Effusion": 0.9006211180124223,
+    "Synovitis": 0.6391875746714456,
+    "Baker's": 0.6594202898550725,
+    "Contusion": 0.611336032388664,
+    "Fracture": 0.5958333333333333
+  },
+  "stage1_gate_label": "Medial Meniscus",
+  "stage1_gate_min": 0.566,
+  "stage1_gate_value": 0.48677884615384626,
+  "stage1_gate_pass": false,
+  "seed_averaged_v0_baseline": 0.6173,
+  "margin": 0.0427,
+  "note": "Single-factor Med Men fills (no new studies). Stage1 gate is per-label Med Men gold, not macro keep/kill. Macro keep needs 3-seed average."
+}

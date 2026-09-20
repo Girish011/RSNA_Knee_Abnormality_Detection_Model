@@ -1,0 +1,40 @@
+{
+  "runs": [
+    "42",
+    "1337",
+    "2024"
+  ],
+  "per_run_gold_macro": {
+    "42": 0.6144479671694548,
+    "1337": 0.5720213358581621,
+    "2024": 0.5889260998353268
+  },
+  "mean_gold_macro": 0.5917984676209813,
+  "seed_sd": 0.0213586664758861,
+  "range": 0.04242663131129276,
+  "largest_same_recipe_abs_delta": 0.04242663131129276,
+  "per_label_sd": {
+    "ACL": 0.02209283869769605,
+    "MCL": 0.08024562809733388,
+    "Medial Meniscus": 0.06564524905971812,
+    "Lateral Meniscus": 0.012255609595816813,
+    "Medial OA": 0.037220067348901015,
+    "Lateral OA": 0.09002685899510239,
+    "PF OA": 0.011958266722236256,
+    "Effusion": 0.13282247206923836,
+    "Synovitis": 0.02769468522614688,
+    "Baker's": 0.08578493148769988,
+    "Contusion": 0.06350432305480834,
+    "Fracture": 0.05992107291616083
+  },
+  "seed_averaged_gold_macro": 0.617323096449904,
+  "seed_averaged_bootstrap": {
+    "mean": 0.6170995354493247,
+    "lo": 0.5667829599387763,
+    "hi": 0.6671081473110609,
+    "sd": 0.025713021414635502
+  },
+  "proposed_margin": 0.0427173329517722,
+  "proposed_keep_threshold": 0.6600404294016762,
+  "note": "All runs share one recipe and differ only in train.seed, so every difference here is noise. Margin rule pre-registered before results: max(0.005, 2*seed_sd)."
+}

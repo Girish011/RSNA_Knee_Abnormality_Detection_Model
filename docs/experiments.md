@@ -333,3 +333,77 @@ Append one row (or block) per run. Never delete history.
 - ruler: seed-averaged v0 baseline **0.6173**, seed sd 0.0214, margin **0.0427**. **This single seed cannot produce a keep/kill.** If a policy shows a real paired gain, seeds 1337 + 2024 follow (~18 h) for the 3-seed verdict.
 - staged deliberately to protect the 30 h weekly quota: ~8 h now, and we only spend the remaining ~18 h if stage 1 looks promising.
 - conclusion: **ABORTED** mid-run — user reported GPU quota exhausted and asked to stop. Kernel still showed RUNNING via API; cancel requires the Kaggle UI (API token lacks `kernelSessions.cancel`). Resume same staged job when quota resets; do not re-upload meta unless code changes.
+
+### 2026-09-19 — gf_v0c stage 1 resumed (quota reset)
+- prior: v1 CANCEL_ACKNOWLEDGED after GPU exhaustion
+- action: re-pushed same kernel + same meta (no rebuild) → **v2 RUNNING**
+- kernel: `girishbose/gf-v0c-conv-seed42-5fold` v2; meta `girishbose/rsna-knee-gf-v0c-meta`
+- conclusion: launched; result below.
+
+### 2026-09-20 — gf_v0c stage 1 COMPLETE → longer training FAILS gold; selection policy is the real finding
+- kernel: `girishbose/gf-v0c-conv-seed42-5fold` v2 COMPLETE; artifacts `outputs/kaggle_download/gf-v0c-conv-seed42-5fold/`; audit `docs/audit/gf_v0c_convergence_seed42.json`
+- **reproduction check PASSED** (pairing property holds): epochs 0–4 weak-val match the recorded seed-42 5-epoch run to 0.001 on every fold (max |drift| = 0.000 after rounding).
+- **per-epoch true OOF gold-58 (all folds, same epoch):**
+  | ep | gold | weak |
+  |---|---|---|
+  | 0 | 0.5807 | 0.6239 |
+  | 1 | 0.5956 | 0.6628 |
+  | 2 | 0.5951 | 0.6707 |
+  | 3 | 0.6001 | 0.6825 |
+  | **4** | **0.6317** | 0.6894 |
+  | 5 | 0.6150 | 0.6803 |
+  | 6 | 0.6136 | 0.6943 |
+  | 7 | 0.6276 | 0.6943 |
+  | 8 | 0.6162 | 0.7049 |
+  | 9 | 0.6110 | 0.6991 |
+- **Gold peaks at epoch 4 and declines.** Weak keeps rising through ep8 (0.689→0.705). Weak−gold gap grows 0.058→0.088 → teacher overfit: more epochs fit noisy weak labels harder, not gold.
+- **Checkpoint policies (same trained models, paired):**
+  | policy | gold | weak |
+  |---|---|---|
+  | **uniform ep4** (all folds @ ep4) | **0.6317** | — |
+  | avg_last5 | 0.6265 | 0.7059 |
+  | avg_last3 | 0.6211 | 0.7067 |
+  | best_weakval_all10 | 0.6195 | 0.7075 |
+  | best_weakval_first5 (= old recipe) | **0.6144** | 0.6855 |
+  | final_epoch | 0.6110 | 0.6991 |
+- Old recipe matches recorded seed-42 OOF **exactly** (0.6144); fold3 picked ep1, fold4 picked ep3 on weak-val, leaving ~0.017 vs uniform ep4.
+- avg_last5 vs old: **+0.012** paired — a *selection* win, not a *longer-training* win (uniform ep4 still beats it).
+- conclusion: **KILL "train longer"** for this frozen recipe. Do **not** spend ~18 h on seeds 1337/2024 at 10 epochs. Escalate. Fixed-epoch / no-weak-val picking is hygiene, not a path to ~0.94.
+
+### 2026-09-20 — Chose clean Med Men (lig3); stage 1 launched
+- choice vs fork: clean Med Men fills (not unfreeze / volume / re-plan) — only reproducible signal; cheapest honest label A/B; no cache rebuild.
+- teacher: `weak_labels_gf_lig3.csv` = weak_v1 + Med Men gap-fill **restricted to studies with ≥1 weak_v1 label**
+- coverage: Med Men 866→886 (**+20 fills**); ANY **2449→2449** (0 new studies). Contrast lig2: +594 fills, ANY→3023 — most of lig2's Med Men lift admitted new studies.
+- kernel: `girishbose/gf-labels-lig3-5fold`; meta `girishbose/rsna-knee-gf-lig3-meta`
+- **pre-registered stage-1 gate:** Med Men gold OOF ≥ **0.566** (not a macro keep). Fail → kill without multi-seed. Pass → seeds 1337+2024 for seed-averaged macro vs 0.6173+0.0427.
+- conclusion: launched; result below.
+
+### 2026-09-20 — gf_labels_lig3 stage 1 COMPLETE → **GATE FAIL / KILL**
+- kernel: `girishbose/gf-labels-lig3-5fold` COMPLETE
+- weak OOF macro 0.682; gold OOF macro **0.6018**
+- **Med Men gold 0.4868** vs v0 seed42 0.4856 (Δ **+0.001**); gate ≥ 0.566 → **FAIL**
+- per-label vs v0: no Med Men lift; Effusion still strong (0.901); Med OA −0.067 (noise-scale)
+- artifacts: `outputs/kaggle_download/gf-labels-lig3-5fold/`; audit `docs/audit/gf_lig3_oof_gold58_metrics.json`
+- conclusion: **KILL clean Med Men fills.** The lig1/lig2 Med Men +0.13 required admitting new studies (ANY 2449→3023); fills inside the existing 2449 pool (+20 cells) do nothing. Do not run seeds 1337/2024. Label gap-fill track closed for this extractor.
+
+### 2026-09-20 — Chose careful unfreeze (gf_v0u); stage 1 launched
+- next lever: reopen DECISIONS 2026-08-12 under paired measurement (past collapses were single-seed / weak-val).
+- kernel: `girishbose/gf-v0u-unfreeze-seed42-5fold` RUNNING; **reuses** `rsna-knee-gf-v0c-meta` (no dataset upload)
+- recipe: ep0–4 frozen (retraces v0), ep5–7 unfrozen at lr×0.05, `--save-epoch-oof`
+- gates: COLLAPSE if unfrozen_max < frozen_max−0.02; PROMISING if ≥ frozen_max+0.02; else INCONCLUSIVE → kill
+- conclusion: launched; result below.
+
+### 2026-09-21 — gf_v0u unfreeze stage 1 COMPLETE → **COLLAPSE / KILL**
+- kernel: `girishbose/gf-v0u-unfreeze-seed42-5fold` COMPLETE
+- reproduction: epochs 0–4 weak-val match seed42 exactly (drift 0.000)
+- **gold curve:** ep4 frozen **0.6317** → ep5 unfrozen **0.5094** → ep6/7 ~0.516
+- frozen_max 0.6317, unfrozen_max 0.5177, Δ **−0.114** → verdict **COLLAPSE** (margin 0.02)
+- artifacts: `outputs/kaggle_download/gf-v0u-unfreeze-seed42-5fold/`; audit `docs/audit/gf_v0u_unfreeze_seed42.json`
+- conclusion: **KILL unfreeze** on this recipe. Confirms DECISIONS 2026-08-12 with paired true-OOF gold. No multi-seed.
+
+### 2026-09-21 — Chose honest 24-slice volume retest (gf_v1 true OOF); stage 1 launched
+- prior v1 kill (fold0→all58 0.7089) is VOID under true-OOF ruler
+- reuse existing `girishbose/gf-cache-v1` (no rebuild) + `rsna-knee-gf-v1-meta`
+- kernel: `girishbose/gf-v1-true-oof-seed42-5fold` RUNNING
+- gate vs v0 seed42 0.6144: KILL <0.5944; PROMISING ≥0.6344; else INCONCLUSIVE → kill
+- conclusion: **running** — user will report when done (no poll).

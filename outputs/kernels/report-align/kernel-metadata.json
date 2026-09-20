@@ -1,0 +1,23 @@
+{
+  "id": "girishbose/report-align-dinov2-s-cachev1",
+  "title": "report-align-dinov2-s-cachev1",
+  "code_file": "19_report_alignment.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_tpu": false,
+  "enable_internet": true,
+  "machine_shape": "NvidiaTeslaT4",
+  "dataset_sources": [
+    "girishbose/rsna-knee-code",
+    "girishbose/dinov2-vits14-rsna-knee"
+  ],
+  "competition_sources": [
+    "rsna-knee-abnormality-detection"
+  ],
+  "kernel_sources": [
+    "girishbose/rsna-knee-cache-v1"
+  ],
+  "model_sources": []
+}

@@ -1,0 +1,22 @@
+{
+  "weak_oof_macro_auc": 0.6773955591761784,
+  "gold58_oof_macro_auc": 0.6102801644009966,
+  "per_label_auc": {
+    "ACL": 0.5833333333333334,
+    "MCL": 0.46712018140589573,
+    "Medial Meniscus": 0.622596153846154,
+    "Lateral Meniscus": 0.6186335403726708,
+    "Medial OA": 0.6713178294573644,
+    "Lateral OA": 0.6441005802707931,
+    "PF OA": 0.5366795366795367,
+    "Effusion": 0.7341614906832298,
+    "Synovitis": 0.5698924731182795,
+    "Baker's": 0.6739130434782609,
+    "Contusion": 0.6113360323886639,
+    "Fracture": 0.5902777777777778
+  },
+  "baseline_oof_gold58": 0.6144,
+  "keep_threshold": 0.6194,
+  "verdict": "KILL",
+  "note": "True OOF gold; teacher=gf_lig2 Med-Men-only gap-fill on weak_v1"
+}

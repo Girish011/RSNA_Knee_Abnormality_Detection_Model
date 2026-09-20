@@ -1,0 +1,39 @@
+{
+  "stats": {
+    "Medial Meniscus_filled": 594,
+    "n_rows": 4407
+  },
+  "focus_labels": [
+    "Medial Meniscus"
+  ],
+  "coverage_before": [
+    {
+      "label": "Medial Meniscus",
+      "known": 866,
+      "pos": 739.0,
+      "neg": 127.0
+    },
+    {
+      "label": "ANY",
+      "known": 2449,
+      "pos": NaN,
+      "neg": NaN
+    }
+  ],
+  "coverage_after": [
+    {
+      "label": "Medial Meniscus",
+      "known": 1460,
+      "pos": 1202.0,
+      "neg": 258.0
+    },
+    {
+      "label": "ANY",
+      "known": 3023,
+      "pos": NaN,
+      "neg": NaN
+    }
+  ],
+  "out_csv": "/Users/girish11/RSNA_Knee_Abnormality_Detection_Model/data/processed/weak_labels_gf_lig2.csv",
+  "n_studies": 4407
+}

@@ -1,0 +1,63 @@
+# gf = greenfield (new plan, not the old stack)
+# v0 = first simple baseline
+
+# Words to know
+# YAML: settings written as key: value (indentation matters; use spaces, not tabs)
+# backbone: the pretrained image network (here DINOv2-S)
+# frozen: backbone weights stay fixed; only a small head learns at first
+# ruler: how we decide keep vs kill
+
+experiment:
+  id: gf_baseline_v0
+  track: main
+  notes: "Greenfield v0: 1 sag + 1 cor + 1 ax, 12 slices, 224px, frozen DINOv2-S"
+
+paths:
+  # On Kaggle these paths will change; for now document the plan
+  train_csv: /kaggle/input/competitions/rsna-knee-abnormality-detection/train.csv
+  train_series_csv: /kaggle/input/competitions/rsna-knee-abnormality-detection/train_series.csv
+  folds: data/folds/folds_v1.csv
+  weak_labels: data/processed/weak_labels_v1.csv
+  series_picks: outputs/eda/gf_v0_series_picks.csv
+  cache_dir: /kaggle/input/datasets/girishbose/rsna-knee-cache-gf-v0/cache_gf_v0
+  output_dir: outputs/experiments/gf_baseline_v0
+  backbone_weights: null
+
+data:
+  # Volume recipe for v0
+  max_series: 3
+  n_slices: 12
+  image_size: 224
+  center_bias: true
+  require_plane_coverage: true
+  plane_order: ["Sagittal", "Coronal", "Axial"]
+  prefer_fluid_sensitive: true
+
+model:
+  backbone: dinov2_vits14
+  freeze_backbone_epochs: 5
+  dropout: 0.1
+  pretrained: true
+
+train:
+  # Fold 0 only for the first real train run
+  n_folds: 5
+  fold: 0
+  seed: 1337
+  epochs: 5
+  batch_size: 2
+  lr: 3.0e-4
+  weight_decay: 0.05
+  amp: true
+  num_workers: 2
+
+loss:
+  type: masked_bce
+  use_confidence: true
+  pos_weight: 1.0
+
+ruler:
+  # Keep/kill on full-58 gold macro AUC; weak-val is smoke only
+  primary: full58_gold_macro_auc
+  margin: 0.005
+  smoke: weak_label_val_auc

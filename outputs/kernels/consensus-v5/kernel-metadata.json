@@ -1,0 +1,20 @@
+{
+  "id": "girishbose/weak-labels-v5-consensus-qwen",
+  "title": "weak-labels-v5-consensus-qwen",
+  "code_file": "21_consensus_labels.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_tpu": false,
+  "enable_internet": true,
+  "machine_shape": "NvidiaTeslaT4",
+  "dataset_sources": [
+    "girishbose/rsna-knee-code"
+  ],
+  "competition_sources": [
+    "rsna-knee-abnormality-detection"
+  ],
+  "kernel_sources": [],
+  "model_sources": []
+}
