@@ -8,3 +8,4 @@ pydicom>=2.4
 pillow>=10.0
 opencv-python-headless>=4.8
 # Install torch/torchvision from the Kaggle image or matching CUDA/MPS wheels separately.
+einops>=0.7  # MRI-CORE / SAM import chain

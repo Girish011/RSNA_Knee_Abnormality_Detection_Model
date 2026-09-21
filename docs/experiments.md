@@ -406,4 +406,26 @@ Append one row (or block) per run. Never delete history.
 - reuse existing `girishbose/gf-cache-v1` (no rebuild) + `rsna-knee-gf-v1-meta`
 - kernel: `girishbose/gf-v1-true-oof-seed42-5fold` RUNNING
 - gate vs v0 seed42 0.6144: KILL <0.5944; PROMISING ≥0.6344; else INCONCLUSIVE → kill
+- conclusion: launched; result below.
+
+### 2026-09-21 — gf_v1 true-OOF stage 1 COMPLETE → **INCONCLUSIVE → KILL**
+- kernel: `girishbose/gf-v1-true-oof-seed42-5fold` COMPLETE
+- gold OOF macro **0.6080**, weak **0.6806**; Δ vs v0 seed42 0.6144 = **−0.006**
+- gate: KILL <0.5944 / PROMISING ≥0.6344 → **INCONCLUSIVE** → kill (no multi-seed)
+- per-label vs v0: Med OA **−0.115**, Fracture +0.068, Effusion −0.046; rest ~noise
+- artifacts: `outputs/kaggle_download/gf-v1-true-oof-seed42-5fold/`; audit `docs/audit/gf_v1_true_oof_seed42.json`
+- conclusion: **KILL 24-slice volume** under honest ruler. Thin-recipe volume/adaptation/labels track closed. Next = structural encoder (MRI-CORE).
+
+### 2026-09-21 — Chose MRI-CORE ViT-B; stage 1 launched
+- wire: `create_image_encoder("mri_core_vitb")` in greenfield `src/rsna_knee`; custom teacher→SAM loader (fixes upstream pos_embed bug; skips unused SAM neck → **768-d** features)
+- same `cache_gf_v0`; bilinear 224→384 at encode; batch 1; encode_chunk 8; freeze 5ep
+- meta: `girishbose/rsna-knee-gf-mri-core-meta`; weights dataset reused
+- kernel: `girishbose/gf-mri-core-seed42-5fold` RUNNING
+- gate vs v0 seed42 0.6144 ±0.02
+- conclusion: launched; result / fix below.
+
+### 2026-09-21 — gf-mri-core v1 ERROR → v2 relaunch
+- v1 fail: `AssertionError: .../competitions/.../train.csv` (competition mount missing train on this worker)
+- fix: bundle `data/raw/train.csv` (no Report) into meta; kernel resolves competition → meta → rglob
+- kernel: `girishbose/gf-mri-core-seed42-5fold` **v2 RUNNING**
 - conclusion: **running** — user will report when done (no poll).

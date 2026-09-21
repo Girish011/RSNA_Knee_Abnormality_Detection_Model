@@ -1,0 +1,56 @@
+# Greenfield structural lever: same volume recipe as gf_v0, MRI-CORE ViT-B encoder.
+# Cache stays cache_gf_v0 (3×12×224); slices are bilinear-upsampled to 384 at encode time.
+
+experiment:
+  id: gf_mri_core_v0
+  track: main
+  notes: "Frozen MRI-CORE ViT-B on cache_gf_v0; upsample 224→384; stage-1 seed 42 true OOF"
+
+paths:
+  train_csv: /kaggle/input/competitions/rsna-knee-abnormality-detection/train.csv
+  train_series_csv: /kaggle/input/competitions/rsna-knee-abnormality-detection/train_series.csv
+  folds: data/folds/folds_v1.csv
+  weak_labels: data/processed/weak_labels_v1.csv
+  series_picks: outputs/eda/gf_v0_series_picks.csv
+  cache_dir: /kaggle/input/datasets/girishbose/rsna-knee-cache-gf-v0/cache_gf_v0
+  output_dir: outputs/experiments/gf_mri_core_v0
+  backbone_weights: null
+
+data:
+  max_series: 3
+  n_slices: 12
+  image_size: 224
+  center_bias: true
+  require_plane_coverage: true
+  plane_order: ["Sagittal", "Coronal", "Axial"]
+  prefer_fluid_sensitive: true
+
+model:
+  backbone: mri_core_vitb
+  image_size: 384
+  encode_chunk_size: 8
+  freeze_backbone_epochs: 5
+  dropout: 0.1
+  pretrained: false
+  backbone_weights: null
+
+train:
+  n_folds: 5
+  fold: 0
+  seed: 42
+  epochs: 5
+  batch_size: 1
+  lr: 3.0e-4
+  weight_decay: 0.05
+  amp: true
+  num_workers: 0
+
+loss:
+  type: masked_bce
+  use_confidence: true
+  pos_weight: 1.0
+
+ruler:
+  primary: full58_gold_macro_auc
+  margin: 0.02
+  smoke: weak_label_val_auc

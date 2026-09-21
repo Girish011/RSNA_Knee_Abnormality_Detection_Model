@@ -10,34 +10,15 @@ Paste into a **new chat**. Source of truth: this file + `docs/STATUS.md` + `docs
 4. Tail of `docs/experiments.md` (from 2026-09-08 / greenfield)
 
 ## Where we are (one paragraph)
-Greenfield on RSNA Knee. Recipe **gf_v0**: 3×12×224 frozen DINOv2-S / weak_v1. Floor 0.6144 was a fluke → **0.592 ± 0.021**; seed-avg baseline **0.6173**. Closed this cycle: train-longer KILL, lig3 GATE FAIL, **unfreeze COLLAPSE −0.114**. Live: honest 24-slice true-OOF retest (`gf-v1-true-oof-seed42-5fold`).
-
-## Scoreboard (read the caveats)
-| Run | Weak OOF | Gold OOF | Status |
-|---|---|---|---|
-| gf_v0 seed 42 | 0.685 | 0.6144 | lucky draw, not a floor |
-| gf_v0 seed 1337 | 0.672 | 0.5720 | same recipe |
-| gf_v0 seed 2024 | 0.687 | 0.5889 | same recipe |
-| **gf_v0 3-seed mean** | 0.681 ± 0.009 | **0.592 ± 0.021** | honest description |
-| **gf_v0 seed-averaged OOF** | — | **0.6173** | **current baseline to beat** |
-| gf_v1 24-slice | — | (old ruler) | verdict VOID (single seed) |
-| gf_v2 336px | — | (old ruler) | verdict VOID (single seed) |
-| gf_labels_lig1 | 0.707 | 0.6019 | VOID (noise); study-set confound |
-| gf_labels_lig2 | 0.677 | 0.6103 | VOID (noise); study-set confound |
-| gf_labels_lig3 | 0.682 | 0.6018 | **KILL** (Med Men gate fail) |
-| gf_v0c 10ep | — | peak ep4 0.632 | **KILL** train-longer |
-| gf_v0u unfreeze | — | frozen 0.632 → unfr 0.518 | **COLLAPSE −0.114** |
-| gf_v1 true-OOF | — | pending | stage-1 RUNNING |
+Greenfield on RSNA Knee. Thin DINOv2-S recipe closed (train-longer / lig3 / unfreeze / 24-slice). Live: **MRI-CORE ViT-B** stage-1 true OOF on `cache_gf_v0` (`gf-mri-core-seed42-5fold`). Seed-avg baseline still **0.6173**.
 
 ## Active job
-`girishbose/gf-v1-true-oof-seed42-5fold` RUNNING. Uses existing `gf-cache-v1` (24-slice).
-Gate vs v0 seed42 0.6144 (±0.02).
+`girishbose/gf-mri-core-seed42-5fold` **v2 RUNNING** (v1 died: competition train.csv missing).
+Meta now bundles `data/raw/train.csv`. Gate vs v0 seed42 0.6144 (±0.02).
 
-**Unfreeze closed:** COLLAPSE −0.114 (frozen 0.632 → unfrozen 0.518). Do not retry.
-
-When volume done:
+When done:
 1. Download → `oof_gold58_metrics.json` verdict.
-2. PROMISING → seeds 1337+2024. Else → structural / MRI-CORE.
+2. PROMISING → seeds 1337+2024. Else → DINOv2-B / aggregator.
 Do not poll.
 
 ## The ruler (use these numbers)
@@ -55,17 +36,11 @@ Tools: `scripts/seed_variance_report.py` (seed spread + seed-averaged baseline +
 `scripts/gold_oof_ab.py` (paired bootstrap between two runs).
 Audit: `docs/audit/gf_v0_seed_variance.json`.
 
-## Levers still on the table (after gf_v0c)
-We score ~0.59 against a ~0.937 public LB and the ruler resolves ~0.04, so small tuning is off
-the table. Remaining large-effect candidates, in rough order:
-1. **Backbone fine-tuning** — blocked by DECISIONS 2026-08-12, but every past unfreeze
-   "collapse" was a single-seed read and is now suspect.
-2. **Volume/pooling redesign** — the v1/v2 kills are void, so 24-slice and 336px are untested
-   rather than disproven.
-3. **Med Men fills, done cleanly** — single-factor version (fills restricted to the 2449
-   studies already in v0 training so no new studies enter), at 3 seeds.
-4. **Structural re-plan** if the above stall: the frozen-DINOv2-S 3×12×224 design may simply
-   be far from competitive.
+## Levers still on the table
+Thin DINOv2-S recipe levers are **closed**. Live / remaining:
+1. **MRI-CORE ViT-B** — stage-1 RUNNING (`gf-mri-core-seed42-5fold`).
+2. **DINOv2-B / study aggregator** — if MRI-CORE fails.
+3. **Efficiency student** — parallel once a main encoder clears a real bar.
 
 ## Ruler noise numbers (use these, not vibes)
 - paired bootstrap delta sd ≈ **0.022**; single-run bootstrap sd ≈ **0.027**; keep margin 0.005 is **unresolvable**

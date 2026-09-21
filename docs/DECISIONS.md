@@ -174,3 +174,14 @@ Format: date | decision | why | rejected
 - **Decision:** **KILL** backbone unfreeze on gf_v0 / weak_v1 (frozen max gold 0.6317 → unfrozen max 0.5177, Δ −0.114). Keep DECISIONS 2026-08-12. Next: honest **true-OOF** retest of 24-slice `cache_gf_v1` (prior kill void), stage-1 seed 42, gates ±0.02 vs v0 seed42 0.6144.
 - **Why:** Unfreeze destroys gold immediately on the first unfrozen epoch; no ambiguity. Remaining cheap lever with existing artifacts is volume (cache already built). Structural / MRI-CORE waits until volume is honestly settled.
 - **Rejected:** Multi-seed unfreeze; last-block-only micro-variants before a volume read; rebuilding cache.
+
+## 2026-09-21 — Kill 24-slice volume (honest true-OOF); next = MRI-CORE encoder
+- **Decision:** **KILL** `cache_gf_v1` / 24-slice under true 5-fold OOF (gold **0.6080** vs v0 seed42 **0.6144**, Δ −0.006 → INCONCLUSIVE gate → no multi-seed). Close further pure volume A/Bs on the frozen DINOv2-S 3-series recipe (12↔24 slices already settled; 336px prior kill stands as directional). **Next lever: MRI-CORE ViT-B** as frozen slice encoder (Apache-2.0; already vendored under `third_party/mri_foundation`), stage-1 seed 42 true-OOF, same gates ±0.02 vs 0.6144.
+- **Why:** Labels, train-longer, unfreeze, and volume all failed or collapsed on the thin DINOv2-S recipe. Remaining large-effect bet in EXTERNAL_ASSETS / greenfield thesis is a domain-matched MRI foundation encoder (or later DINOv2-B / aggregator). MRI-CORE is public, offline-bundleable, and already used in the old stack’s feature path — greenfield `src/rsna_knee` still only loads DINOv2.
+- **Rejected:** Seeds 1337/2024 on v1; more slice/resolution micro-sweeps; another weak-label teacher pass.
+
+## 2026-09-21 — Launch MRI-CORE ViT-B stage 1 (honest true-OOF)
+- **Decision:** Run `gf_mri_core_v0`: frozen MRI-CORE ViT-B on `cache_gf_v0`, upsample 224→384, seed 42, 5-fold true OOF. Gate ±0.02 vs v0 seed42 0.6144. Multi-seed only if PROMISING.
+- **Loader note:** Official `build_sam` mis-assigns teacher `pos_embed` and the checkpoint has no SAM neck. We map `teacher.backbone.*` ourselves, interpolate pos embeds, and pool **768-d** pre-neck tokens.
+- **Why:** Thin DINOv2-S levers closed; MRI-CORE is the pre-registered domain encoder in EXTERNAL_ASSETS; weights + source already offline-bundled.
+- **Rejected:** Rebuilding a 384 cache first; feature-cache-only head (want end-to-end parity with gf_v0); DINOv2-B before MRI-CORE.
