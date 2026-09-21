@@ -1,11 +1,11 @@
-"""Study-level multiseries DINOv2 classifier."""
+"""Study-level multiseries image classifier (DINOv2 or MRI-CORE)."""
 
 from __future__ import annotations
 
 from typing import Any
 
 from rsna_knee.constants import NUM_LABELS
-from rsna_knee.models.backbone import DINOV2_DIMS, create_dinov2_encoder
+from rsna_knee.models.backbone import BACKBONE_DIMS, create_image_encoder
 from rsna_knee.models.pooling import create_attention_pool
 
 
@@ -24,15 +24,22 @@ def create_multiseries_model(
     pretrained: bool = True,
     num_planes: int = 4,
     dropout: float = 0.1,
+    image_size: int | None = None,
+    encode_chunk_size: int = 0,
 ):
     torch, nn = _torch()
-    encoder = create_dinov2_encoder(
-        backbone_name,
-        weights_path=weights_path,
-        freeze=freeze_backbone,
-        pretrained=pretrained,
-    )
-    dim = getattr(encoder, "embed_dim", DINOV2_DIMS.get(backbone_name, 384))
+    encoder_kwargs: dict[str, Any] = {
+        "weights_path": weights_path,
+        "freeze": freeze_backbone,
+        "pretrained": pretrained,
+    }
+    if image_size is not None:
+        encoder_kwargs["image_size"] = image_size
+    encoder = create_image_encoder(backbone_name, **encoder_kwargs)
+    dim = getattr(encoder, "embed_dim", BACKBONE_DIMS.get(backbone_name, 384))
+    # MRI-CORE ViT-B at 384 is heavy; chunk slice encoding unless overridden.
+    if encode_chunk_size <= 0 and backbone_name == "mri_core_vitb":
+        encode_chunk_size = 8
 
     class MultiSeriesStudyModel(nn.Module):
         def __init__(self) -> None:
@@ -51,12 +58,19 @@ def create_multiseries_model(
                 nn.Dropout(dropout),
             )
             self.classifiers = nn.ModuleList([nn.Linear(dim, 1) for _ in range(NUM_LABELS)])
+            self.encode_chunk_size = int(encode_chunk_size)
 
         def encode_slices(self, images: Any) -> Any:
             # images: (B, S, N, 3, H, W)
             b, s, n, c, h, w = images.shape
             flat = images.reshape(b * s * n, c, h, w)
-            feats = self.encoder(flat)
+            if self.encode_chunk_size > 0 and flat.shape[0] > self.encode_chunk_size:
+                chunks = []
+                for start in range(0, flat.shape[0], self.encode_chunk_size):
+                    chunks.append(self.encoder(flat[start : start + self.encode_chunk_size]))
+                feats = torch.cat(chunks, dim=0)
+            else:
+                feats = self.encoder(flat)
             return feats.reshape(b, s, n, -1)
 
         def forward(
