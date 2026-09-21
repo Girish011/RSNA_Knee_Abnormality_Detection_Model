@@ -73,12 +73,16 @@ def main() -> None:
         else float(cfg.get("train", {}).get("unfreeze_lr_mult", 0.1))
     )
     backbone = str(cfg["model"].get("backbone", "dinov2_vits14"))
+    image_size = cfg["model"].get("image_size", cfg.get("data", {}).get("image_size"))
+    image_size = int(image_size) if image_size is not None else None
+    encode_chunk_size = int(cfg["model"].get("encode_chunk_size", 0))
     loss_cfg = cfg.get("loss", {})
     loss_mode = str(loss_cfg.get("mode", "bce"))
     label_smoothing = float(loss_cfg.get("label_smoothing", 0.0))
     gce_q = float(loss_cfg.get("gce_q", 0.7))
     print(
-        f"backbone={backbone} epochs={epochs} freeze_epochs={freeze_epochs} "
+        f"backbone={backbone} image_size={image_size} encode_chunk={encode_chunk_size} "
+        f"epochs={epochs} freeze_epochs={freeze_epochs} "
         f"lr={lr} pos_weight={pos_weight} unfreeze_lr_mult={unfreeze_lr_mult} "
         f"loss_mode={loss_mode} label_smoothing={label_smoothing}"
     )
@@ -134,13 +138,18 @@ def main() -> None:
     tr_loader = DataLoader(tr_ds, batch_size=batch_size, shuffle=True, collate_fn=collate_studies, num_workers=0)
     va_loader = DataLoader(va_ds, batch_size=batch_size, shuffle=False, collate_fn=collate_studies, num_workers=0)
 
-    weights = str(args.weights) if args.weights else None
+    weights = str(args.weights) if args.weights else cfg["model"].get("backbone_weights")
+    weights = str(weights) if weights else None
+    if backbone == "mri_core_vitb" and weights is None:
+        raise SystemExit("mri_core_vitb requires --weights or model.backbone_weights")
     model = create_multiseries_model(
         backbone,
         weights_path=weights,
         freeze_backbone=True,
         pretrained=weights is None,
         dropout=float(cfg["model"].get("dropout", 0.1)),
+        image_size=image_size,
+        encode_chunk_size=encode_chunk_size,
     )
     model.to(device)
     opt = torch.optim.AdamW(filter(lambda p: p.requires_grad, model.parameters()), lr=lr, weight_decay=0.05)
