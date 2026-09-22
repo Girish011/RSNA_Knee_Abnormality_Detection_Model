@@ -1,0 +1,26 @@
+{
+  "seed": 42,
+  "n_slices": 24,
+  "weak_oof_macro_auc": 0.6805590976349948,
+  "gold58_oof_macro_auc": 0.607975979277748,
+  "per_label_auc": {
+    "ACL": 0.48039215686274506,
+    "MCL": 0.45351473922902497,
+    "Medial Meniscus": 0.4831730769230769,
+    "Lateral Meniscus": 0.6571428571428571,
+    "Medial OA": 0.5054263565891473,
+    "Lateral OA": 0.5957446808510638,
+    "PF OA": 0.6602316602316602,
+    "Effusion": 0.8434782608695653,
+    "Synovitis": 0.6678614097968937,
+    "Baker's": 0.6884057971014492,
+    "Contusion": 0.5978407557354926,
+    "Fracture": 0.6625
+  },
+  "v0_seed42_gold": 0.6144,
+  "delta_vs_v0_seed42": -0.0064240207222519,
+  "kill_below": 0.5943999999999999,
+  "promise_above": 0.6344,
+  "verdict": "INCONCLUSIVE",
+  "note": "Honest true-OOF retest of 24-slice volume. Prior fold0\u2192all58 kill is void. Stage1 gate only; multi-seed only if PROMISING."
+}
