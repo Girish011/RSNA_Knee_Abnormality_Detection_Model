@@ -1,71 +1,45 @@
-# Handoff — greenfield campaign (2026-09-15)
+# Handoff — public-floor pivot + autonomous loop (2026-09-23)
 
-Paste into a **new chat**. Source of truth: this file + `docs/STATUS.md` + `docs/SERIES.md`
-+ latest entries in `docs/experiments.md` + `docs/DECISIONS.md`.
+Paste the opener at the bottom into a **new chat**. Source of truth: this file, `docs/STATUS.md`,
+`docs/AGENT_PLAN.md` (approved plan), `docs/DECISIONS.md` (tail from 2026-09-21).
 
-## Read first
-1. `docs/STATUS.md`
-2. `docs/SERIES.md`
-3. `docs/DECISIONS.md` (tail from 2026-09-13)
-4. Tail of `docs/experiments.md` (from 2026-09-08 / greenfield)
+## Where we are
+- Strategy pivot approved (DECISIONS 2026-09-23): fork the public floor, train on RunPod RTX 4090,
+  $300 cap, pre-registered gate **2026-10-06: public LB ≥ 0.950** or switch to robustness + efficiency.
+- Top 5 main board is a stretch; ~10 teams show 0.96 public. Realistic: medal range + efficiency final.
+- Built: `src/rsna_knee/agent/` (journal, search, memory + ban list, dream replay, activity log),
+  `agent/memory/cold_start.md`, `scripts/agent_dashboard.py`. 11 tests in `tests/test_agent.py` pass.
+- Branch: **`agent/autorun`**. Audit trail: `agent/runs/activity.jsonl`.
 
-## Where we are (one paragraph)
-Greenfield on RSNA Knee. Thin DINOv2-S recipe closed (train-longer / lig3 / unfreeze / 24-slice). Live: **MRI-CORE ViT-B** stage-1 true OOF on `cache_gf_v0` (`gf-mri-core-seed42-5fold`). Seed-avg baseline still **0.6173**.
+## Blocked / pending
+1. Kaggle weekly GPU quota exhausted. Fork ready at `outputs/kernels/public_floor_rsna_base/`
+   (`girishbose/rsna-knee-public-floor`, private). On reset: `kaggle kernels push -p <dir>`, then submit.
+2. RunPod: key OK, $45 credit, nothing running. Next: pod pulls `dreaddevelopment/knee-raptor-corpus`
+   (+`-ext`) and both public soft-label sets.
+3. Dense cache builder (64-80 slots, 6-94% span) as a Kaggle **CPU** notebook — not started.
+4. DeepSeek was blocked by the old laptop's corporate proxy; verify from the new machine.
 
-## Active job
-`girishbose/gf-mri-core-seed42-5fold` **v2 RUNNING** (v1 died: competition train.csv missing).
-Meta now bundles `data/raw/train.csv`. Gate vs v0 seed42 0.6144 (±0.02).
+## Public assets
+See the license table in `docs/STATUS.md`. All CC0 except `tonylica/rsna-knee-bend-dinov3-0917-repro-assets`
+(license "other", public 0.941 bundle; floor reference only, never in a final).
 
-When done:
-1. Download → `oof_gold58_metrics.json` verdict.
-2. PROMISING → seeds 1337+2024. Else → DINOv2-B / aggregator.
-Do not poll.
-
-## The ruler (use these numbers)
-| Item | Value |
-|---|---|
-| Baseline: seed-averaged OOF gold (42/1337/2024) | **0.6173** |
-| Measured seed sd | **0.0214** |
-| Margin = max(0.005, 2×sd) | **0.0427** |
-| Weak-ruler sd (n≈2449, for contrast) | 0.0085 |
-| Worst per-label seed sd | Effusion 0.133, Lat OA 0.090, Baker's 0.086, MCL 0.080 |
-| Best per-label seed sd | PF OA 0.012, Lat Men 0.012, ACL 0.022, Synovitis 0.028 |
-
-Rule: **≥3 seeds per A/B, compare seed-averaged predictions.** Never decide on one seed.
-Tools: `scripts/seed_variance_report.py` (seed spread + seed-averaged baseline + margin),
-`scripts/gold_oof_ab.py` (paired bootstrap between two runs).
-Audit: `docs/audit/gf_v0_seed_variance.json`.
-
-## Levers still on the table
-Thin DINOv2-S recipe levers are **closed**. Live / remaining:
-1. **MRI-CORE ViT-B** — stage-1 RUNNING (`gf-mri-core-seed42-5fold`).
-2. **DINOv2-B / study aggregator** — if MRI-CORE fails.
-3. **Efficiency student** — parallel once a main encoder clears a real bar.
-
-## Ruler noise numbers (use these, not vibes)
-- paired bootstrap delta sd ≈ **0.022**; single-run bootstrap sd ≈ **0.027**; keep margin 0.005 is **unresolvable**
-- 11 identical-teacher-cell labels in lig2 vs v0: delta sd **0.079**, max |delta| **0.155**
-- tool: `scripts/gold_oof_ab.py --baseline <preds.csv> --candidate <preds.csv> --changed-labels ...`
-
-## Working rules
-- Do **not** poll/watch Kaggle; user reports when jobs finish
-- No reports / KneeCoT / LLM APIs at submit
-- No public LB until OOF gold win ≥ floor + 0.005
-- Repo docs beat chat history
-
-## Key artifacts
-| Item | Slug / path |
-|---|---|
-| Cache | `girishbose/rsna-knee-cache-gf-v0` |
-| v0 5-fold | `girishbose/gf-baseline-v0-5fold` → `outputs/kaggle_download/gf-baseline-v0-5fold/` |
-| lig1 (verdict void) | `girishbose/gf-labels-lig1-5fold` → `outputs/kaggle_download/gf-labels-lig1-5fold/` |
-| lig2 (verdict void) | `girishbose/gf-labels-lig2-5fold` → `outputs/kaggle_download/gf-labels-lig2-5fold/` |
-| Seed replicates | `girishbose/gf-v0-seed{1337,2024}-5fold` → `outputs/kaggle_download/gf-v0-seed{1337,2024}-5fold/` |
-| Seed-kernel template | `outputs/kernels/_template_gf_v0_seed_5fold.py` (patches one `seed:` line, asserts it) |
-| Ligament teacher | `src/rsna_knee/text/gf_ligament_teacher.py`, `scripts/build_gf_ligament_labels.py` |
-| Ruler tools | `scripts/gold_oof_ab.py`, `scripts/seed_variance_report.py` |
-| Configs | `configs/gf_baseline_v0.yaml`, `configs/gf_labels_lig1.yaml`, `configs/gf_labels_lig2.yaml` |
+## New-machine setup
+```bash
+git clone https://github.com/Girish011/RSNA_Knee_Abnormality_Detection_Model.git
+cd RSNA_Knee_Abnormality_Detection_Model
+git checkout agent/autorun            # or: git fetch <bundle> agent/autorun:agent/autorun
+python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
+pip install -e ".[dev,kaggle]" scipy
+pytest -q tests/test_agent.py
+python scripts/agent_dashboard.py --serve           # http://localhost:8765/dashboard.html
+```
+Secrets (never in the repo), with **freshly rotated** keys:
+- `~/.kaggle/access_token` — Kaggle API token
+- `~/.rsna_agent/secrets.env` — `RUNPOD_API_KEY=...` and `DEEPSEEK_API_KEY=...`
 
 ## New-chat opener (copy/paste)
-> Read `docs/STATUS.md`, `docs/HANDOFF.md`, `docs/SERIES.md`, and the latest `docs/experiments.md` / `docs/DECISIONS.md`.
-> Continue greenfield. **Do not treat 0.6144 or 0.728 as a floor** — seed replicates proved gf_v0 is **0.592 ± 0.021** (seeds 42/1337/2024 → 0.6144/0.5720/0.5889) and 0.6144 was the lucky draw. The v1/v2/lig1/lig2 verdicts are **void** (all single-seed, inside the noise band). Baseline to beat is the **seed-averaged 0.6173**; margin **0.0427**; **every A/B needs ≥3 seeds** (~13 h GPU). We score ~0.59 vs a ~0.937 LB, so pick one large-effect lever, not tuning. One step at a time. Do not poll Kaggle. Do not reopen KneeCoT or put reports in submit.
+> Read `docs/HANDOFF.md`, `docs/STATUS.md`, `docs/AGENT_PLAN.md`, and the tail of `docs/DECISIONS.md`.
+> We are on branch `agent/autorun`. Continue the approved plan from "Next 3 actions" in STATUS.
+> Secrets are in `~/.kaggle/access_token` and `~/.rsna_agent/secrets.env`; never print or commit them.
+> Log every action with `rsna_knee.agent.activity.log` and keep the dashboard running.
+> Do not poll Kaggle; do not reopen thin-recipe levers; reports are train-only.
