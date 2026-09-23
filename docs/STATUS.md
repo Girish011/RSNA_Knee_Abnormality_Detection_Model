@@ -1,30 +1,32 @@
 # STATUS
 
-Last updated: 2026-09-21
+Last updated: 2026-09-23
 
 ## Phase
-**Greenfield Imaging Playbook**. Structural encoder stage 1 live.
-Coding: **gf-mri-core-seed42-5fold RUNNING** (v2 after train.csv path fix).
+**Public-floor pivot + autonomous search loop** (DECISIONS 2026-09-23). Budget cap $300.
+Target: medal-range main final + competitive efficiency final. Top 5 main = stretch.
 
-## Active experiment
-- Kernel: `girishbose/gf-mri-core-seed42-5fold` **v2** (T4)
-- Meta: `girishbose/rsna-knee-gf-mri-core-meta` (now includes `data/raw/train.csv`)
-- v1 ERROR: competition `train.csv` missing at `/kaggle/input/competitions/...` (assert at startup). Fixed via meta-bundled train + path resolver.
-- Weights: `girishbose/mri-core-vitb-rsna-knee` (Apache-2.0)
-- Cache: existing `rsna-knee-cache-gf-v0` (3×12×224; upsample → 384 at encode)
-- Recipe: frozen MRI-CORE ViT-B, 768-d pool (SAM neck skipped), batch 1, chunk 8, seed 42, 5-fold true OOF
-- Gate vs v0 seed42 **0.6144**: KILL <0.5944; PROMISING ≥0.6344; else INCONCLUSIVE → kill
+## Done this session
+- `src/rsna_knee/agent/` harness: `journal.py` (MCGS graph, Eq. 7 reward, primary-edge backprop),
+  `search.py` (progressive UCT + elite switch, stagnation operators), `memory.py` (RRF retrieval,
+  ban list), `dream.py` (window/blend replay on stored logits, Dream-RSI tree replay). 10 tests pass.
+- `agent/memory/cold_start.md`: kill ledger + public density results as retrievable records.
 
-## Closed this cycle
-| Lever | Verdict |
-|---|---|
-| train-longer / lig3 / unfreeze / 24-slice | all KILL |
+## Blocked on user
+1. Kaggle API token at `~/.kaggle/access_token` on this machine (CLI installed, no token).
+2. RunPod account + API key (`RUNPOD_API_KEY`), ~$40 initial credit.
+3. LLM API key for the planner/coder (DeepSeek or Qwen), cap ~$50.
+4. License confirmation for Max-Span Dense Corpus + twelve-findings weights (logged-in check).
 
 ## Next 3 actions
-1. User reports when MRI-CORE kernel finishes (do not poll).
-2. Read `oof_gold58_metrics.json` verdict.
-3. PROMISING → seeds 1337+2024; else DINOv2-B / aggregator redesign.
+1. Fork rsna-base, submit once, log public score + runtime in `experiments.md` (floor ~0.936).
+2. Pull the dense corpus to RunPod via Kaggle API; build gated multilingual soft labels; audit on 58.
+3. First own train on RunPod: public geometry, our soft labels, save per-window logits.
+
+## Legacy (log only)
+- `girishbose/gf-mri-core-seed42-5fold` v2 (thin cache). Record verdict when user reports; does not block.
 
 ## Do not
 - Poll Kaggle; reopen thin-recipe levers; treat 0.6144/0.728 as floors
 - Reports at test time; KneeCoT
+- Hill-climb the public LB; select finals on public LB alone

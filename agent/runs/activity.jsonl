@@ -1,0 +1,6 @@
+{"ts": "2026-09-23T23:02:42", "kind": "plan", "msg": "Pivot approved: fork public 0.936 floor,  cap, 6 Oct gate LB>=0.950", "cost_usd": 0.0, "decision": "docs/DECISIONS.md 2026-09-23"}
+{"ts": "2026-09-23T23:02:42", "kind": "code", "msg": "Agent harness: journal/search/memory/dream + cold-start memory", "cost_usd": 0.0, "files": "src/rsna_knee/agent/*, agent/memory/cold_start.md", "tests": "11 passed"}
+{"ts": "2026-09-23T23:02:42", "kind": "code", "msg": "Monitoring: activity log + live dashboard", "cost_usd": 0.0, "files": "src/rsna_knee/agent/activity.py, scripts/agent_dashboard.py"}
+{"ts": "2026-09-23T23:02:42", "kind": "data", "msg": "Licenses checked: all public inputs CC0-1.0", "cost_usd": 0.0, "datasets": "knee-raptor-corpus(+ext), raptor-knee-widedense, raptor-knee-maxspan, rsna-knee-labels, pilkwang/rsna-knee-llm-labels"}
+{"ts": "2026-09-23T23:02:42", "kind": "note", "msg": "Public train slices are 44 slots over 15-85%; dense 64-80 slot geometry exists only as weights -> own dense cache needed for the geometry lever", "cost_usd": 0.0}
+{"ts": "2026-09-23T23:02:42", "kind": "note", "msg": "Two public report-distilled soft-label sets exist (CC0); our labels must beat them, not only keyword v1", "cost_usd": 0.0}
