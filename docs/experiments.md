@@ -440,3 +440,25 @@ Append one row (or block) per run. Never delete history.
 - dread agreement on non-expert studies (mean Spearman): with pilk 0.81, kw_v7 0.41, kw_v1 0.33
 - caveat: pilk's labeler docstring says its prompt was checked against the annotated studies → its 0.870 is likely optimistic; the +0.24 gap is far larger than any plausible selection effect
 - conclusion: keyword extractors are retired as teachers. First train supervision = public LLM soft labels (see DECISIONS 2026-09-24). Our own LLM labels must beat pilk on the experts by a paired CI before they replace it.
+
+### 2026-09-24 — Label calibration: pilk UNK → dread (labels_llm_blend_v2)
+- on 57 experts, pilk verdict UNK cells (n=177) are expert-positive **13.6%**; pilk writes a flat 0.28 there (YES cells 65.3% positive, NO 4.1%)
+- dread's value in pilk-UNK cells is 0.05–0.21 for most labels (Synovitis 0.43: reports rarely mention it)
+- v2 = mean(pilk, dread) where pilk is YES/NO, dread alone where pilk is UNK; expert override on the 58
+- files (git-ignored): `data/processed/labels_llm_blend_v2.{csv,parquet}`, `labels_dread.parquet`; builder `scripts/build_llm_blend_labels.py --version v2`
+
+### 2026-09-24 — RunPod labels-ab-v1 launched (first own GPU train, paired label A/B)
+- pod `v4gyvfi50q6vwh` (RTX 4090 community, $0.34/hr, 71 GB RAM, 20 vCPU); launcher `scripts/runpod_launch.py --job labels-ab-v1`; on-pod `runpod/run_job.sh`
+- trainer: public `dreaddevelopment/knee-mri-training-the-twelve-finding-model` vendored as `runpod/train_knee.py` (unchanged); corpus = public 44-slot `knee-raptor-corpus` + `-ext` (4407 studies)
+- recipe (both arms): `coatnet_rmlp_2_rw_384.sw_in12k_ft_in1k`, res 384, 16 ep, bs 8, k 12 / k_eval 24, grad ckpt, imagenet norm, seed 42; validation = 58 experts (never trained on)
+- arms: **dread_s42** (`labels_dread.parquet`, reproduces the public teacher) vs **blendv2_s42** (`labels_llm_blend_v2.parquet`)
+- read-out rule (pre-registered): compare best-epoch, SWA and fixed last-epoch gold AUC; best-epoch is selection-biased on gold for both arms equally. Keep blend v2 only if it wins on ≥2 of the 3 with a paired bootstrap CI not centred below 0; otherwise the teacher choice is a wash and dread stays (it is the published teacher).
+- caveat: the 44-slot corpus has no public test-time preprocessor, so these weights are a measurement; submit models train on our dense80 cache
+- results: bundle `girishbose/rsna-knee-rp-labels-ab-v1-bundle` → pod uploads `girishbose/rsna-knee-rp-labels-ab-v1-out` and self-terminates. Est. ~7 h, ~$2.40.
+
+### 2026-09-24 — Dense80 train cache (Kaggle CPU, 4 shards) launched
+- kernels `girishbose/rsna-knee-dense80-s0..s3` (CPU, no internet); source `outputs/kernels/dense80_cache/`
+- geometry: 80 slots = Sag fluid 22 / Sag non-fluid 18 / Cor fluid 15 / Cor other 10 / Ax 15; uniform over 2–98% of each series; 140 mm crop; 336 px uint8; per-slot 2–98 percentile normalisation
+- picker/ordering/normalisation copied from the public widedense inference code (primary 2–98% arm) so the test-time builder is the same function with the same constants
+- outputs per shard: `vols_s{k}.npy` (~1102 × 80 × 336 × 336, ~10 GB), `masks_s{k}.npy`, `ids_s{k}.npy`, `meta_s{k}.json` (errors, empty studies, minutes)
+- next: when the user reports done, pull with `kaggle kernels output girishbose/rsna-knee-dense80-s{k}` onto a RunPod volume

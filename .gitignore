@@ -63,3 +63,5 @@ tmp/
 # Agent audit trail is tracked; the rendered dashboard is not
 !agent/runs/
 agent/runs/dashboard.html
+
+outputs/runpod_bundle/
