@@ -8,5 +8,5 @@
 {"ts": "2026-09-23T23:05:28", "kind": "submit", "msg": "Forked rsna-base as girishbose/rsna-knee-public-floor (private); push BLOCKED: weekly Kaggle GPU quota 30h reached", "cost_usd": 0.0, "kernel": "girishbose/rsna-knee-public-floor", "status": "blocked_quota"}
 {"ts": "2026-09-23T23:05:28", "kind": "note", "msg": "Legacy gf-mri-core-seed42-5fold is CANCEL_ACKNOWLEDGED; not consuming quota", "cost_usd": 0.0}
 {"ts": "2026-09-23T23:05:28", "kind": "note", "msg": "Correction: public notebook runtimes (~3 min) are on 3 visible test studies; hidden ~1300-study run is far longer", "cost_usd": 0.0}
-{"ts": "2026-09-23T23:05:28", "kind": "cost", "msg": "RunPod key OK, balance \\, spend/hr 0", "cost_usd": 0.0}
+{"ts": "2026-09-23T23:05:28", "kind": "cost", "msg": "RunPod key OK, balance 45 USD, spend/hr 0", "cost_usd": 0.0}
 {"ts": "2026-09-23T23:05:28", "kind": "error", "msg": "DeepSeek API blocked by corporate Zscaler on this laptop; planner LLM calls must run from the RunPod host", "cost_usd": 0.0, "component": "llm"}
