@@ -9,7 +9,7 @@ User priority (2026-09-24): **top 5**; do not wait for the Kaggle GPU reset; key
 ## In flight (do not poll Kaggle; RunPod progress page is fine)
 | Job | Where | What | Pull when done |
 |---|---|---|---|
-| `labels-ab-v1` | RunPod pod `v4gyvfi50q6vwh`, progress `https://v4gyvfi50q6vwh-8000.proxy.runpod.net/STATUS` (+`/job.log`, `/<arm>/train.log`) | CoAtNet-384 16 ep on public 44-slot corpus; arms `dread_s42` vs `blendv2_s42` | `kaggle datasets download girishbose/rsna-knee-rp-labels-ab-v1-out`; pod self-terminates after upload |
+| `labels-ab-v1` | RunPod pod `mw4c7rb992jk7u` (community RTX 3090, $0.22/hr; ep0 = 17.6 min → ~5 h/arm, ETA ~2026-09-24 06:30 UTC), progress `https://mw4c7rb992jk7u-8000.proxy.runpod.net/STATUS` (+`/job.log`, `/<arm>/train.log`) | CoAtNet-384 16 ep on public 44-slot corpus; arms `dread_s42` vs `blendv2_s42` | `kaggle datasets download girishbose/rsna-knee-rp-labels-ab-v1-out`; pod self-terminates after upload |
 | dense80 cache | Kaggle CPU `girishbose/rsna-knee-dense80-s0..s3` | 80-slot 2–98% train cache, ~10 GB per shard | `kaggle kernels output girishbose/rsna-knee-dense80-s{k}` (onto RunPod, not the Mac) |
 
 ## Done this session (2026-09-24)
@@ -21,7 +21,8 @@ User priority (2026-09-24): **top 5**; do not wait for the Kaggle GPU reset; key
 
 ## Credentials (outside repo)
 - Kaggle: `~/.kaggle/access_token` holds only the Kaggle token (the old 3-line file is `~/.kaggle/access_token.bak_multiline`). RunPod + DeepSeek: `~/.rsna_agent/secrets.env`.
-- RunPod balance $45 at launch. DeepSeek untested on this machine.
+- RunPod balance $44.9 before the A/B pod. DeepSeek untested on this machine.
+- RunPod host lessons: 3 community pods failed (torch 'CUDA unknown error' on 2, silent self-terminate on 1) and 1 secure pod hung in pip (torch upgrade via timm). Fixes in `run_job.sh`: pinned torch/torchvision/numpy, GPU guard with retries that terminates bad hosts; launcher filters host CUDA ≥ 12.4 and falls back secure 4090 → community 4090 → community 4090/3090.
 - User decided rotation is not required (keys were echoed into a session log on 2026-09-24).
 
 ## Public assets (licenses checked 2026-09-23)

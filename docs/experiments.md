@@ -454,6 +454,7 @@ Append one row (or block) per run. Never delete history.
 - arms: **dread_s42** (`labels_dread.parquet`, reproduces the public teacher) vs **blendv2_s42** (`labels_llm_blend_v2.parquet`)
 - read-out rule (pre-registered): compare best-epoch, SWA and fixed last-epoch gold AUC; best-epoch is selection-biased on gold for both arms equally. Keep blend v2 only if it wins on ≥2 of the 3 with a paired bootstrap CI not centred below 0; otherwise the teacher choice is a wash and dread stays (it is the published teacher).
 - caveat: the 44-slot corpus has no public test-time preprocessor, so these weights are a measurement; submit models train on our dense80 cache
+- pod history: v4gyvfi50q6vwh, 3n1waju7ptv5h8, tb1g29qyhyv8me (community host CUDA faults), 8jp8lof50epyet (secure, pip hang) → running on **mw4c7rb992jk7u** (community 3090, $0.22/hr); smoke OK; dread_s42 ep0 gold 0.7172, 1056 s/epoch
 - results: bundle `girishbose/rsna-knee-rp-labels-ab-v1-bundle` → pod uploads `girishbose/rsna-knee-rp-labels-ab-v1-out` and self-terminates. Est. ~7 h, ~$2.40.
 
 ### 2026-09-24 — Dense80 train cache (Kaggle CPU, 4 shards) launched
