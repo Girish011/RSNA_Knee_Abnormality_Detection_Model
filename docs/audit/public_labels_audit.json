@@ -1,0 +1,127 @@
+{
+  "sources": {
+    "pilk": {
+      "graded": true,
+      "n_experts": 57,
+      "macro_auc": 0.8700395897324982,
+      "macro_auc_ci95": [
+        0.8311771548081287,
+        0.9002336547239825
+      ],
+      "gate_pass": [
+        "ACL",
+        "MCL",
+        "Medial Meniscus",
+        "Lateral Meniscus",
+        "Medial OA",
+        "Lateral OA",
+        "PF OA",
+        "Effusion",
+        "Synovitis",
+        "Baker's",
+        "Fracture"
+      ]
+    },
+    "dread": {
+      "graded": false,
+      "reason": "no expert studies in source"
+    },
+    "kw_v1": {
+      "graded": true,
+      "n_experts": 57,
+      "macro_auc": 0.6276930051796074,
+      "macro_auc_ci95": [
+        0.5768176986298789,
+        0.6766196123667272
+      ],
+      "gate_pass": [
+        "ACL",
+        "MCL",
+        "Medial Meniscus",
+        "Lateral Meniscus",
+        "Medial OA",
+        "Lateral OA",
+        "Effusion",
+        "Synovitis",
+        "Baker's",
+        "Contusion",
+        "Fracture"
+      ]
+    },
+    "kw_v7": {
+      "graded": true,
+      "n_experts": 57,
+      "macro_auc": 0.651026211729485,
+      "macro_auc_ci95": [
+        0.603337544842927,
+        0.6984435262187215
+      ],
+      "gate_pass": [
+        "ACL",
+        "MCL",
+        "Medial Meniscus",
+        "Lateral Meniscus",
+        "Medial OA",
+        "Effusion",
+        "Synovitis",
+        "Baker's",
+        "Fracture"
+      ]
+    }
+  },
+  "paired_macro_auc": {
+    "pilk-kw_v1": {
+      "delta": 0.24234658455289082,
+      "ci95": [
+        0.19303123606007427,
+        0.29022436819672437
+      ]
+    },
+    "pilk-kw_v7": {
+      "delta": 0.21901337800301313,
+      "ci95": [
+        0.16641850803854133,
+        0.2723778379184875
+      ]
+    },
+    "kw_v1-kw_v7": {
+      "delta": -0.023333206549877694,
+      "ci95": [
+        -0.05682621733110647,
+        0.006693509622240102
+      ]
+    }
+  },
+  "mean_spearman_nonexpert": [
+    {
+      "a": "dread",
+      "b": "kw_v1",
+      "spearman": 0.328
+    },
+    {
+      "a": "dread",
+      "b": "kw_v7",
+      "spearman": 0.411
+    },
+    {
+      "a": "kw_v1",
+      "b": "kw_v7",
+      "spearman": 0.674
+    },
+    {
+      "a": "pilk",
+      "b": "dread",
+      "spearman": 0.809
+    },
+    {
+      "a": "pilk",
+      "b": "kw_v1",
+      "spearman": 0.396
+    },
+    {
+      "a": "pilk",
+      "b": "kw_v7",
+      "spearman": 0.478
+    }
+  ]
+}

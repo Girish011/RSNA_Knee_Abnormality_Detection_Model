@@ -1,12 +1,16 @@
 # STATUS
 
-Last updated: 2026-09-23
+Last updated: 2026-09-24
 
 ## Phase
 **Public-floor pivot + autonomous search loop** (DECISIONS 2026-09-23). Budget cap $300.
 Target: medal-range main final + competitive efficiency final. Top 5 main = stretch.
 
-## Done this session
+## Done this session (2026-09-24)
+- Label audit (`scripts/audit_public_labels.py`, experiments 2026-09-24): public pilkwang LLM labels **0.870** macro AUC on 57 experts vs keyword v1 0.628 / v7 0.651 (paired +0.24 [0.19, 0.29]). dread labels omit the experts; Spearman 0.81 with pilk.
+- DECISIONS 2026-09-24: first train uses mean(pilk, dread) soft labels + expert override; keyword teachers retired. Built `data/processed/labels_llm_blend_v1.csv` (`scripts/build_llm_blend_labels.py`, git-ignored).
+
+## Done 2026-09-23
 - `src/rsna_knee/agent/` harness: `journal.py` (MCGS graph, Eq. 7 reward, primary-edge backprop),
   `search.py` (progressive UCT + elite switch, stagnation operators), `memory.py` (RRF retrieval,
   ban list), `dream.py` (window/blend replay on stored logits, Dream-RSI tree replay). 10 tests pass.
@@ -15,7 +19,7 @@ Target: medal-range main final + competitive efficiency final. Top 5 main = stre
 ## Credentials (outside repo)
 - Kaggle: `~/.kaggle/access_token` OK (user `girishbose`). RunPod + DeepSeek: `~/.rsna_agent/secrets.env`.
 - RunPod OK, $45 balance. DeepSeek blocked by corporate Zscaler on this laptop -> call it from the RunPod host.
-- All three keys were pasted in chat; rotate once the loop is running.
+- **ROTATE ALL THREE KEYS NOW.** On 2026-09-24 `~/.kaggle/access_token` held the Kaggle, RunPod and DeepSeek keys on three lines; a Kaggle CLI traceback echoed all three into the session output. File trimmed to the Kaggle line (backup `~/.kaggle/access_token.bak_multiline`, delete after rotating). Do not start RunPod or DeepSeek spend until rotated.
 
 ## Public assets (licenses checked 2026-09-23)
 | Slug | What | License |
@@ -33,9 +37,9 @@ Dense 64-80 slot training geometry is not public as slices, only as weights; the
 - **Kaggle GPU weekly quota (30 h) exhausted.** `girishbose/rsna-knee-public-floor` is forked locally at `outputs/kernels/public_floor_rsna_base/` but cannot be pushed until the weekly reset. Every submit needs a short Kaggle GPU commit, so training stays off Kaggle GPU entirely.
 
 ## Next 3 actions
-1. On quota reset: `kaggle kernels push -p outputs/kernels/public_floor_rsna_base`, then submit its `submission.csv`; log score in `experiments.md`.
-2. Now (no Kaggle GPU needed): RunPod pod pulls corpus + both public soft-label sets; start the dense cache builder as a Kaggle **CPU** notebook.
-3. Build our gated soft labels; audit vs the two public label sets on the 58 experts before the first train.
+1. **User:** rotate Kaggle, RunPod, DeepSeek keys; `access_token` must hold only the Kaggle token. Then on Kaggle GPU quota reset: `kaggle kernels push -p outputs/kernels/public_floor_rsna_base`, submit, log score.
+2. Label calibration check before the first train: pilk writes 0.28 for silent findings, so blended mean targets (0.17-0.45) sit above plausible prevalence. Compare against expert prevalence / dread-only; pick UNK mapping (keep, prior, or dread-only) — a BCE-target question, not a re-audit.
+3. RunPod (after rotation): network volume pulls `knee-raptor-corpus` (+`-ext`) + `labels_llm_blend_v1.csv`; start the dense cache builder as a Kaggle **CPU** notebook.
 
 ## Legacy (log only)
 - `girishbose/gf-mri-core-seed42-5fold` v2 (thin cache). Record verdict when user reports; does not block.

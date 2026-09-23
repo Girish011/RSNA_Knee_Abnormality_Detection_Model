@@ -35,6 +35,14 @@ Add a bullet only when a result is measured; never add opinions.
 - Public leaders train on report-distilled soft labels, not hard keyword labels.
 - Fluid_Sensitive and Fat_Suppression flags are identical on all 24,371 training series; treat as one feature.
 
+## Label audits (report labels vs 57 expert studies, 2026-09-24)
+
+- Public pilkwang/rsna-knee-llm-labels scores macro AUC 0.870 [0.831, 0.900] vs experts; keyword v1 0.628, v7 0.651; pilk minus v1 = +0.242 [0.193, 0.290] paired.
+- pilk per-label AUC: ACL 0.997, MCL 0.976, Med Men 0.943, Baker's 0.932, Med OA 0.908, PF OA 0.891, Fracture 0.871, Lat Men 0.841, Effusion 0.830, Lat OA 0.789, Contusion 0.768, Synovitis 0.694.
+- pilk fails the precision >= 0.5 gate only on Contusion (0.44); keyword v1/v7 fail PF OA (0.25).
+- dreaddevelopment/rsna-knee-labels omits all 58 expert studies; it cannot be graded on them. Mean Spearman with pilk on non-expert studies is 0.81; with keyword v1 0.33.
+- pilk's labeler was prompt-checked against the annotated studies, so its expert AUC is likely optimistic by an unknown amount.
+
 ## Constraints
 
 - Reports and any text model are train-only; test.csv has no Report field.

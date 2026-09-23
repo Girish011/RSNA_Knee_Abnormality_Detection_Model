@@ -429,3 +429,14 @@ Append one row (or block) per run. Never delete history.
 - fix: bundle `data/raw/train.csv` (no Report) into meta; kernel resolves competition → meta → rglob
 - kernel: `girishbose/gf-mri-core-seed42-5fold` **v2 RUNNING**
 - conclusion: **running** — user will report when done (no poll).
+
+### 2026-09-24 — Report-label audit: public LLM labels vs keyword v1/v7 on the experts (no train)
+- script: `scripts/audit_public_labels.py`; outputs `docs/audit/public_labels_vs_expert.csv`, `public_labels_agreement_nonexpert.csv`, `public_labels_audit.json`
+- sources: `pilkwang/rsna-knee-llm-labels` (CC0, 4406 studies, 57/58 experts), `dreaddevelopment/rsna-knee-labels` (CC0, 4349 studies, **0 experts**), our keyword v1/v7 re-run on raw reports (no expert override)
+- **macro AUC vs 57 experts:** pilk **0.870** [0.831, 0.900]; kw_v7 0.651 [0.603, 0.698]; kw_v1 0.628 [0.577, 0.677]
+- paired: pilk − kw_v1 **+0.242** [0.193, 0.290]; pilk − kw_v7 +0.219 [0.166, 0.272]; kw_v1 − kw_v7 −0.023 [−0.057, +0.007]
+- precision ≥ 0.5 gate: pilk passes 11/12 (fails **Contusion** 0.44); kw_v1 fails PF OA; kw_v7 fails PF OA, Lat OA, Contusion
+- weakest pilk labels: Synovitis 0.694, Contusion 0.768, Lat OA 0.789 (this is the report-reading ceiling vs image-read experts)
+- dread agreement on non-expert studies (mean Spearman): with pilk 0.81, kw_v7 0.41, kw_v1 0.33
+- caveat: pilk's labeler docstring says its prompt was checked against the annotated studies → its 0.870 is likely optimistic; the +0.24 gap is far larger than any plausible selection effect
+- conclusion: keyword extractors are retired as teachers. First train supervision = public LLM soft labels (see DECISIONS 2026-09-24). Our own LLM labels must beat pilk on the experts by a paired CI before they replace it.
