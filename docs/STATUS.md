@@ -7,7 +7,7 @@ Last updated: 2026-09-24
 User priority (2026-09-24): **top 5**; do not wait for the Kaggle GPU reset; key rotation not required.
 
 ## Autonomous loop (live since 2026-09-24 10:32 IST)
-- Process: `caffeinate -i python -m rsna_knee.agent.loop run --interval 600` on this Mac (log `agent/runs/loop.log`). Restart the same way after a reboot; state is on disk.
+- Process: launchd agent `~/Library/LaunchAgents/com.rsna.agentloop.plist` (runs `caffeinate -i python -m rsna_knee.agent.loop run --interval 600`, starts at login, restarts on crash; log `agent/runs/loop.log`). Dashboard: `com.rsna.dashboard`. Restart after code changes: `launchctl kickstart -k gui/$(id -u)/com.rsna.agentloop` (safe any time the loop is sleeping; state is on disk). Remove: `launchctl bootout gui/$(id -u)/com.rsna.agentloop`.
 - Control: `python -m rsna_knee.agent.loop status | pause | resume | approve | reject`; `touch agent/runs/STOP` exits it. Dashboard shows loop heartbeat and APPROVAL NEEDED.
 - Needs you only for: approvals (any action > $10), leaderboard submits, finals, budget changes. Keep/kill of a new best uses `agent/runs/holdout.json` (never shown to the planner).
 - Design and checks: DECISIONS 2026-09-24 "Autonomous loop goes live". First loop node = baseline (public CoAtNet recipe, dread labels) under the fold-0 / expert-holdout protocol.
@@ -15,7 +15,8 @@ User priority (2026-09-24): **top 5**; do not wait for the Kaggle GPU reset; key
 ## In flight (do not poll Kaggle; RunPod progress page is fine)
 | Job | Where | What | Pull when done |
 |---|---|---|---|
-| `labels-ab-v1` | RunPod pod `mw4c7rb992jk7u` (community RTX 3090, $0.22/hr; ep0 = 17.6 min → ~5 h/arm, ETA ~2026-09-24 06:30 UTC), progress `https://mw4c7rb992jk7u-8000.proxy.runpod.net/STATUS` (+`/job.log`, `/<arm>/train.log`) | CoAtNet-384 16 ep on public 44-slot corpus; arms `dread_s42` vs `blendv2_s42` | `kaggle datasets download girishbose/rsna-knee-rp-labels-ab-v1-out`; pod self-terminates after upload |
+| loop node `7421b1b6a6fa` (baseline) | pod `lyk09i0lfpu0wr`, `https://lyk09i0lfpu0wr-8000.proxy.runpod.net/STATUS` | public recipe, dread, fold-0 + holdout protocol | loop does it |
+| ~~`labels-ab-v1`~~ DONE: wash (0.9148 vs 0.9148), dread stays | RunPod pod `mw4c7rb992jk7u` (community RTX 3090, $0.22/hr; ep0 = 17.6 min → ~5 h/arm, ETA ~2026-09-24 06:30 UTC), progress `https://mw4c7rb992jk7u-8000.proxy.runpod.net/STATUS` (+`/job.log`, `/<arm>/train.log`) | CoAtNet-384 16 ep on public 44-slot corpus; arms `dread_s42` vs `blendv2_s42` | `kaggle datasets download girishbose/rsna-knee-rp-labels-ab-v1-out`; pod self-terminates after upload |
 | dense80 cache | Kaggle CPU `girishbose/rsna-knee-dense80-s0..s3` | 80-slot 2–98% train cache, ~10 GB per shard | `kaggle kernels output girishbose/rsna-knee-dense80-s{k}` (onto RunPod, not the Mac) |
 
 ## Done this session (2026-09-24)

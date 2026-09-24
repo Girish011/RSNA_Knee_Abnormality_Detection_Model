@@ -17,5 +17,35 @@
   "visits": 0,
   "value_sum": 0.0,
   "created": 1790226142.83037
+ },
+ {
+  "id": "7421b1b6a6fa",
+  "parent": "root",
+  "genome": {
+   "corpus": "raptor44",
+   "labels": "dread",
+   "arch": "coatnet384",
+   "epochs": 16,
+   "k": 12,
+   "k_eval": 24,
+   "bb_lr": 3e-05,
+   "head_lr": 0.001,
+   "wd": 0.02,
+   "freeze_blocks": 0
+  },
+  "plan": "baseline: public CoAtNet recipe, dread labels, fold-0 protocol",
+  "kind": "online",
+  "refs": [],
+  "operator": "primary",
+  "status": "pending",
+  "proxy_auc": null,
+  "gold_auc": null,
+  "public_lb": null,
+  "gpu_hours": 0.0,
+  "error": "",
+  "reward": 0.0,
+  "visits": 0,
+  "value_sum": 0.0,
+  "created": 1790227738.819778
  }
 ]

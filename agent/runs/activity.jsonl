@@ -39,3 +39,8 @@
 {"ts": "2026-09-24T10:20:53", "kind": "note", "msg": "DeepSeek API reachable from this machine; models: deepseek-flash, deepseek-v4-pro", "cost_usd": 0.0}
 {"ts": "2026-09-24T10:30:39", "kind": "data", "msg": "labeler live check: 3 dev-expert reads via deepseek-flash", "cost_usd": 0.004}
 {"ts": "2026-09-24T10:32:22", "kind": "note", "msg": "loop started (interval 600s)", "cost_usd": 0.0}
+{"ts": "2026-09-24T10:58:58", "kind": "note", "msg": "loop started (interval 600s)", "cost_usd": 0.0}
+{"ts": "2026-09-24T11:00:53", "kind": "train", "msg": "RunPod job n-7421b1b6a6fa launched: ['7421b1b6a6fa']", "cost_usd": 0.0, "pod": "lyk09i0lfpu0wr", "bundle": "girishbose/rsna-knee-rp-n-7421b1b6a6fa-bundle", "result": "girishbose/rsna-knee-rp-n-7421b1b6a6fa-out", "monitor": "https://lyk09i0lfpu0wr-8000.proxy.runpod.net", "price_hr": 0.74, "est_hours": 4.7}
+{"ts": "2026-09-24T11:01:35", "kind": "note", "msg": "loop started (interval 600s)", "cost_usd": 0.0}
+{"ts": "2026-09-24T11:02:15", "kind": "cost", "msg": "labels-ab-v1 pod mw4c7rb992jk7u (3090, ~10.5 h)", "cost_usd": 2.2, "pod": "mw4c7rb992jk7u"}
+{"ts": "2026-09-24T11:02:15", "kind": "gate", "msg": "labels-ab-v1 verdict: WASH. gold-58 best 0.9148 vs 0.9148 (paired CI [-0.015,+0.015]); SWA 0.9138 vs 0.9132. dread stays teacher", "cost_usd": 0.0, "results": "outputs/runpod_results/labels-ab-v1"}

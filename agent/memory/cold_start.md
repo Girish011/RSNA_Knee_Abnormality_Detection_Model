@@ -43,6 +43,13 @@ Add a bullet only when a result is measured; never add opinions.
 - dreaddevelopment/rsna-knee-labels omits all 58 expert studies; it cannot be graded on them. Mean Spearman with pilk on non-expert studies is 0.81; with keyword v1 0.33.
 - pilk's labeler was prompt-checked against the annotated studies, so its expert AUC is likely optimistic by an unknown amount.
 
+## Own trains (RunPod, public 44-slot corpus, CoAtNet-384 16 ep, seed 42, all 58 experts as val)
+
+- Teacher A/B dread vs blend_v2 (pilk+dread, dread where pilk UNK): gold-58 best 0.9148 vs 0.9148 (paired CI -0.015..+0.015), SWA 0.9138 vs 0.9132; teacher swap is a wash.
+- blend_v2 per label vs dread: Lateral Meniscus +0.04 to +0.06, Fracture +0.02 to +0.03, MCL -0.03 to -0.05, Contusion -0.02 to -0.03 (single seed, noise-scale).
+- blend_v2 learned faster early (epoch 1 gold 0.811 vs 0.783) but both peaked at epoch 10; SWA of top-3 epochs did not beat the best epoch.
+- One 16-epoch CoAtNet-384 run is ~17.5 min/epoch on an RTX 3090 (~4.7 h), ~$1.0-3.5 depending on host.
+
 ## Constraints
 
 - Reports and any text model are train-only; test.csv has no Report field.

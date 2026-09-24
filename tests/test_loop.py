@@ -32,7 +32,7 @@ def sandbox(tmp_path, monkeypatch):
     monkeypatch.setattr(loop.runpod, "terminate_pod", lambda pid: None)
     monkeypatch.setattr(loop.runpod, "list_pods", lambda: [])
 
-    def fake_download(slug, dest):
+    def fake_download(slug, dest, tags):
         nid = slug.split("n-")[1].split("-out")[0]
         (dest / nid).mkdir(parents=True, exist_ok=True)
         noise = rng.normal(0, 1.0, (200, 12))

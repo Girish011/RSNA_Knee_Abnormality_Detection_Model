@@ -21,7 +21,6 @@ from __future__ import annotations
 import argparse
 import json
 import random
-import shutil
 import subprocess
 import time
 import traceback
@@ -119,14 +118,21 @@ def oof_file(job_dir: Path, tag: str) -> Path:
 
 # ------------------------------------------------------------------ observe
 
-def download_results(slug: str, dest: Path) -> bool:
+def result_files(tag: str) -> list[str]:
+    f = G.PROTOCOL["fold"]
+    return [f"{tag}/raptor_ft_{tag}.json", f"{tag}/raptor_oof_{tag}_fold{f}.npz",
+            f"{tag}/raptor_oof_{tag}_swa_fold{f}.npz", f"{tag}/raptor_holdout_{tag}.npz",
+            f"{tag}/train.log"]
+
+
+def download_results(slug: str, dest: Path, tags: list[str]) -> bool:
+    """Fetch only the scoring files by name (whole-dataset downloads fail silently on large sets)."""
     dest.mkdir(parents=True, exist_ok=True)
-    r = subprocess.run(["kaggle", "datasets", "download", slug, "-p", str(dest), "--unzip", "-q"],
+    for name in ["STATUS", "job.log"] + [f for t in tags for f in result_files(t)]:
+        (dest / name).parent.mkdir(parents=True, exist_ok=True)
+        subprocess.run(["kaggle", "datasets", "download", slug, "-f", name, "-p", str((dest / name).parent)],
                        capture_output=True, text=True)
-    for z in dest.glob("*.zip"):
-        shutil.unpack_archive(z, dest / z.stem)
-        z.unlink()
-    return r.returncode == 0 and any(dest.rglob("*.json"))
+    return (dest / "STATUS").exists()
 
 
 def observe(state: dict, journal: Journal) -> None:
@@ -153,7 +159,7 @@ def observe(state: dict, journal: Journal) -> None:
             cost_usd=elapsed_h * a["price_hr"], pod=a["pod"])
         a["cost_logged"], a["gpu_hours"] = True, elapsed_h
     dest = RESULTS / a["job"]
-    if not download_results(a["result"], dest):
+    if not download_results(a["result"], dest, a["nodes"]):
         a["tries"] = a.get("tries", 0) + 1
         if a["tries"] < DOWNLOAD_TRIES:
             return

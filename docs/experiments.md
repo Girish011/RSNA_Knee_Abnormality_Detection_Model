@@ -463,3 +463,14 @@ Append one row (or block) per run. Never delete history.
 - picker/ordering/normalisation copied from the public widedense inference code (primary 2–98% arm) so the test-time builder is the same function with the same constants
 - outputs per shard: `vols_s{k}.npy` (~1102 × 80 × 336 × 336, ~10 GB), `masks_s{k}.npy`, `ids_s{k}.npy`, `meta_s{k}.json` (errors, empty studies, minutes)
 - next: when the user reports done, pull with `kaggle kernels output girishbose/rsna-knee-dense80-s{k}` onto a RunPod volume
+
+### 2026-09-24 — labels-ab-v1 COMPLETE → WASH (dread stays the teacher)
+- results: `outputs/runpod_results/labels-ab-v1/` (from `girishbose/rsna-knee-rp-labels-ab-v1-out`); cost ~$2.20 (3090, ~10.5 h)
+- gold-58 best-epoch: dread **0.9148** vs blend_v2 **0.9148**, Δ +0.0000, paired bootstrap CI [−0.015, +0.015]
+- SWA (top-3 epochs): 0.9138 vs 0.9132 (Δ −0.0006, CI [−0.016, +0.014]); last epoch 0.9079 vs 0.9086
+- per label (blend − dread, best-epoch): Lat Men +0.056, Fracture +0.033, Lat OA +0.014; MCL −0.032, Contusion −0.031, Effusion −0.019
+- verdict under the pre-registered rule (blend must win ≥2 of 3 with CI not centred below 0): **not met → dread stays**. Our reproduction of the public recipe (0.9148) matches the published 0.9167 within noise.
+- implication: whole-teacher swaps are exhausted; label work continues only as targeted relabels of weak cells (loop branch), and geometry (dense80) is the next large lever.
+
+### 2026-09-24 — Autonomous loop live; first node launched
+- loop under launchd (`com.rsna.agentloop`); node `7421b1b6a6fa` = baseline (public recipe, dread, fold-0 protocol with expert holdout) on pod `lyk09i0lfpu0wr` (secure 4090, $0.74/h, est 4.7 h)
