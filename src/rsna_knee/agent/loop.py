@@ -146,6 +146,21 @@ def observe(state: dict, journal: Journal) -> None:
     except Exception:
         pod = None
     elapsed_h = (time.time() - a["launched"]) / 3600
+    # Phantom / vanished pod (create claimed success then 404, or never rented): relaunch.
+    if pod is None and not a.get("cost_logged") and elapsed_h < 0.5:
+        log("error", f"pod {a['pod']} gone before billing (phantom/capacity); relaunching",
+            component="loop", pod=a["pod"])
+        retries = a.get("infra_retries", 0) + 1
+        state["active"] = None
+        if retries <= INFRA_RETRIES:
+            start_train(state, journal, a["nodes"][0], attempt=retries)
+            if state.get("active"):
+                state["active"]["infra_retries"] = retries
+        else:
+            for nid in a["nodes"]:
+                journal.record(nid, error="pod vanished / no capacity after retries", gpu_hours=0.0)
+                log("gate", f"node {nid} FAILED: no capacity", node=nid)
+        return
     if pod is not None and pod.get("desiredStatus") == "RUNNING":
         if elapsed_h > 2 * a["est_hours"] + 1:
             runpod.terminate_pod(a["pod"])
@@ -284,8 +299,17 @@ def plan(state: dict, journal: Journal, rng: random.Random, llm=None) -> None:
         node = journal.add(ROOT_ID, dict(G.BASE), plan="baseline: public CoAtNet recipe, dread labels, fold-0 protocol")
         return _gate_or_start(state, journal, {"type": "train", "node": node.id}, G.est_hours(node.genome))
 
-    # Do not start a second train while an online node is still pending (in-flight / uploading).
-    if any(n.kind == "online" and n.status == "pending" for n in journal.nodes.values()):
+    # Orphaned pending online node (launch claimed then vanished): resume that train.
+    orphans = [n for n in journal.nodes.values()
+               if n.kind == "online" and n.status == "pending"]
+    if orphans and not state.get("active"):
+        n = orphans[0]
+        log("plan", f"resume orphaned pending node {n.id}")
+        start_train(state, journal, n.id, attempt=int((state.get("_orphan_retries") or 0)) + 1)
+        state["_orphan_retries"] = int(state.get("_orphan_retries") or 0) + 1
+        return
+    # Do not start a second train while an online node is still pending *and* a job is active.
+    if orphans and state.get("active"):
         log("note", "skip plan: an online node is still pending")
         return
     # Never idle while a registered relabel has not been trained: that is free expected gain.

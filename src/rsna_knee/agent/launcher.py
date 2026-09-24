@@ -73,11 +73,15 @@ def upload_bundle(d: Path) -> str:
     return slug
 
 
-def launch(job: str, arms: list[Arm], hours: float) -> dict:
-    """Upload the bundle and start a pod. Returns {pod, costPerHr, monitor, bundle, result}."""
+def launch(job: str, arms: list[Arm], hours: float, *, capacity_rounds: int = 8) -> dict:
+    """Upload the bundle and start a pod. Returns {pod, costPerHr, monitor, bundle, result}.
+
+    Retries across community 4090 → 4090/3090 → secure 4090, with backoff, until a host is
+    free or ``capacity_rounds`` is exhausted.
+    """
     assert_budget(hours * PRICE_HR)
     bundle = upload_bundle(build_bundle(job, arms))
-    time.sleep(90)
+    time.sleep(30)
     result = result_slug(job)
     base = {
         "name": f"rsna-{job}", "imageName": IMAGE, "computeType": "GPU", "gpuCount": 1,
@@ -93,16 +97,27 @@ def launch(job: str, arms: list[Arm], hours: float) -> dict:
         {"cloudType": "COMMUNITY", "gpuTypeIds": [runpod.GPU_4090]},
         {"cloudType": "COMMUNITY", "gpuTypeIds": [runpod.GPU_4090, runpod.GPU_3090]},
         {"cloudType": "SECURE", "gpuTypeIds": [runpod.GPU_4090]},
+        {"cloudType": "COMMUNITY", "gpuTypeIds": [runpod.GPU_3090]},
     ]
     pod = None
-    for extra in attempts:
-        try:
-            pod = runpod.create_pod({**base, **extra})
+    last_err = ""
+    for round_i in range(capacity_rounds):
+        for extra in attempts:
+            try:
+                pod = runpod.create_pod({**base, **extra})
+                break
+            except RuntimeError as e:
+                last_err = str(e)[:160]
+                continue
+        if pod is not None:
             break
-        except RuntimeError:
-            continue
+        wait = min(30 * (round_i + 1), 120)
+        log("note", f"RunPod capacity miss round {round_i + 1}/{capacity_rounds}; retry in {wait}s",
+            job=job, err=last_err)
+        time.sleep(wait)
     if pod is None:
-        log("error", f"RunPod job {job}: no GPU capacity on any fallback", bundle=bundle)
+        log("error", f"RunPod job {job}: no GPU capacity after {capacity_rounds} rounds",
+            bundle=bundle, err=last_err)
         raise RuntimeError("no RunPod capacity")
     out = {"pod": pod["id"], "costPerHr": pod.get("costPerHr"), "monitor": runpod.proxy_url(pod["id"]),
            "bundle": bundle, "result": result}

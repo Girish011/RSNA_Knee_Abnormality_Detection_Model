@@ -1,15 +1,15 @@
 {
  "paused": false,
  "active": {
-  "job": "n-2c52aa6dd0b0",
-  "pod": "u58xwmw7y5a32v",
+  "job": "n-2c52aa6dd0b0-r1",
+  "pod": "1x8mqill5c1g3l",
   "nodes": [
    "2c52aa6dd0b0"
   ],
-  "result": "girishbose/rsna-knee-rp-n-2c52aa6dd0b0-out",
-  "launched": 1790248616.371986,
+  "result": "girishbose/rsna-knee-rp-n-2c52aa6dd0b0-r1-out",
+  "launched": 1790249096.335038,
   "est_hours": 4.66,
-  "price_hr": 0.34
+  "price_hr": 0.22
  },
  "pending": null,
  "next_plan_after": 0,
@@ -23,5 +23,6 @@
    ]
   }
  ],
- "heartbeat": 1790248709.755098
+ "heartbeat": 1790249096.335063,
+ "_orphan_retries": 1
 }
