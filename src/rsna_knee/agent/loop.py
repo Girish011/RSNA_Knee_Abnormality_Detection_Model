@@ -51,6 +51,7 @@ VETO_DROP = 0.04
 MAX_RELABELS = 4
 STOP_COOLDOWN_S = 6 * 3600
 DOWNLOAD_TRIES = 8
+INFRA_RETRIES = 2
 
 
 # ------------------------------------------------------------------ state
@@ -163,6 +164,15 @@ def observe(state: dict, journal: Journal) -> None:
         a["tries"] = a.get("tries", 0) + 1
         if a["tries"] < DOWNLOAD_TRIES:
             return
+    if not any(oof_file(dest, n).exists() for n in a["nodes"]) and a.get("infra_retries", 0) < INFRA_RETRIES:
+        status = (dest / "STATUS").read_text().strip() if (dest / "STATUS").exists() else "no STATUS"
+        log("error", f"job {a['job']} produced no results ({status}); relaunching as infrastructure failure",
+            component="loop", pod=a["pod"])
+        retries = a.get("infra_retries", 0) + 1
+        state["active"] = None
+        start_train(state, journal, a["nodes"][0], attempt=retries)
+        state["active"]["infra_retries"] = retries
+        return
     holdout = json.loads(HOLDOUT.read_text()) if HOLDOUT.exists() else {}
     for nid in a["nodes"]:
         oof = oof_file(dest, nid)
@@ -223,12 +233,13 @@ def dream_blends(journal: Journal, root: Path, top: int = 4) -> None:
 
 # ------------------------------------------------------------------ plan + act
 
-def start_train(state: dict, journal: Journal, node_id: str) -> None:
+def start_train(state: dict, journal: Journal, node_id: str, attempt: int = 0) -> None:
     g = journal.nodes[node_id].genome
     labels_file, args = G.to_cli(g, "/workspace/bundle")
     hours = G.est_hours(g)
-    out = launcher.launch(f"n-{node_id}", [(node_id, labels_file, args)], hours)
-    state["active"] = {"job": f"n-{node_id}", "pod": out["pod"], "nodes": [node_id], "result": out["result"],
+    job = f"n-{node_id}" + (f"-r{attempt}" if attempt else "")
+    out = launcher.launch(job, [(node_id, labels_file, args)], hours)
+    state["active"] = {"job": job, "pod": out["pod"], "nodes": [node_id], "result": out["result"],
                        "launched": time.time(), "est_hours": hours,
                        "price_hr": float(out.get("costPerHr") or launcher.PRICE_HR)}
 

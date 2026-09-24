@@ -33,7 +33,9 @@ def sandbox(tmp_path, monkeypatch):
     monkeypatch.setattr(loop.runpod, "list_pods", lambda: [])
 
     def fake_download(slug, dest, tags):
-        nid = slug.split("n-")[1].split("-out")[0]
+        if "broken" in slug:
+            return True
+        nid = tags[0]
         (dest / nid).mkdir(parents=True, exist_ok=True)
         noise = rng.normal(0, 1.0, (200, 12))
         np.savez(dest / nid / f"raptor_oof_{nid}_fold0.npz", pred=ref.to_numpy() + noise, ids=ids)
@@ -92,6 +94,19 @@ def test_loop_cycle(sandbox):
     assert len(launched) == 2 and loop.load_state()["active"]["nodes"] == [online[1].id]
     kinds = [e["kind"] for e in activity.read()]
     assert "cost" in kinds and "gate" in kinds and "plan" in kinds
+
+
+def test_infra_failure_relaunches_then_fails(sandbox):
+    launched = sandbox
+    loop.tick(llm=lambda *a, **k: ({}, 0.0), rng=random.Random(0))
+    nid = loop.load_state()["active"]["nodes"][0]
+    for attempt in (1, 2, 3):
+        s = loop.load_state()
+        s["active"]["result"] = "u/broken-out"
+        loop.save_state(s)
+        loop.tick(llm=lambda *a, **k: ({"type": "stop", "why": "test"}, 0.0), rng=random.Random(0))
+    assert [j for j, _ in launched] == [f"n-{nid}", f"n-{nid}-r1", f"n-{nid}-r2"]
+    assert loop.load_journal().nodes[nid].status == "failed"
 
 
 def test_expensive_proposal_waits_for_approval(sandbox, monkeypatch):

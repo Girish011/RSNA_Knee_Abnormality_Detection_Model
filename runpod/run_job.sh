@@ -34,8 +34,8 @@ EOF
 
 status "installing"
 pip freeze | grep -E '^(torch|torchvision|numpy)==' > /tmp/pins.txt; cat /tmp/pins.txt
-pip install --progress-bar off -c /tmp/pins.txt timm kaggle pyarrow scikit-learn pandas 2>&1 \
-  | grep -E "^(Collecting|Successfully|ERROR)" || true
+timeout 900 pip install --progress-bar off -c /tmp/pins.txt timm kaggle pyarrow scikit-learn pandas 2>&1 \
+  | grep --line-buffered -E "^(Collecting|Successfully|ERROR)" || true
 python -c "import timm, sklearn, pyarrow, pandas; print('deps ok, timm', timm.__version__)" || finish "pip failed"
 nvidia-smi --query-gpu=name,memory.total,driver_version --format=csv
 free -g | head -2; nproc
