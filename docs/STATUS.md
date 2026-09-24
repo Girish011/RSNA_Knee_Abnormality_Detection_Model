@@ -6,6 +6,12 @@ Last updated: 2026-09-24
 **Public-floor pivot + autonomous search loop** (DECISIONS 2026-09-23). Budget cap $300.
 User priority (2026-09-24): **top 5**; do not wait for the Kaggle GPU reset; key rotation not required.
 
+## Autonomous loop (live since 2026-09-24 10:32 IST)
+- Process: `caffeinate -i python -m rsna_knee.agent.loop run --interval 600` on this Mac (log `agent/runs/loop.log`). Restart the same way after a reboot; state is on disk.
+- Control: `python -m rsna_knee.agent.loop status | pause | resume | approve | reject`; `touch agent/runs/STOP` exits it. Dashboard shows loop heartbeat and APPROVAL NEEDED.
+- Needs you only for: approvals (any action > $10), leaderboard submits, finals, budget changes. Keep/kill of a new best uses `agent/runs/holdout.json` (never shown to the planner).
+- Design and checks: DECISIONS 2026-09-24 "Autonomous loop goes live". First loop node = baseline (public CoAtNet recipe, dread labels) under the fold-0 / expert-holdout protocol.
+
 ## In flight (do not poll Kaggle; RunPod progress page is fine)
 | Job | Where | What | Pull when done |
 |---|---|---|---|
@@ -39,9 +45,9 @@ User priority (2026-09-24): **top 5**; do not wait for the Kaggle GPU reset; key
 - **Kaggle GPU weekly quota** until the weekly reset: no submits until then. Fork ready at `outputs/kernels/public_floor_rsna_base/`.
 
 ## Next 3 actions
-1. When `labels-ab-v1` uploads: download, apply the pre-registered read-out (experiments 2026-09-24), pick the teacher.
-2. When dense80 shards finish: check `meta_s{k}.json` (errors, empty studies), then RunPod job `dense80-v1` = CoAtNet-384 on dense80 with the chosen teacher, k_eval over all windows; save per-window logits for window-count dreams.
-3. Build the dense80 submit notebook (same picker, our weights, timed) and, on quota reset, submit the floor fork + our first model.
+1. Loop runs the baseline node, then DeepSeek-planned nodes/relabels. Check the dashboard; answer approvals.
+2. When dense80 shards finish (user reports): check `meta_s{k}.json`, add a dense80 corpus path to `run_job.sh`/`genome.py` and flip `CORPORA["dense80"] = True` so the loop can use it.
+3. Build the dense80 submit notebook; on GPU quota reset, submit the floor fork + best loop node (user approves).
 
 ## Legacy (log only)
 - `girishbose/gf-mri-core-seed42-5fold` v2 (thin cache). Record verdict when user reports; does not block.

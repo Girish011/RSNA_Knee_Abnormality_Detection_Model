@@ -375,6 +375,9 @@ def main():
     ap.add_argument("--roi_pad", type=float, default=0.06)
     ap.add_argument("--roi_overlap", type=float, default=0.12)
     ap.add_argument("--roi_boxes", default=os.path.join(HERE, "roi_boxes.npz"))
+    # ---- expert holdout: these gold studies are neither trained on nor used for epoch selection;
+    # they are predicted once at the end with the selected weights (raptor_holdout_<tag>.npz).
+    ap.add_argument("--holdout", default=None, help="json list of expert StudyInstanceUIDs")
     a = ap.parse_args()
     random.seed(a.seed); np.random.seed(a.seed); torch.manual_seed(a.seed)
     dev = "cuda" if torch.cuda.is_available() else "cpu"
@@ -395,6 +398,12 @@ def main():
     tr = pd.read_csv(_tcsv); tr["StudyInstanceUID"] = tr["StudyInstanceUID"].astype(str)
     gold_df = tr[tr[LAB].notna().all(axis=1)].copy().set_index("StudyInstanceUID")
     gold_ids = [u for u in gold_df.index if u in idset]
+    holdout_ids = []
+    if a.holdout:
+        hset = set(json.load(open(a.holdout)))
+        holdout_ids = [u for u in gold_ids if u in hset]
+        gold_ids = [u for u in gold_ids if u not in hset]
+        print(f"[holdout] {len(holdout_ids)} experts held out; gold-val {len(gold_ids)}", flush=True)
     _lab = a.labels or _find("labels_llm_soft.parquet")
     if not _lab or not os.path.exists(_lab):
         # Exit cleanly rather than as a failure: running this notebook as published, with no
@@ -403,7 +412,7 @@ def main():
         raise SystemExit(0)
     soft = pd.read_parquet(_lab)
     soft["StudyInstanceUID"] = soft["StudyInstanceUID"].astype(str); soft = soft.set_index("StudyInstanceUID")
-    goldset = set(gold_ids)
+    goldset = set(gold_ids) | set(holdout_ids)
     train_ids = [u for u in ids if u in soft.index and u not in goldset]
     # ---- CV fold hook: hold out fold `a.fold`, train on the rest ----
     oof_ids = []
@@ -418,7 +427,7 @@ def main():
     if a.limit: train_ids = train_ids[:a.limit]
     labels = {u: soft.loc[u, LAB].values.astype(np.float32) for u in train_ids}
     for u in oof_ids: labels[u] = soft.loc[u, LAB].values.astype(np.float32)
-    for u in gold_ids: labels[u] = gold_df.loc[u, LAB].values.astype(np.float32)
+    for u in gold_ids + holdout_ids: labels[u] = gold_df.loc[u, LAB].values.astype(np.float32)
     print(f"train {len(train_ids)} | gold-val {len(gold_ids)}"
           + (f" | oof {len(oof_ids)}" if oof_ids else ""), flush=True)
 
@@ -605,6 +614,20 @@ def main():
                      pred=Pens, truth=Yo, ids=np.array(oof_ids), fold=a.fold, nfolds=a.folds)
             print(f"[cv] wrote epoch-ensemble OOF over epochs {sorted(oof_by_ep)}", flush=True)
         model.load_state_dict(best_state["model"]); model.eval()
+
+    if holdout_ids and best_state is not None:
+        model.load_state_dict(best_state["model"]); model.eval()
+        hds = StudyWindows(HERE, holdout_ids, id2row, labels, a.res, a.k_eval, train=False, norm=a.norm, **_roi_kw)
+        hl = DataLoader(hds, batch_size=max(2, a.bs // 2), shuffle=False, num_workers=a.workers,
+                        collate_fn=collate, persistent_workers=False)
+        Ph = []
+        with torch.no_grad():
+            for x, y in hl:
+                with torch.autocast(dev, dtype=torch.bfloat16, enabled=dev == "cuda"):
+                    Ph.append(torch.sigmoid(model(x.to(dev)).float()).cpu().numpy())
+        np.savez(os.path.join(HERE, f"raptor_holdout_{a.tag}.npz"), pred=np.concatenate(Ph),
+                 truth=np.stack([labels[u] for u in holdout_ids]), ids=np.array(holdout_ids))
+        print(f"[holdout] wrote raptor_holdout_{a.tag}.npz ({len(holdout_ids)} studies)", flush=True)
 
     # --- weight-averaged checkpoint (new) ---
     if len(topk) > 1:

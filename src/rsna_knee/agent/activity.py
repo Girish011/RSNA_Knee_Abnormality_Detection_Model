@@ -23,7 +23,8 @@ KINDS = {"plan", "code", "train", "dream", "submit", "data", "cost", "gate", "er
 _SECRET = re.compile(r"(KGAT_|rpa_|sk-)[A-Za-z0-9]{12,}")
 
 
-def log(kind: str, msg: str, *, cost_usd: float = 0.0, path: Path = ACTIVITY, **details) -> dict:
+def log(kind: str, msg: str, *, cost_usd: float = 0.0, path: Path | None = None, **details) -> dict:
+    path = path or ACTIVITY
     if kind not in KINDS:
         raise ValueError(f"unknown kind {kind}; use one of {sorted(KINDS)}")
     blob = json.dumps({"msg": msg, **details}, default=str)
@@ -37,7 +38,8 @@ def log(kind: str, msg: str, *, cost_usd: float = 0.0, path: Path = ACTIVITY, **
     return event
 
 
-def read(path: Path = ACTIVITY) -> list[dict]:
+def read(path: Path | None = None) -> list[dict]:
+    path = path or ACTIVITY
     if not path.exists():
         return []
     return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
@@ -47,7 +49,7 @@ def spent(events: list[dict]) -> float:
     return round(sum(e.get("cost_usd", 0.0) for e in events), 2)
 
 
-def assert_budget(extra_usd: float, path: Path = ACTIVITY, budget: float = BUDGET_USD) -> None:
+def assert_budget(extra_usd: float, path: Path | None = None, budget: float = BUDGET_USD) -> None:
     """Hard stop before any paid action that would cross the campaign cap."""
     total = spent(read(path)) + extra_usd
     if total > budget:

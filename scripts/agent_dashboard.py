@@ -103,6 +103,18 @@ def render() -> str:
         f"<div class=card>Nodes<div class=big>{len(nodes)}</div>{n_online} online / {n_dream} dream</div>",
         f"<div class=card>Branch<div class=big>{esc(branch or '-')}</div></div>",
     ]
+    state_f = JOURNAL.parent / "loop_state.json"
+    if state_f.exists():
+        st = json.loads(state_f.read_text())
+        age = (time.time() - st.get("heartbeat", 0)) / 60
+        act = st.get("active") or {}
+        pend = st.get("pending")
+        loop_txt = ("PAUSED" if st.get("paused") else f"alive, {age:.0f} min ago" if age < 30 else f"STALE {age:.0f} min")
+        cards.append(
+            f"<div class=card>Loop<div class=big>{esc(loop_txt)}</div>"
+            f"{'pod ' + esc(act.get('pod', '')) + ' ' + esc(','.join(act.get('nodes', []))) if act else 'no active pod'}"
+            f"{'<br><b>APPROVAL NEEDED:</b> ' + esc(json.dumps(pend))[:200] + ' (loop approve|reject)' if pend else ''}"
+            f"</div>")
     ev_rows = "".join(_event_row(e) for e in reversed(events[-60:]))
     node_rows = "".join(
         f"<tr><td><code>{esc(n['id'])}</code></td><td class={esc(n['kind'])}>{esc(n['kind'])}</td>"
@@ -123,7 +135,7 @@ def render() -> str:
 <h1>RSNA Knee autonomous campaign</h1><div>updated {time.strftime('%Y-%m-%d %H:%M:%S')}</div>
 <div style='margin-top:12px'>{''.join(cards)}</div>
 <h2>Experiment graph (newest first)</h2><table><tr><th>id</th><th>kind</th><th>operator</th>
-<th>status</th><th>proxy</th><th>gold-58</th><th>public LB</th><th>GPU h</th><th>plan</th></tr>
+<th>status</th><th>proxy</th><th>gold-dev</th><th>public LB</th><th>GPU h</th><th>plan</th></tr>
 {node_rows or '<tr><td colspan=9>no nodes yet</td></tr>'}</table>
 <h2>Activity (latest 60)</h2><table><tr><th>time</th><th>kind</th><th>what</th><th>cost</th>
 <th>details</th></tr>{ev_rows or '<tr><td colspan=5>no events yet</td></tr>'}</table>

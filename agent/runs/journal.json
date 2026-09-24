@@ -1,0 +1,21 @@
+[
+ {
+  "id": "root",
+  "parent": null,
+  "genome": {},
+  "plan": "",
+  "kind": "root",
+  "refs": [],
+  "operator": "primary",
+  "status": "done",
+  "proxy_auc": null,
+  "gold_auc": null,
+  "public_lb": null,
+  "gpu_hours": 0.0,
+  "error": "",
+  "reward": 0.0,
+  "visits": 0,
+  "value_sum": 0.0,
+  "created": 1790226142.83037
+ }
+]
