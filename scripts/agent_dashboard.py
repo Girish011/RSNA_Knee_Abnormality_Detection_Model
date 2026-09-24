@@ -205,12 +205,16 @@ def render() -> str:
                 f"alive, {age:.0f} min ago" if age is not None and age < 30 else
                 f"STALE {age:.0f} min" if age is not None else "no heartbeat")
 
+    bal_txt = "-"
+    spend_hr = "-"
+    if isinstance(bal, dict):
+        bal_txt = f"${float(bal.get('clientBalance', 0)):.2f}"
+        spend_hr = str(bal.get("currentSpendPerHr", "-"))
     cards = [
         f"<div class=card>Spend<div class=big>${usd:.2f} / ${BUDGET_USD:.0f}</div>{bar}"
         f"<div class=muted>logged GPU+LLM</div></div>",
-        f"<div class=card>RunPod balance<div class=big>"
-        f"{('$' + f'{bal.get(\"clientBalance\", 0):.2f}') if bal else '-'}</div>"
-        f"<div class=muted>spend/hr {bal.get('currentSpendPerHr', '-') if bal else '-'}</div></div>",
+        f"<div class=card>RunPod balance<div class=big>{bal_txt}</div>"
+        f"<div class=muted>spend/hr {spend_hr}</div></div>",
         f"<div class=card>Best public LB<div class=big>{best_lb if best_lb else '-'}</div></div>",
         f"<div class=card>Best proxy AUC<div class=big>{best_proxy}</div></div>",
         f"<div class=card>Gate {GATE[0]}<div class=big>LB &ge; {GATE[1]}</div></div>",
@@ -243,11 +247,14 @@ def render() -> str:
   <pre>{ep_pre}</pre>
 </div>"""
     else:
+        msg = esc(live.get("msg", "idle"))
+        link = ""
+        if live.get("base"):
+            link = f' · <a href="{esc(live["base"])}/STATUS" target=_blank>open STATUS</a>'
         live_html = f"""
 <h2>Live RunPod job</h2>
 <div class=card style='display:block;width:calc(100% - 34px)'>
-  <div class=muted>{esc(live.get('msg', 'idle'))}
-  {(' · <a href=\"' + esc(live['base']) + '/STATUS\" target=_blank>open STATUS</a>') if live.get('base') else ''}</div>
+  <div class=muted>{msg}{link}</div>
 </div>"""
 
     pod_rows = "".join(
