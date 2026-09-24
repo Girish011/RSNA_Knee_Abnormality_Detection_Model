@@ -16,7 +16,7 @@ User priority: **keep searching until fold-0 proxy >= 0.958** (top-10 band). Do 
 | Job | Where | What | Pull when done |
 |---|---|---|---|
 | ~~baseline `7421b1b6a6fa`~~ DONE proxy **0.9215** / gold_dev 0.8878 / holdout 0.9251 | — | dread CoAtNet fold-0 | scored |
-| loop node `2c52aa6dd0b0` (relabel LatMen+Fracture) | pod `u58xwmw7y5a32v` ($0.34/h), https://u58xwmw7y5a32v-8000.proxy.runpod.net/STATUS | train `relabel_8c56cdf0` on best parent; target proxy>=0.958 | loop does it |
+| loop node `2c52aa6dd0b0` (relabel LatMen+Fracture) | pod `1x8mqill5c1g3l` ($0.22/h), https://1x8mqill5c1g3l-8000.proxy.runpod.net/STATUS | train `relabel_8c56cdf0` on best parent; target proxy>=0.958 | loop does it |
 | ~~`labels-ab-v1`~~ DONE: wash (0.9148 vs 0.9148), dread stays | RunPod pod `mw4c7rb992jk7u` (community RTX 3090, $0.22/hr; ep0 = 17.6 min → ~5 h/arm, ETA ~2026-09-24 06:30 UTC), progress `https://mw4c7rb992jk7u-8000.proxy.runpod.net/STATUS` (+`/job.log`, `/<arm>/train.log`) | CoAtNet-384 16 ep on public 44-slot corpus; arms `dread_s42` vs `blendv2_s42` | `kaggle datasets download girishbose/rsna-knee-rp-labels-ab-v1-out`; pod self-terminates after upload |
 | dense80 cache | Kaggle CPU `girishbose/rsna-knee-dense80-s0..s3` | 80-slot 2–98% train cache, ~10 GB per shard | `kaggle kernels output girishbose/rsna-knee-dense80-s{k}` (onto RunPod, not the Mac) |
 
@@ -47,7 +47,7 @@ User priority: **keep searching until fold-0 proxy >= 0.958** (top-10 band). Do 
 - **Kaggle GPU weekly quota** until the weekly reset: no submits until then. Fork ready at `outputs/kernels/public_floor_rsna_base/`.
 
 ## Next 3 actions
-1. Loop trains continuously toward proxy **0.958** (auto-queues unused relabels; 15 min max stop cooldown; fallback genomes if planner hits the ban wall).
+1. Loop trains continuously toward proxy **0.958** (DeepSeek `launch_runpod_train` tool auto-triggers pods; unused relabels still force-queued; 15 min stop cooldown).
 2. When dense80 shards finish (user reports): enable `CORPORA["dense80"]` so the loop can use the geometry lever.
 3. On GPU quota reset: submit floor fork + best loop weights (user approves).
 

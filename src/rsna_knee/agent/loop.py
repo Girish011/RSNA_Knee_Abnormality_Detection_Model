@@ -328,10 +328,17 @@ def plan(state: dict, journal: Journal, rng: random.Random, llm=None) -> None:
     parent, mode = select(journal, min(1.0, 1 - budget_left / BUDGET_USD), Schedule(), rng)
     operator, refs = choose_operator(journal, parent, Schedule())
     kw = {"llm": llm} if llm else {}
+    if not llm:
+        kw["status_fn"] = lambda: {
+            "active": state.get("active"),
+            "pending": state.get("pending"),
+            "foreign_running": _foreign_pods(),
+            "policy": "one pod at a time; launch_runpod_train auto-triggers when idle and under gates",
+        }
     p = propose(journal, parent, operator, refs, budget_left=budget_left, cold_start=COLD_START,
                 target=PROXY_TARGET, **kw)
     log("plan", f"[{mode}/{operator}] from {parent.id}: {p.type} - {p.plan or p.why}", cost_usd=p.cost_usd,
-        attempts=p.attempts)
+        attempts=p.attempts, tools=len(getattr(p, "tool_trace", []) or []))
     if p.type == "stop":
         # Fall back to a cheap allowed train (k / epochs / head_lr) instead of parking for hours.
         fallback = _fallback_genome(parent.genome or G.BASE, journal)

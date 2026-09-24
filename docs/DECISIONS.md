@@ -210,3 +210,8 @@ Format: date | decision | why | rejected
 - **Checks:** menu validation; primary operator changes one field (intra/cross 2, aggregate 3); duplicate genomes rejected; ban list on plan text; one pod at a time (waits for hand-launched pods too); pod killed at 2x estimate + 1 h; campaign cap $300 counting GPU + LLM; relabels capped at 4 and gated per finding on dev (reader AUC ≥ pilk − 0.01 and precision ≥ 0.5); `agent/runs/STOP` kill switch; `loop pause|resume|approve|reject`.
 - **Why:** hand-driving every job meant idle GPUs and constant monitoring. The measured label A/B (dread vs blend v2 peaked at the same 0.9148 gold) says labels are one lever among several, so they are a branch of the search, not its objective.
 - **Rejected:** letting the LLM edit trainer code (an install or shape bug burns a rented GPU); scoring on all 58 experts (the loop would overfit them); auto-submitting to the leaderboard.
+
+## 2026-09-24 — DeepSeek tool calls auto-trigger RunPod
+- **Decision:** Planner uses DeepSeek native function calling. When a train is needed it must call `launch_runpod_train` (not only emit JSON text). The host validates the genome, then auto-starts the pod via existing one-pod / budget / >$10 approval gates. Also exposed: `get_runpod_status`, `request_relabel`, `stop_search`.
+- **Why:** User asked for DeepSeek tool calling so RunPod execution is auto-triggered whenever needed; JSON-only proposals could describe a train without a hard side-effect contract.
+- **Rejected:** Letting the model terminate/create pods with raw RunPod API args; skipping validation before queue.
