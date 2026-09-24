@@ -1,0 +1,21 @@
+{
+ "relabel_8c56cdf0": {
+  "file": "labels_relabel_8c56cdf0.parquet",
+  "audit": {
+   "Lateral Meniscus": {
+    "dev_auc": 0.965,
+    "pilk_dev_auc": 0.886,
+    "prec": 0.9,
+    "kept": true
+   },
+   "Fracture": {
+    "dev_auc": 0.912,
+    "pilk_dev_auc": 0.878,
+    "prec": 0.62,
+    "kept": true
+   }
+  },
+  "base": "dread",
+  "rule": "pilk_unk"
+ }
+}

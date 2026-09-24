@@ -22,13 +22,16 @@ RELABEL_RULES = ["pilk_unk", "disagree", "both"]
 
 SYSTEM = """You are the planner of an autonomous ML search for the RSNA knee MRI competition
 (macro ROC AUC over 12 findings, hidden test is expert-read images, reports exist only in training).
-You choose the NEXT experiment. You cannot write code: you either change fields of a typed genome
-or request a relabel of weak label cells with an LLM report reader. Reply with JSON only."""
+Campaign target: push fold-0 proxy AUC to at least 0.958 (top-10 band). Do not stop while budget
+remains and unused label sets or untried genome fields exist. You cannot write code: you either
+change fields of a typed genome or request a relabel of weak label cells. Reply with JSON only.
+Never propose unfreeze, train-longer schedules past the menu, thin-cache work, or reports at test time."""
 
 FORMAT = """Reply with exactly one of:
 {"type": "train", "plan": "<one sentence>", "genome": {<full genome>}, "expected_gain": <float, proxy AUC>, "why": "<evidence from memory>"}
 {"type": "relabel", "plan": "<one sentence>", "labels": [<finding names>], "rule": "pilk_unk"|"disagree"|"both", "base": "<registry label set>", "why": "<evidence>"}
-{"type": "stop", "why": "<reason no experiment is worth its cost>"}"""
+{"type": "stop", "why": "<only if every menu field and unused label set is exhausted>"}
+Prefer: (1) train any unused LABEL REGISTRY entry as a one-field labels= change; (2) geometry k / epochs within menu; (3) targeted relabel of weak findings. Never invent fields."""
 
 
 @dataclass
@@ -51,17 +54,24 @@ def _node_line(n: Node) -> str:
 
 
 def build_prompt(journal: Journal, parent: Node, operator: str, refs: list[str],
-                 budget_left: float, cold_start: Path) -> str:
+                 budget_left: float, cold_start: Path, target: float = 0.958) -> str:
     top = sorted(journal.valid_nodes(), key=lambda n: n.proxy_auc, reverse=True)[:6]
     parent_genome = parent.genome or G.BASE
     query = f"{operator} {json.dumps(parent_genome)} {parent.plan}"
     mem = retrieve(query, load_cold_start(cold_start) + journal_records(journal), k=8)
     reg = {k: v.get("audit", {}) for k, v in G.label_registry().items()}
+    used_labels = sorted({n.genome.get("labels") for n in journal.nodes.values()
+                          if n.kind == "online" and n.genome.get("labels")})
+    unused = [k for k in reg if k not in used_labels]
+    best_proxy = top[0].proxy_auc if top else None
+    gap = (None if best_proxy is None else round(target - best_proxy, 4))
     return "\n".join([
+        f"TARGET: fold-0 proxy AUC >= {target} (current best {best_proxy}; gap {gap}). Keep proposing until target or budget is gone.",
         f"PROTOCOL (fixed, do not change): {G.PROTOCOL}; proxy = macro AUC of fold-0 OOF predictions vs a fixed "
         f"reference label set on ~870 non-expert studies; gold_dev = 29 expert studies (veto only, sd ~0.02-0.04).",
         f"GENOME MENU: {json.dumps(G.MENU)}",
         f"LABEL REGISTRY (name -> audit on expert-dev): {json.dumps(reg)}",
+        f"UNUSED LABEL SETS (prefer training these next): {unused or 'none'}",
         f"FINDINGS: {LABEL_COLS}",
         f"PARENT NODE: {_node_line(parent) if parent.id != ROOT_ID else 'root; base genome ' + json.dumps(G.BASE)}",
         f"OPERATOR: {operator} (change at most {MAX_DIFF.get(operator, 1)} genome field(s) vs the parent)",
@@ -107,8 +117,9 @@ def check(p: Proposal, journal: Journal, parent: Node, operator: str) -> list[st
 
 
 def propose(journal: Journal, parent: Node, operator: str, refs: list[str], *, budget_left: float,
-            cold_start: Path, model: str = FLASH, tries: int = 3, llm=chat_json) -> Proposal:
-    prompt = build_prompt(journal, parent, operator, refs, budget_left, cold_start)
+            cold_start: Path, model: str = FLASH, tries: int = 3, llm=chat_json,
+            target: float = 0.958) -> Proposal:
+    prompt = build_prompt(journal, parent, operator, refs, budget_left, cold_start, target=target)
     cost, feedback = 0.0, ""
     for i in range(tries):
         reply, c = llm(SYSTEM, prompt + feedback, model=model)

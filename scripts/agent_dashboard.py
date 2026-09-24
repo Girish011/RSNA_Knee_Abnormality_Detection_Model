@@ -32,7 +32,7 @@ STATE = RUNS / "loop_state.json"
 HOLDOUT = RUNS / "holdout.json"
 LOOP_LOG = RUNS / "loop.log"
 RESULTS = REPO / "outputs" / "runpod_results"
-GATE = ("2026-10-06", 0.950)
+GATE = ("target", 0.958)
 
 CSS = """
 body{font:14px system-ui,sans-serif;margin:24px;background:#111;color:#ddd}
@@ -217,7 +217,8 @@ def render() -> str:
         f"<div class=muted>spend/hr {spend_hr}</div></div>",
         f"<div class=card>Best public LB<div class=big>{best_lb if best_lb else '-'}</div></div>",
         f"<div class=card>Best proxy AUC<div class=big>{best_proxy}</div></div>",
-        f"<div class=card>Gate {GATE[0]}<div class=big>LB &ge; {GATE[1]}</div></div>",
+        f"<div class=card>Target<div class=big>proxy &ge; {GATE[1]}</div>"
+        f"<div class=muted>top-10 band; keep searching</div></div>",
         f"<div class=card>Nodes<div class=big>{len(nodes)}</div>{n_online} online / {n_dream} dream</div>",
         f"<div class=card>Loop<div class=big>{esc(loop_txt)}</div>"
         f"{'pod ' + esc(act.get('pod', '')) if act else 'idle'}</div>",

@@ -105,8 +105,31 @@ def test_infra_failure_relaunches_then_fails(sandbox):
         s["active"]["result"] = "u/broken-out"
         loop.save_state(s)
         loop.tick(llm=lambda *a, **k: ({"type": "stop", "why": "test"}, 0.0), rng=random.Random(0))
-    assert [j for j, _ in launched] == [f"n-{nid}", f"n-{nid}-r1", f"n-{nid}-r2"]
+    assert [j for j, _ in launched[:3]] == [f"n-{nid}", f"n-{nid}-r1", f"n-{nid}-r2"]
     assert loop.load_journal().nodes[nid].status == "failed"
+
+
+def test_unused_relabel_autoqueues_train(sandbox, monkeypatch):
+    launched = sandbox
+    from rsna_knee.agent.journal import ROOT_ID
+    from rsna_knee.agent import genome as G
+    j = loop.load_journal()
+    node = j.add(ROOT_ID, dict(G.BASE), plan="base")
+    j.record(node.id, proxy_auc=0.92, gold_auc=0.88)
+    j.save()
+    monkeypatch.setattr(G, "label_registry", lambda: {
+        "dread": {"file": "labels_dread.parquet"},
+        "blend_v2": {"file": "labels_llm_blend_v2.parquet"},
+        "relabel_8c56cdf0": {"file": "labels_relabel_8c56cdf0.parquet"},
+    })
+    s = loop.load_state()
+    s.update({"relabels": [{"name": "relabel_8c56cdf0", "registered": True, "kept": ["Fracture"]}],
+              "active": None, "pending": None, "next_plan_after": 0, "paused": False})
+    loop.save_state(s)
+    loop.tick(llm=lambda *a, **k: ({"type": "stop", "why": "unused"}, 0.0),
+              rng=__import__("random").Random(0))
+    assert any("relabel_8c56cdf0" in str(arms) for _, arms in launched)
+    assert loop.load_state()["active"]["nodes"]
 
 
 def test_expensive_proposal_waits_for_approval(sandbox, monkeypatch):

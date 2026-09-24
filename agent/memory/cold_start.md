@@ -50,6 +50,13 @@ Add a bullet only when a result is measured; never add opinions.
 - blend_v2 learned faster early (epoch 1 gold 0.811 vs 0.783) but both peaked at epoch 10; SWA of top-3 epochs did not beat the best epoch.
 - One 16-epoch CoAtNet-384 run is ~17.5 min/epoch on an RTX 3090 (~4.7 h), ~$1.0-3.5 depending on host.
 
+## Own trains (protocol fold-0 + expert holdout)
+
+- Baseline CoAtNet-384 / dread / seed42 fold0: proxy 0.9215, gold_dev 0.8878, holdout 0.9251 (node 7421b1b6a6fa).
+- Teacher A/B dread vs blend_v2 on all-58 was a wash (0.9148 vs 0.9148); prefer targeted relabels over whole-teacher swaps.
+- relabel_8c56cdf0 (dread + pilk_unk fills for Lat Men + Fracture): Lat Men dev AUC 0.965 (pilk 0.886), Fracture 0.912 (pilk 0.878); train it next.
+- Campaign keeps searching until fold-0 proxy >= 0.958 or budget is exhausted; never park for hours on a planner stop.
+
 ## Constraints
 
 - Reports and any text model are train-only; test.csv has no Report field.

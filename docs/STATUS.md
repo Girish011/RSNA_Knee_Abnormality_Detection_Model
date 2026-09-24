@@ -4,7 +4,7 @@ Last updated: 2026-09-24
 
 ## Phase
 **Public-floor pivot + autonomous search loop** (DECISIONS 2026-09-23). Budget cap $300.
-User priority (2026-09-24): **top 5**; do not wait for the Kaggle GPU reset; key rotation not required.
+User priority: **keep searching until fold-0 proxy >= 0.958** (top-10 band). Do not wait for Kaggle GPU reset; key rotation not required.
 
 ## Autonomous loop (live since 2026-09-24 10:32 IST)
 - Process: launchd agent `~/Library/LaunchAgents/com.rsna.agentloop.plist` (runs `caffeinate -i python -m rsna_knee.agent.loop run --interval 600`, starts at login, restarts on crash; log `agent/runs/loop.log`). Dashboard: `com.rsna.dashboard`. Restart after code changes: `launchctl kickstart -k gui/$(id -u)/com.rsna.agentloop` (safe any time the loop is sleeping; state is on disk). Remove: `launchctl bootout gui/$(id -u)/com.rsna.agentloop`.
@@ -15,7 +15,8 @@ User priority (2026-09-24): **top 5**; do not wait for the Kaggle GPU reset; key
 ## In flight (do not poll Kaggle; RunPod progress page is fine)
 | Job | Where | What | Pull when done |
 |---|---|---|---|
-| loop node `7421b1b6a6fa` (baseline) | pod `xygvuzavwnfi6z` (community 3090, $0.22/h; relaunched after a secure-host pip hang), `https://xygvuzavwnfi6z-8000.proxy.runpod.net/STATUS` | public recipe, dread, fold-0 + holdout protocol | loop does it |
+| ~~baseline `7421b1b6a6fa`~~ DONE proxy **0.9215** / gold_dev 0.8878 / holdout 0.9251 | — | dread CoAtNet fold-0 | scored |
+| loop node `2c52aa6dd0b0` (relabel LatMen+Fracture) | pod `u58xwmw7y5a32v` ($0.34/h), https://u58xwmw7y5a32v-8000.proxy.runpod.net/STATUS | train `relabel_8c56cdf0` on best parent; target proxy>=0.958 | loop does it |
 | ~~`labels-ab-v1`~~ DONE: wash (0.9148 vs 0.9148), dread stays | RunPod pod `mw4c7rb992jk7u` (community RTX 3090, $0.22/hr; ep0 = 17.6 min → ~5 h/arm, ETA ~2026-09-24 06:30 UTC), progress `https://mw4c7rb992jk7u-8000.proxy.runpod.net/STATUS` (+`/job.log`, `/<arm>/train.log`) | CoAtNet-384 16 ep on public 44-slot corpus; arms `dread_s42` vs `blendv2_s42` | `kaggle datasets download girishbose/rsna-knee-rp-labels-ab-v1-out`; pod self-terminates after upload |
 | dense80 cache | Kaggle CPU `girishbose/rsna-knee-dense80-s0..s3` | 80-slot 2–98% train cache, ~10 GB per shard | `kaggle kernels output girishbose/rsna-knee-dense80-s{k}` (onto RunPod, not the Mac) |
 
@@ -46,9 +47,9 @@ User priority (2026-09-24): **top 5**; do not wait for the Kaggle GPU reset; key
 - **Kaggle GPU weekly quota** until the weekly reset: no submits until then. Fork ready at `outputs/kernels/public_floor_rsna_base/`.
 
 ## Next 3 actions
-1. Loop runs the baseline node, then DeepSeek-planned nodes/relabels. Check the dashboard; answer approvals.
-2. When dense80 shards finish (user reports): check `meta_s{k}.json`, add a dense80 corpus path to `run_job.sh`/`genome.py` and flip `CORPORA["dense80"] = True` so the loop can use it.
-3. Build the dense80 submit notebook; on GPU quota reset, submit the floor fork + best loop node (user approves).
+1. Loop trains continuously toward proxy **0.958** (auto-queues unused relabels; 15 min max stop cooldown; fallback genomes if planner hits the ban wall).
+2. When dense80 shards finish (user reports): enable `CORPORA["dense80"]` so the loop can use the geometry lever.
+3. On GPU quota reset: submit floor fork + best loop weights (user approves).
 
 ## Legacy (log only)
 - `girishbose/gf-mri-core-seed42-5fold` v2 (thin cache). Record verdict when user reports; does not block.

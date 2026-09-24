@@ -34,7 +34,7 @@ from rsna_knee.agent import genome as G
 from rsna_knee.agent import labeler, launcher, runpod
 from rsna_knee.agent.activity import BUDGET_USD, JOURNAL, RUNS, log, read, spent
 from rsna_knee.agent.dream import rank_blend
-from rsna_knee.agent.journal import ROOT_ID, Journal, genome_hash
+from rsna_knee.agent.journal import ROOT_ID, Journal, genome_hash, genome_hash
 from rsna_knee.agent.planner import propose
 from rsna_knee.agent.search import Schedule, choose_operator, select
 from rsna_knee.constants import LABEL_COLS
@@ -49,7 +49,8 @@ PUB = REPO / "data" / "external" / "public_labels"
 APPROVAL_USD = 10.0
 VETO_DROP = 0.04
 MAX_RELABELS = 4
-STOP_COOLDOWN_S = 6 * 3600
+STOP_COOLDOWN_S = 15 * 60  # short; never park the campaign for hours
+PROXY_TARGET = 0.958  # top-10 band from AGENT_PLAN; loop keeps searching until met or budget dies
 DOWNLOAD_TRIES = 8
 INFRA_RETRIES = 2
 
@@ -233,6 +234,31 @@ def dream_blends(journal: Journal, root: Path, top: int = 4) -> None:
 
 # ------------------------------------------------------------------ plan + act
 
+def _unused_label_sets(journal: Journal, state: dict) -> list[str]:
+    """Registered soft-label files that no finished/pending online node has trained on yet."""
+    used = {n.genome.get("labels") for n in journal.nodes.values()
+            if n.kind == "online" and n.genome.get("labels")}
+    out = []
+    for r in state.get("relabels") or []:
+        if r.get("registered") and r.get("name") and r["name"] not in used:
+            out.append(r["name"])
+    for name in G.label_registry():
+        if name not in used and name not in ("dread", "blend_v2") and name not in out:
+            # only auto-queue registered relabels, not every registry entry
+            pass
+    return out
+
+
+def _force_train_labels(state: dict, journal: Journal, parent: Node, labels: str, plan: str) -> None:
+    g = dict(parent.genome or G.BASE)
+    g["labels"] = labels
+    if genome_hash(g) in journal.nodes:
+        log("gate", f"skip force-train {labels}: genome already exists")
+        return
+    node = journal.add(parent.id, g, plan=plan, operator="primary")
+    _gate_or_start(state, journal, {"type": "train", "node": node.id}, G.est_hours(g))
+
+
 def start_train(state: dict, journal: Journal, node_id: str, attempt: int = 0) -> None:
     g = journal.nodes[node_id].genome
     labels_file, args = G.to_cli(g, "/workspace/bundle")
@@ -257,25 +283,67 @@ def plan(state: dict, journal: Journal, rng: random.Random, llm=None) -> None:
     if not online:
         node = journal.add(ROOT_ID, dict(G.BASE), plan="baseline: public CoAtNet recipe, dread labels, fold-0 protocol")
         return _gate_or_start(state, journal, {"type": "train", "node": node.id}, G.est_hours(node.genome))
+
+    # Do not start a second train while an online node is still pending (in-flight / uploading).
+    if any(n.kind == "online" and n.status == "pending" for n in journal.nodes.values()):
+        log("note", "skip plan: an online node is still pending")
+        return
+    # Never idle while a registered relabel has not been trained: that is free expected gain.
+    unused = _unused_label_sets(journal, state)
+    best = journal.best()
+    online_valid = [n for n in journal.nodes.values() if n.kind == "online" and n.valid]
+    parent = best if best and best.kind == "online" else (
+        max(online_valid, key=lambda n: n.proxy_auc or 0.0) if online_valid else None)
+    if unused and parent is not None:
+        labels = unused[0]
+        log("plan", f"auto-queue train on unused labels {labels} (campaign target proxy>={PROXY_TARGET})")
+        return _force_train_labels(
+            state, journal, parent, labels,
+            plan=f"train registered relabel {labels} on best parent (target {PROXY_TARGET})")
+
     parent, mode = select(journal, min(1.0, 1 - budget_left / BUDGET_USD), Schedule(), rng)
     operator, refs = choose_operator(journal, parent, Schedule())
     kw = {"llm": llm} if llm else {}
-    p = propose(journal, parent, operator, refs, budget_left=budget_left, cold_start=COLD_START, **kw)
+    p = propose(journal, parent, operator, refs, budget_left=budget_left, cold_start=COLD_START,
+                target=PROXY_TARGET, **kw)
     log("plan", f"[{mode}/{operator}] from {parent.id}: {p.type} - {p.plan or p.why}", cost_usd=p.cost_usd,
         attempts=p.attempts)
     if p.type == "stop":
+        # Fall back to a cheap allowed train (k / epochs / head_lr) instead of parking for hours.
+        fallback = _fallback_genome(parent.genome or G.BASE, journal)
+        if fallback is not None:
+            log("plan", f"stop overridden: fallback train {G.diff(parent.genome or G.BASE, fallback)}")
+            node = journal.add(parent.id, fallback, plan="fallback after planner stop/ban wall",
+                               operator="primary")
+            return _gate_or_start(state, journal, {"type": "train", "node": node.id}, G.est_hours(fallback))
         state["next_plan_after"] = time.time() + STOP_COOLDOWN_S
+        log("note", f"planner stop; retry in {STOP_COOLDOWN_S // 60} min (target {PROXY_TARGET} not met)")
         return
     if p.type == "relabel":
         if len(state["relabels"]) >= MAX_RELABELS:
             log("gate", "relabel rejected: MAX_RELABELS reached")
-            state["next_plan_after"] = time.time() + 3600
+            state["next_plan_after"] = time.time() + 600
             return
         n, est = labeler.estimate(p.labels, p.rule)
         return _gate_or_start(state, journal, {"type": "relabel", "labels": p.labels, "rule": p.rule,
                                                "base": p.base, "calls": n}, None, est)
     node = journal.add(parent.id, p.genome, plan=p.plan, refs=refs, operator=operator)
     _gate_or_start(state, journal, {"type": "train", "node": node.id}, G.est_hours(p.genome))
+
+
+def _fallback_genome(parent: dict, journal: Journal) -> dict | None:
+    """Deterministic one-field diffs when the LLM only proposes banned levers."""
+    for field, values in (("k", [16, 8]), ("epochs", [20, 12]), ("head_lr", [2e-3, 5e-4]),
+                          ("bb_lr", [5e-5, 2e-5]), ("labels", ["blend_v2"])):
+        for v in values:
+            g = dict(parent)
+            if g.get(field) == v:
+                continue
+            g[field] = v
+            if G.validate(g) or genome_hash(g) in journal.nodes:
+                continue
+            return g
+    return None
 
 
 def _gate_or_start(state, journal, item: dict, hours: float | None, est_usd: float | None = None) -> None:
