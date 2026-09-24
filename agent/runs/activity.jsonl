@@ -45,3 +45,7 @@
 {"ts": "2026-09-24T11:02:15", "kind": "cost", "msg": "labels-ab-v1 pod mw4c7rb992jk7u (3090, ~10.5 h)", "cost_usd": 2.2, "pod": "mw4c7rb992jk7u"}
 {"ts": "2026-09-24T11:02:15", "kind": "gate", "msg": "labels-ab-v1 verdict: WASH. gold-58 best 0.9148 vs 0.9148 (paired CI [-0.015,+0.015]); SWA 0.9138 vs 0.9132. dread stays teacher", "cost_usd": 0.0, "results": "outputs/runpod_results/labels-ab-v1"}
 {"ts": "2026-09-24T11:05:25", "kind": "note", "msg": "loop started (interval 600s)", "cost_usd": 0.0}
+{"ts": "2026-09-24T11:10:24", "kind": "cost", "msg": "pod lyk09i0lfpu0wr ~0.16 h at $0.74/h (terminated: pip hang on secure host)", "cost_usd": 0.1174, "pod": "lyk09i0lfpu0wr"}
+{"ts": "2026-09-24T11:10:24", "kind": "error", "msg": "secure-cloud pods hang in pip install (2 of 2); launcher now prefers community hosts with CUDA>=12.4; relaunching baseline node", "cost_usd": 0.0, "component": "runpod"}
+{"ts": "2026-09-24T11:10:25", "kind": "note", "msg": "loop started (interval 600s)", "cost_usd": 0.0}
+{"ts": "2026-09-24T11:12:21", "kind": "train", "msg": "RunPod job n-7421b1b6a6fa launched: ['7421b1b6a6fa']", "cost_usd": 0.0, "pod": "xygvuzavwnfi6z", "bundle": "girishbose/rsna-knee-rp-n-7421b1b6a6fa-bundle", "result": "girishbose/rsna-knee-rp-n-7421b1b6a6fa-out", "monitor": "https://xygvuzavwnfi6z-8000.proxy.runpod.net", "price_hr": 0.22, "est_hours": 4.7}

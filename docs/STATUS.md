@@ -15,7 +15,7 @@ User priority (2026-09-24): **top 5**; do not wait for the Kaggle GPU reset; key
 ## In flight (do not poll Kaggle; RunPod progress page is fine)
 | Job | Where | What | Pull when done |
 |---|---|---|---|
-| loop node `7421b1b6a6fa` (baseline) | pod `lyk09i0lfpu0wr`, `https://lyk09i0lfpu0wr-8000.proxy.runpod.net/STATUS` | public recipe, dread, fold-0 + holdout protocol | loop does it |
+| loop node `7421b1b6a6fa` (baseline) | pod `xygvuzavwnfi6z` (community 3090, $0.22/h; relaunched after a secure-host pip hang), `https://xygvuzavwnfi6z-8000.proxy.runpod.net/STATUS` | public recipe, dread, fold-0 + holdout protocol | loop does it |
 | ~~`labels-ab-v1`~~ DONE: wash (0.9148 vs 0.9148), dread stays | RunPod pod `mw4c7rb992jk7u` (community RTX 3090, $0.22/hr; ep0 = 17.6 min → ~5 h/arm, ETA ~2026-09-24 06:30 UTC), progress `https://mw4c7rb992jk7u-8000.proxy.runpod.net/STATUS` (+`/job.log`, `/<arm>/train.log`) | CoAtNet-384 16 ep on public 44-slot corpus; arms `dread_s42` vs `blendv2_s42` | `kaggle datasets download girishbose/rsna-knee-rp-labels-ab-v1-out`; pod self-terminates after upload |
 | dense80 cache | Kaggle CPU `girishbose/rsna-knee-dense80-s0..s3` | 80-slot 2–98% train cache, ~10 GB per shard | `kaggle kernels output girishbose/rsna-knee-dense80-s{k}` (onto RunPod, not the Mac) |
 

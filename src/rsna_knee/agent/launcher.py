@@ -90,9 +90,9 @@ def launch(job: str, arms: list[Arm], hours: float) -> dict:
         "dockerStartCmd": ["bash", "-c", BOOT.replace("{bundle}", bundle)],
     }
     attempts = [
-        {"cloudType": "SECURE", "gpuTypeIds": [runpod.GPU_4090]},
         {"cloudType": "COMMUNITY", "gpuTypeIds": [runpod.GPU_4090]},
         {"cloudType": "COMMUNITY", "gpuTypeIds": [runpod.GPU_4090, runpod.GPU_3090]},
+        {"cloudType": "SECURE", "gpuTypeIds": [runpod.GPU_4090]},
     ]
     pod = None
     for extra in attempts:
