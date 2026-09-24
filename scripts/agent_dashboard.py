@@ -3,9 +3,8 @@
     python scripts/agent_dashboard.py            # write agent/runs/dashboard.html once
     python scripts/agent_dashboard.py --serve    # http://localhost:8765, refreshes every 20 s
 
-Shows: spend vs the $300 cap, current best / gate, every journal node (online vs dream),
-the latest activity events, and the latest commits with changed files. Standard library
-only, so it runs from any Python on the machine.
+Merges: spend, loop state, journal, activity.jsonl, RunPod pod API, and the active pod's
+HTTP progress page (STATUS + train.log epochs). No DeepSeek / Kaggle calls — viewing is free.
 """
 
 from __future__ import annotations
@@ -13,10 +12,13 @@ from __future__ import annotations
 import argparse
 import html
 import json
+import re
 import subprocess
 import sys
 import threading
 import time
+import urllib.error
+import urllib.request
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
@@ -26,6 +28,10 @@ sys.path.insert(0, str(REPO / "src"))
 from rsna_knee.agent.activity import ACTIVITY, BUDGET_USD, JOURNAL, RUNS, read, spent
 
 OUT = RUNS / "dashboard.html"
+STATE = RUNS / "loop_state.json"
+HOLDOUT = RUNS / "holdout.json"
+LOOP_LOG = RUNS / "loop.log"
+RESULTS = REPO / "outputs" / "runpod_results"
 GATE = ("2026-10-06", 0.950)
 
 CSS = """
@@ -34,10 +40,16 @@ h1{font-size:20px}h2{font-size:15px;margin-top:28px;color:#9cf}
 table{border-collapse:collapse;width:100%}td,th{border-bottom:1px solid #333;padding:4px 8px;
 text-align:left;vertical-align:top}th{color:#999;font-weight:500}
 .card{display:inline-block;background:#1c1c1c;border:1px solid #333;border-radius:6px;
-padding:10px 16px;margin:0 12px 12px 0}.big{font-size:22px;color:#fff}
+padding:10px 16px;margin:0 12px 12px 0;min-width:140px;vertical-align:top}
+.big{font-size:22px;color:#fff}.muted{color:#888;font-size:12px}
 .error{color:#f77}.train{color:#fc6}.dream{color:#8d8}.submit{color:#c9f}.gate{color:#6cf}
-code{color:#bbb;font-size:12px}.bar{background:#333;height:8px;border-radius:4px;width:240px}
+.note{color:#aaa}.cost{color:#fc6}.data{color:#8cf}.plan{color:#c9f}.code{color:#bbb}
+pre{background:#0a0a0a;border:1px solid #333;padding:10px;overflow:auto;max-height:320px;
+font:12px ui-monospace,Menlo,monospace;color:#cfc;white-space:pre-wrap}
+a{color:#9cf}code{color:#bbb;font-size:12px}
+.bar{background:#333;height:8px;border-radius:4px;width:240px}
 .fill{background:#fc6;height:8px;border-radius:4px}
+.live{border-color:#fc6}.warn{color:#fc6}
 """
 
 
@@ -67,6 +79,91 @@ def _journal_rows() -> list[dict]:
     return sorted(nodes, key=lambda n: n["created"], reverse=True)
 
 
+def _http_get(url: str, timeout: float = 8.0) -> tuple[int, str]:
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent": "rsna-dashboard/1"})
+        with urllib.request.urlopen(req, timeout=timeout) as r:
+            return r.status, r.read().decode("utf-8", errors="replace")
+    except Exception as e:
+        return 0, f"{type(e).__name__}: {e}"
+
+
+def _proxy_base(pod: str) -> str:
+    return f"https://{pod}-8000.proxy.runpod.net"
+
+
+def _epoch_lines(text: str, n: int = 16) -> list[str]:
+    lines = []
+    for line in text.splitlines():
+        s = line.strip()
+        if re.match(r"^ep\d+\s", s) or s.startswith("[ckpt]") or s.startswith("DONE ") \
+                or s.startswith("SWA ") or s.startswith("device ") or s.startswith("train "):
+            lines.append(s)
+    return lines[-n:]
+
+
+def _live_runpod(act: dict) -> dict:
+    """Pull STATUS + train epochs from the pod's free HTTP progress server (no API key)."""
+    pod = act.get("pod") or ""
+    nodes = act.get("nodes") or []
+    if not pod:
+        return {"ok": False, "msg": "no active pod"}
+    base = _proxy_base(pod)
+    code, status = _http_get(f"{base}/STATUS")
+    if code != 200:
+        return {"ok": False, "msg": f"STATUS HTTP {code}: {status[:120]}", "base": base, "pod": pod}
+    tag = nodes[0] if nodes else ""
+    epochs: list[str] = []
+    job_tail = ""
+    if tag:
+        c2, train = _http_get(f"{base}/{tag}/train.log")
+        if c2 == 200:
+            epochs = _epoch_lines(train)
+        else:
+            c3, job = _http_get(f"{base}/job.log")
+            if c3 == 200:
+                epochs = _epoch_lines(job)
+                job_tail = "\n".join(job.strip().splitlines()[-12:])
+    elapsed_h = (time.time() - float(act.get("launched") or time.time())) / 3600
+    price = float(act.get("price_hr") or 0)
+    return {
+        "ok": True, "pod": pod, "base": base, "status": status.strip(), "epochs": epochs,
+        "job_tail": job_tail, "tag": tag, "elapsed_h": elapsed_h,
+        "est_hours": act.get("est_hours"), "price_hr": price,
+        "spend_so_far": round(elapsed_h * price, 2), "job": act.get("job"),
+        "result": act.get("result"),
+    }
+
+
+def _runpod_api_pods() -> list[dict]:
+    try:
+        from rsna_knee.agent import runpod
+        out = []
+        for p in runpod.list_pods():
+            out.append({
+                "id": p.get("id"), "name": p.get("name"), "status": p.get("desiredStatus"),
+                "costPerHr": p.get("costPerHr"), "gpu": (p.get("machine") or {}).get("gpuDisplayName")
+                or p.get("gpu"), "uptime": p.get("uptimeSeconds"),
+            })
+        bal = runpod.balance()
+        return [{"_balance": bal}, *out]
+    except Exception as e:
+        return [{"_error": f"{type(e).__name__}: {str(e)[:120]}"}]
+
+
+def _result_summaries() -> list[str]:
+    if not RESULTS.exists():
+        return []
+    rows = []
+    for d in sorted(RESULTS.iterdir(), key=lambda p: p.stat().st_mtime, reverse=True)[:8]:
+        if not d.is_dir():
+            continue
+        status = (d / "STATUS").read_text().strip() if (d / "STATUS").exists() else ""
+        arms = [p.name for p in d.iterdir() if p.is_dir()]
+        rows.append(f"{d.name}: {status or 'no STATUS'} | arms={arms}")
+    return rows
+
+
 def _event_row(e: dict) -> str:
     esc = html.escape
     cost = f"${e['cost_usd']:.2f}" if e.get("cost_usd") else ""
@@ -74,7 +171,7 @@ def _event_row(e: dict) -> str:
     return (
         f"<tr><td>{esc(e['ts'])}</td><td class={esc(e['kind'])}>{esc(e['kind'])}</td>"
         f"<td>{esc(e['msg'])}</td><td>{cost}</td>"
-        f"<td><code>{esc(json.dumps(extra))[:240]}</code></td></tr>"
+        f"<td><code>{esc(json.dumps(extra, default=str))[:320]}</code></td></tr>"
     )
 
 
@@ -92,37 +189,101 @@ def render() -> str:
     branch = _git("rev-parse", "--abbrev-ref", "HEAD").strip()
     esc = html.escape
 
+    st = json.loads(STATE.read_text()) if STATE.exists() else {}
+    act = st.get("active") or {}
+    pend = st.get("pending")
+    live = _live_runpod(act) if act else {"ok": False, "msg": "no active job"}
+    api_pods = _runpod_api_pods()
+    bal = next((p["_balance"] for p in api_pods if "_balance" in p), None)
+    api_rows = [p for p in api_pods if "id" in p]
+
     n_online = sum(n["kind"] == "online" for n in nodes)
     n_dream = sum(n["kind"] == "dream" for n in nodes)
     bar = f"<div class=bar><div class=fill style='width:{pct:.0f}%'></div></div>"
+    age = (time.time() - st.get("heartbeat", 0)) / 60 if st.get("heartbeat") else None
+    loop_txt = ("PAUSED" if st.get("paused") else
+                f"alive, {age:.0f} min ago" if age is not None and age < 30 else
+                f"STALE {age:.0f} min" if age is not None else "no heartbeat")
+
     cards = [
-        f"<div class=card>Spend<div class=big>${usd:.2f} / ${BUDGET_USD:.0f}</div>{bar}</div>",
+        f"<div class=card>Spend<div class=big>${usd:.2f} / ${BUDGET_USD:.0f}</div>{bar}"
+        f"<div class=muted>logged GPU+LLM</div></div>",
+        f"<div class=card>RunPod balance<div class=big>"
+        f"{('$' + f'{bal.get(\"clientBalance\", 0):.2f}') if bal else '-'}</div>"
+        f"<div class=muted>spend/hr {bal.get('currentSpendPerHr', '-') if bal else '-'}</div></div>",
         f"<div class=card>Best public LB<div class=big>{best_lb if best_lb else '-'}</div></div>",
         f"<div class=card>Best proxy AUC<div class=big>{best_proxy}</div></div>",
         f"<div class=card>Gate {GATE[0]}<div class=big>LB &ge; {GATE[1]}</div></div>",
         f"<div class=card>Nodes<div class=big>{len(nodes)}</div>{n_online} online / {n_dream} dream</div>",
+        f"<div class=card>Loop<div class=big>{esc(loop_txt)}</div>"
+        f"{'pod ' + esc(act.get('pod', '')) if act else 'idle'}</div>",
         f"<div class=card>Branch<div class=big>{esc(branch or '-')}</div></div>",
     ]
-    state_f = JOURNAL.parent / "loop_state.json"
-    if state_f.exists():
-        st = json.loads(state_f.read_text())
-        age = (time.time() - st.get("heartbeat", 0)) / 60
-        act = st.get("active") or {}
-        pend = st.get("pending")
-        loop_txt = ("PAUSED" if st.get("paused") else f"alive, {age:.0f} min ago" if age < 30 else f"STALE {age:.0f} min")
+    if pend:
         cards.append(
-            f"<div class=card>Loop<div class=big>{esc(loop_txt)}</div>"
-            f"{'pod ' + esc(act.get('pod', '')) + ' ' + esc(','.join(act.get('nodes', []))) if act else 'no active pod'}"
-            f"{'<br><b>APPROVAL NEEDED:</b> ' + esc(json.dumps(pend))[:200] + ' (loop approve|reject)' if pend else ''}"
-            f"</div>")
-    ev_rows = "".join(_event_row(e) for e in reversed(events[-60:]))
+            f"<div class='card live'><b class=warn>APPROVAL NEEDED</b>"
+            f"<div><code>{esc(json.dumps(pend, default=str)[:280])}</code></div>"
+            f"<div class=muted>python -m rsna_knee.agent.loop approve|reject</div></div>")
+
+    # Live RunPod panel
+    if live.get("ok"):
+        ep_pre = esc("\n".join(live["epochs"]) or "(no epoch lines yet — still installing/downloading)")
+        live_html = f"""
+<h2>Live RunPod job</h2>
+<div class='card live' style='display:block;width:calc(100% - 34px)'>
+  <div><b>STATUS:</b> <code>{esc(live['status'])}</code>
+    · pod <code>{esc(live['pod'])}</code>
+    · ${live['price_hr']:.2f}/hr · ~{live['elapsed_h']:.1f} h elapsed
+    · ~${live['spend_so_far']:.2f} so far
+    · est {live.get('est_hours')} h</div>
+  <div class=muted>job {esc(str(live.get('job')))} → result {esc(str(live.get('result')))}
+    · <a href="{esc(live['base'])}/STATUS" target=_blank>STATUS</a>
+    · <a href="{esc(live['base'])}/{esc(live.get('tag') or '')}/train.log" target=_blank>train.log</a>
+    · <a href="{esc(live['base'])}/job.log" target=_blank>job.log</a></div>
+  <pre>{ep_pre}</pre>
+</div>"""
+    else:
+        live_html = f"""
+<h2>Live RunPod job</h2>
+<div class=card style='display:block;width:calc(100% - 34px)'>
+  <div class=muted>{esc(live.get('msg', 'idle'))}
+  {(' · <a href=\"' + esc(live['base']) + '/STATUS\" target=_blank>open STATUS</a>') if live.get('base') else ''}</div>
+</div>"""
+
+    pod_rows = "".join(
+        f"<tr><td><code>{esc(p.get('id') or '')}</code></td><td>{esc(str(p.get('name') or ''))}</td>"
+        f"<td>{esc(str(p.get('status') or ''))}</td><td>{p.get('costPerHr')}</td>"
+        f"<td>{esc(str(p.get('gpu') or ''))}</td>"
+        f"<td><a href='{_proxy_base(p['id'])}/STATUS' target=_blank>progress</a></td></tr>"
+        for p in api_rows
+    ) or "<tr><td colspan=6>no running pods</td></tr>"
+    if api_pods and "_error" in api_pods[0]:
+        pod_rows = f"<tr><td colspan=6 class=error>{esc(api_pods[0]['_error'])}</td></tr>"
+
+    holdout_html = ""
+    if HOLDOUT.exists():
+        try:
+            h = json.loads(HOLDOUT.read_text())
+            holdout_html = f"<h2>Holdout scores (human keep/kill; planner never sees)</h2><pre>{esc(json.dumps(h, indent=1)[:2000])}</pre>"
+        except json.JSONDecodeError:
+            holdout_html = ""
+
+    results = _result_summaries()
+    results_html = ("<h2>Local result pulls</h2><pre>" + esc("\n".join(results)) + "</pre>") if results else ""
+
+    loop_tail = ""
+    if LOOP_LOG.exists() and LOOP_LOG.stat().st_size:
+        loop_tail = "<h2>Loop process log (tail)</h2><pre>" + esc(
+            "\n".join(LOOP_LOG.read_text(errors="replace").splitlines()[-40:])) + "</pre>"
+
+    ev_rows = "".join(_event_row(e) for e in reversed(events[-120:]))
     node_rows = "".join(
         f"<tr><td><code>{esc(n['id'])}</code></td><td class={esc(n['kind'])}>{esc(n['kind'])}</td>"
-        f"<td>{esc(n['operator'])}</td><td>{esc(n['status'])}</td>"
+        f"<td>{esc(n.get('operator') or '')}</td><td>{esc(n['status'])}</td>"
         f"<td>{n['proxy_auc'] if n['proxy_auc'] is not None else ''}</td>"
         f"<td>{n['gold_auc'] if n['gold_auc'] is not None else ''}</td>"
         f"<td>{n['public_lb'] if n['public_lb'] is not None else ''}</td>"
-        f"<td>{n['gpu_hours']:.1f}</td><td>{esc(n['plan'])[:200]}</td></tr>"
+        f"<td>{n['gpu_hours']:.1f}</td><td>{esc(n.get('plan') or '')[:200]}</td></tr>"
         for n in nodes
     )
     commit_rows = "".join(
@@ -132,13 +293,22 @@ def render() -> str:
     )
     return f"""<!doctype html><html><head><meta charset=utf-8>
 <meta http-equiv=refresh content=20><title>RSNA agent</title><style>{CSS}</style></head><body>
-<h1>RSNA Knee autonomous campaign</h1><div>updated {time.strftime('%Y-%m-%d %H:%M:%S')}</div>
+<h1>RSNA Knee autonomous campaign</h1>
+<div class=muted>updated {time.strftime('%Y-%m-%d %H:%M:%S')} · refreshes every 20s ·
+localhost only (no DeepSeek / Kaggle / billing APIs for this page; RunPod progress HTTP is free)</div>
 <div style='margin-top:12px'>{''.join(cards)}</div>
+{live_html}
+<h2>RunPod pods (API)</h2>
+<table><tr><th>id</th><th>name</th><th>status</th><th>$/hr</th><th>gpu</th><th>progress</th></tr>
+{pod_rows}</table>
 <h2>Experiment graph (newest first)</h2><table><tr><th>id</th><th>kind</th><th>operator</th>
 <th>status</th><th>proxy</th><th>gold-dev</th><th>public LB</th><th>GPU h</th><th>plan</th></tr>
 {node_rows or '<tr><td colspan=9>no nodes yet</td></tr>'}</table>
-<h2>Activity (latest 60)</h2><table><tr><th>time</th><th>kind</th><th>what</th><th>cost</th>
+{holdout_html}
+{results_html}
+<h2>Activity (latest 120)</h2><table><tr><th>time</th><th>kind</th><th>what</th><th>cost</th>
 <th>details</th></tr>{ev_rows or '<tr><td colspan=5>no events yet</td></tr>'}</table>
+{loop_tail}
 <h2>Code changes (latest commits)</h2><table><tr><th>commit</th><th>when</th><th>message</th>
 <th>files</th></tr>{commit_rows}</table></body></html>"""
 
@@ -152,7 +322,11 @@ def write() -> Path:
 def serve(port: int, every: float) -> None:
     def loop():
         while True:
-            write()
+            try:
+                write()
+            except Exception as e:
+                # Keep serving the last good page; surface the error next refresh.
+                (RUNS / "dashboard_error.txt").write_text(f"{time.strftime('%H:%M:%S')} {e}\n")
             time.sleep(every)
 
     write()
