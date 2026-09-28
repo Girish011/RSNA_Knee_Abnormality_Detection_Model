@@ -12,13 +12,15 @@ from pathlib import Path
 from typing import Any, Callable
 
 from rsna_knee.agent import coder, genome as G
-from rsna_knee.agent.deepseek import FLASH, chat_json, run_tools
+from rsna_knee.agent.deepseek import FLASH, PRO, chat_json, run_tools
 from rsna_knee.agent.journal import ROOT_ID, Journal, Node, genome_hash
 from rsna_knee.agent.memory import BANS, check_bans, journal_records, load_cold_start, retrieve
 from rsna_knee.constants import LABEL_COLS
 
 MAX_DIFF = {"primary": 1, "intra_branch": 2, "cross_branch": 2, "aggregate": 3}
-RELABEL_RULES = ["pilk_unk", "disagree", "both"]
+RELABEL_RULES = ["pilk_unk", "disagree", "both", "all"]
+# Measured flat (±0.003 proxy over 4 one-field trains): never the only change in a train.
+CLOSED_AXES = {"bb_lr", "head_lr", "wd", "epochs"}
 
 SYSTEM = """You are the FULL autonomous planner/coder for the RSNA knee MRI competition
 (macro ROC AUC over 12 findings). True success = Kaggle LB >= 0.958; fold-0 proxy is the compass.
@@ -32,15 +34,18 @@ YOU OWN EVERY IDLE TICK. The host will not auto-pick the next train for you.
 On every idle turn you MUST do real work, in this order when useful:
 1) Coder-first if stuck on harness/trainer bugs (phantoms, upload, OOM handling): list_repo →
    read_repo_file → write_repo_file (allowlisted) → run_agent_tests → then launch_runpod_train.
-2) Otherwise launch_runpod_train on a GPU-needed diff only: unused dense80 LABEL REGISTRY entries,
-   then epochs / bb_lr / head_lr / wd within the menu. Never change k, k_eval, or arch.
-3) request_relabel only if RUNPOD HINT says relabel slots remain.
+2) Otherwise launch_runpod_train on a label/corpus lever: unused dense80 LABEL REGISTRY entries
+   (label sets from relabels of weak findings). lr / wd / head_lr / epochs one-field diffs are a
+   CLOSED axis (measured within ±0.003) and will be refused. Never change k, k_eval, or arch.
+3) request_relabel (rule 'all' re-reads every report) for weak findings — Synovitis, PF OA,
+   Lateral OA, Lateral Meniscus — when no unused label set is left.
+Submissions are the public D4 stack + our full-data members; a strategist queues members.
 NEVER call stop_search while unused labels or menu genomes remain — the tool will refuse.
 Do not write secrets. One pod / $300 / >$10 / no auto-LB still enforced by the host."""
 
 FORMAT = """Use tools every idle turn. Required outcome: launch_runpod_train (optionally after code edits).
-Prefer: (1) harness fixes if pods die / OOM; (2) unused dense80 labels or lr/epoch diffs at k=8;
-(3) request_relabel if slots remain. Never propose k>8, k_eval!=24, or a new backbone.
+Prefer: (1) harness fixes if pods die / OOM; (2) unused dense80 label sets at k=8;
+(3) request_relabel of weak findings. lr/wd/head_lr/epochs-only diffs are refused. Never propose k>8, k_eval!=24, or a new backbone.
 After success reply with short JSON {"type":"train"|"relabel"|"code","ok":true}."""
 
 TOOLS: list[dict] = [
@@ -123,19 +128,7 @@ def work_remaining(journal: Journal, parent: Node) -> list[str]:
     unused = [k for k in G.label_registry() if k not in used_dense]
     if unused:
         reasons.append(f"unused dense80 labels: {unused[:6]}")
-    base = _train_base(parent)
-    for field, values in (("epochs", [20, 12]), ("head_lr", [2e-3, 5e-4]),
-                          ("bb_lr", [5e-5, 2e-5, 1e-5]), ("wd", [0.05]),
-                          ("freeze_blocks", [1, 2])):
-        for v in values:
-            g = dict(base)
-            if g.get(field) == v:
-                continue
-            g[field] = v
-            if G.validate(g) or genome_hash(g) in journal.nodes:
-                continue
-            reasons.append(f"untried {field}={v}")
-            return reasons
+    # lr / wd / head_lr / epochs are closed; untried values there are not "remaining work".
     return reasons
 
 
@@ -223,6 +216,9 @@ def check(p: Proposal, journal: Journal, parent: Node, operator: str) -> list[st
                 errs.append(f"{operator} allows {limit} changed field(s); you changed {sorted(d)}")
             if genome_hash(p.genome) in journal.nodes:
                 errs.append("this exact genome was already run; read its result instead")
+            if d and set(d) <= CLOSED_AXES:
+                errs.append(f"closed axis: {sorted(d)} one-field diffs landed within ±0.003 proxy; "
+                            "change labels/corpus or request_relabel instead")
     else:
         errs.append("type must be train, relabel or stop")
     hits = check_bans(f"{p.plan} {p.why} {json.dumps(p.genome)}")
@@ -237,7 +233,7 @@ def _default_status() -> dict:
 
 
 def propose(journal: Journal, parent: Node, operator: str, refs: list[str], *, budget_left: float,
-            cold_start: Path, model: str = FLASH, tries: int = 3, llm: Callable | None = None,
+            cold_start: Path, model: str = PRO, tries: int = 3, llm: Callable | None = None,
             target: float = 0.958, status_fn: Callable[[], dict] | None = None,
             use_tools: bool = True) -> Proposal:
     """Propose the next action. Default path uses DeepSeek tool calls so trains go through

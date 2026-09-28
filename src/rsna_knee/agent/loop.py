@@ -31,7 +31,7 @@ import pandas as pd
 from sklearn.metrics import roc_auc_score
 
 from rsna_knee.agent import genome as G
-from rsna_knee.agent import labeler, launcher, members, runpod
+from rsna_knee.agent import labeler, launcher, members, runpod, strategist
 from rsna_knee.agent.activity import BUDGET_USD, JOURNAL, RUNS, log, read, spent
 from rsna_knee.agent.dream import greedy_rank_blend, rank_blend
 from rsna_knee.agent.journal import ROOT_ID, Journal, Node, genome_hash
@@ -50,7 +50,7 @@ APPROVAL_USD = 10.0
 VETO_DROP = 0.04
 # Cap on *successful unique* LLM relabel jobs (budget guard). Not a science threshold.
 # Rejection must fall through to a menu train — never idle the campaign.
-MAX_RELABELS = 4
+MAX_RELABELS = strategist.MAX_RELABELS
 STOP_COOLDOWN_S = 15 * 60  # only when the menu is fully exhausted
 # Local search bar only. True goal = Kaggle submit/LB macro AUC ≥ 0.958 (DECISIONS 2026-09-25).
 PROXY_TARGET = 0.958
@@ -545,7 +545,7 @@ def plan(state: dict, journal: Journal, rng: random.Random, llm=None) -> None:
             "unused_dense80_labels": _unused_label_sets(journal, state),
             "coder": "CODER-FIRST: write_repo_file on agent/runpod/tests then run_agent_tests then launch",
             "policy": ("VRAM: k=8 k_eval=24 only; arch=coatnet384; dream/replay already ran this tick; "
-                       "launch only unused dense80 labels or lr/epoch diffs"),
+                       "lr/wd/head_lr/epochs diffs are CLOSED; launch label/corpus levers or relabel weak findings"),
         }
     p = propose(journal, seed, operator, refs, budget_left=budget_left, cold_start=COLD_START,
                 target=PROXY_TARGET, **kw)
@@ -578,10 +578,8 @@ def _fallback_genome(parent: dict, journal: Journal) -> dict | None:
     base = G.clamp(parent)
     label_opts = [x for x in G.label_registry() if x != base.get("labels")]
     # Prefer unused labels + lr/epoch (GPU-needed). Never open k / k_eval / arch (VRAM + settled).
-    for field, values in (("corpus", ["dense80"]), ("labels", label_opts),
-                          ("epochs", [20, 12]), ("head_lr", [2e-3, 5e-4]),
-                          ("bb_lr", [5e-5, 2e-5, 1e-5]), ("wd", [0.05]),
-                          ("freeze_blocks", [1, 2])):
+    # lr / wd / head_lr / epochs are a closed axis (DECISIONS 2026-09-29): labels / corpus only.
+    for field, values in (("corpus", ["dense80"]), ("labels", label_opts)):
         for v in values:
             g = dict(base)
             if g.get(field) == v:
@@ -631,6 +629,13 @@ def tick(llm=None, rng: random.Random | None = None) -> dict:
             members_busy = False
             log("error", f"members tick failed: {type(e).__name__}: {str(e)[:200]}", component="members")
         if state["active"] or state["paused"] or members_busy or _foreign_pods():
+            # GPU busy: DeepSeek strategist does CPU/API work (labels, member queue, kernels).
+            if not state["paused"] and llm is None:
+                try:
+                    strategist.research(state, journal, RESULTS)
+                except Exception as e:  # noqa: BLE001 — never stall pod monitoring
+                    log("error", f"strategist failed: {type(e).__name__}: {str(e)[:200]}",
+                        component="strategist", trace=traceback.format_exc()[-600:])
             return state
         if state["pending"]:
             if state["pending"].get("approved"):

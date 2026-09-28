@@ -118,8 +118,8 @@ def test_launch_tool_rejects_bad_genome(monkeypatch, tmp_path):
                 "function": {
                     "name": "launch_runpod_train",
                     "arguments": json.dumps({
-                        "plan": "epochs=12", "genome": dict(G.BASE, epochs=12),
-                        "why": "shorter schedule", "expected_gain": 0.001,
+                        "plan": "labels=blend_v2", "genome": dict(G.BASE, labels="blend_v2"),
+                        "why": "unused label set", "expected_gain": 0.001,
                     }),
                 },
             }],
@@ -138,6 +138,6 @@ def test_launch_tool_rejects_bad_genome(monkeypatch, tmp_path):
         lambda system, user, tools, handlers, **kw: _local_run_tools(system, user, tools, handlers, fake_chat),
     )
     p = planner.propose(j, parent, "primary", [], budget_left=100, cold_start=cold)
-    assert p.type == "train" and p.genome["epochs"] == 12
+    assert p.type == "train" and p.genome["labels"] == "blend_v2"
     assert p.tool_trace[0]["result"]["ok"] is False
     assert p.tool_trace[1]["result"]["ok"] is True

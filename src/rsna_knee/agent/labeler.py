@@ -19,7 +19,7 @@ import pandas as pd
 from sklearn.metrics import precision_score, roc_auc_score
 
 from rsna_knee.agent import genome as G
-from rsna_knee.agent.deepseek import FLASH, chat_json
+from rsna_knee.agent.deepseek import FLASH, PRICE, PRO, chat_json
 from rsna_knee.constants import LABEL_COLS
 
 REPO = G.REPO
@@ -27,7 +27,9 @@ PUB = REPO / "data" / "external" / "public_labels"
 CACHE = REPO / "agent" / "labels" / "cache"
 PROMPT_VERSION = "v1"
 DISAGREE = 0.35
-EST_USD_PER_CALL = 0.0015
+EST_USD_PER_CALL = 0.0007  # flash, measured 2026-09-24 relabels; pro scales by PRICE ratio
+RULES = ("pilk_unk", "disagree", "both", "all")  # all = re-read every non-expert study
+MODELS = {"flash": FLASH, "pro": PRO}
 
 DEFS = {
     "ACL": "anterior cruciate ligament tear (partial or complete), including graft tear",
@@ -75,15 +77,19 @@ def select_cells(labels: list[str], rule: str) -> dict[str, list[str]]:
     for l in labels:
         unk = pilk.loc[ids, f"{l}__verdict"] == "UNK"
         dis = (pilk.loc[ids, l] - dread.loc[ids, l]).abs() > DISAGREE
-        m = unk if rule == "pilk_unk" else dis if rule == "disagree" else (unk | dis)
+        if rule == "all":
+            m = pd.Series(True, index=ids)
+        else:
+            m = unk if rule == "pilk_unk" else dis if rule == "disagree" else (unk | dis)
         for uid in ids[m.to_numpy()]:
             cells.setdefault(uid, []).append(l)
     return cells
 
 
-def estimate(labels: list[str], rule: str) -> tuple[int, float]:
+def estimate(labels: list[str], rule: str, model: str = FLASH) -> tuple[int, float]:
     n = len(select_cells(labels, rule)) + 29
-    return n, n * EST_USD_PER_CALL
+    scale = PRICE.get(model, PRICE[PRO])[1] / PRICE[FLASH][1]
+    return n, n * EST_USD_PER_CALL * scale
 
 
 def run(labels: list[str], rule: str, base: str, *, model: str = FLASH, workers: int = 16,

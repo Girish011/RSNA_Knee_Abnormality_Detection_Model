@@ -19,7 +19,7 @@ ACTIVITY = RUNS / "activity.jsonl"
 JOURNAL = RUNS / "journal.json"
 BUDGET_USD = 300.0
 
-KINDS = {"plan", "code", "train", "dream", "submit", "data", "cost", "gate", "error", "note"}
+KINDS = {"plan", "code", "train", "dream", "submit", "data", "cost", "gate", "error", "note", "research"}
 _SECRET = re.compile(r"(KGAT_|rpa_|sk-)[A-Za-z0-9]{12,}")
 
 
