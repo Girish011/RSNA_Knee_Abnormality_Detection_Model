@@ -22,8 +22,8 @@ Deadline **2026-10-22**.
 ## Live
 | Job | Pod | $/h | What |
 |---|---|---:|---|
-| `n-ca830ada7798` | `s0yb5c4835xdkr` | 0.34 | fold-0 bb_lr=1e-5 — ep11/16, gold 0.869 (5bc0 ended 0.909) → likely miss |
-| `m-f8709fd3f8` | queued | ~0.34 | **v5 warm-start**, full data, 6 ep, labels `relabel_8c56cdf0` + `dread` (2 arms, est ≤$3.6). Auto-launches when ca830 frees the slot. |
+| `n-ca830ada7798` | done | 0.34 | bb_lr=1e-5 → proxy **0.9200**, gold_dev 0.8775 — miss; lr axis closed (~$1.02) |
+| `m-f8709fd3f8` | `n6b0pdsjxzuzwq` | 0.74 | **v5 warm-start**, full data, 6 ep, labels `relabel_8c56cdf0` + `dread` (2 arms, est ≤$3.6). Launched 01:50 IST; downloading dense80. Monitor https://n6b0pdsjxzuzwq-8000.proxy.runpod.net |
 
 **Submitted** `ens-d4-5bc0-w20` v1 (D4 + 5bc0 w=0.2) → ref **56651119** PENDING. Record: `scripts/submit_gate.py record --ref 56651119 --score <lb>`.
 

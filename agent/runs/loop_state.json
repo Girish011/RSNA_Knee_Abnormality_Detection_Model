@@ -1,17 +1,6 @@
 {
  "paused": false,
- "active": {
-  "job": "n-ca830ada7798",
-  "pod": "s0yb5c4835xdkr",
-  "nodes": [
-   "ca830ada7798"
-  ],
-  "result": "girishbose/rsna-knee-rp-n-ca830ada7798-out",
-  "launched": 1790615847.718816,
-  "est_hours": 4.66,
-  "price_hr": 0.34,
-  "proxy_misses": 0
- },
+ "active": null,
  "pending": null,
  "next_plan_after": 0,
  "relabels": [
@@ -45,6 +34,6 @@
    ]
   }
  ],
- "heartbeat": 1790624832.191168,
+ "heartbeat": 1790626851.0519412,
  "_orphan_retries": 4
 }
