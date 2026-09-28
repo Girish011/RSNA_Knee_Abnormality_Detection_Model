@@ -524,3 +524,4 @@
 {"ts": "2026-09-29T01:06:53", "kind": "plan", "msg": "members queued m-f8709fd3f8: 2 full-data arms from 5bc0a0f45d75 (~4.9 h, ~$3.63)", "cost_usd": 0.0, "job": "m-f8709fd3f8", "arms": ["m6edbb53fbab", "mb40244a6b78"]}
 {"ts": "2026-09-29T01:07:08", "kind": "note", "msg": "loop started (interval 600s)", "cost_usd": 0.0}
 {"ts": "2026-09-29T01:19:37", "kind": "submit", "msg": "pushed girishbose/ens-d4-5bc0-w20 v1 (RUNNING); D4 stack + 5bc0 w=0.2; user-approved; submit via submit_gate after COMPLETE", "cost_usd": 0.0, "kernel": "girishbose/ens-d4-5bc0-w20", "version": 1}
+{"ts": "2026-09-29T01:33:30", "kind": "submit", "msg": "competition submit ref 56651119 PENDING (ens-d4-5bc0-w20 v1; D4 + 5bc0 w=0.2)", "cost_usd": 0.0, "kernel": "girishbose/ens-d4-5bc0-w20", "version": 1, "ref": 56651119}

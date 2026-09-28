@@ -18,5 +18,25 @@
   "ref": 56646862,
   "public_lb": 0.92,
   "ensemble": null
+ },
+ {
+  "date": "2026-09-28T20:03:21.143010+00:00",
+  "kernel": "girishbose/ens-d4-5bc0-w20",
+  "version": 1,
+  "fingerprint": "b312c38d829c94e8",
+  "why": "D4 stack + 5bc0 w=0.2 first ensemble probe",
+  "ref": 56651119,
+  "public_lb": null,
+  "ensemble": {
+   "base": "rsna-knee-fast-2xt4-inference.ipynb",
+   "members": [
+    "5bc0a0f45d75"
+   ],
+   "weights": [
+    "raptor_ft_5bc0a0f45d75.pt"
+   ],
+   "w": 0.2
+  },
+  "ts": 1790625801.14378
  }
 ]
