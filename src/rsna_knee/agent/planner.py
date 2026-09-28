@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 from rsna_knee.agent import coder, genome as G
-from rsna_knee.agent.deepseek import FLASH, PRO, chat_json, run_tools
+from rsna_knee.agent.deepseek import FLASH, chat_json, run_tools
 from rsna_knee.agent.journal import ROOT_ID, Journal, Node, genome_hash
 from rsna_knee.agent.memory import BANS, check_bans, journal_records, load_cold_start, retrieve
 from rsna_knee.constants import LABEL_COLS
@@ -233,7 +233,7 @@ def _default_status() -> dict:
 
 
 def propose(journal: Journal, parent: Node, operator: str, refs: list[str], *, budget_left: float,
-            cold_start: Path, model: str = PRO, tries: int = 3, llm: Callable | None = None,
+            cold_start: Path, model: str = FLASH, tries: int = 3, llm: Callable | None = None,
             target: float = 0.958, status_fn: Callable[[], dict] | None = None,
             use_tools: bool = True) -> Proposal:
     """Propose the next action. Default path uses DeepSeek tool calls so trains go through

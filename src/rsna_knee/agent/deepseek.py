@@ -19,7 +19,7 @@ import requests
 from rsna_knee.agent.runpod import secret
 
 URL = "https://api.deepseek.com/chat/completions"
-FLASH = "deepseek-flash"
+FLASH = "deepseek-flash"  # DeepSeek-V4.1-Flash per /models (2026-09-29)
 PRO = "deepseek-v4-pro"
 # USD per million tokens (input, output incl. reasoning); deliberately on the high side.
 PRICE = {FLASH: (0.30, 1.20), PRO: (1.00, 4.00)}

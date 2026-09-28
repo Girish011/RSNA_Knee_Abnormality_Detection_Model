@@ -18,7 +18,7 @@ Deadline **2026-10-22**.
 2. Members = **full-data** retrains (no fold), several arms per pod (`python -m rsna_knee.agent.members …`).
 3. **Warm start from public v5** full-SWA CoAtNet (CC0; 486/486 tensors load; public fine-tune → 0.932 standalone).
 4. Every LB submit through `scripts/submit_gate.py` (approval flag, 5/day, duplicate refusal, ledger).
-5. **DeepSeek strategist** (pro) works every 45 min while pods run: relabels weak findings, keeps the member queue stocked, queues label/corpus fold-0 trains, builds (not pushes) kernels. ≤$6/day.
+5. **DeepSeek strategist** (V4.1-Flash) works every 45 min while pods run: relabels weak findings, keeps the member queue stocked, queues label/corpus fold-0 trains, builds (not pushes) kernels. ≤$15/day.
 
 ## Live
 | Job | Pod | $/h | What |

@@ -33,13 +33,13 @@ from sklearn.metrics import roc_auc_score
 
 from rsna_knee.agent import coder, genome as G, labeler, members, runpod
 from rsna_knee.agent.activity import BUDGET_USD, RUNS, log, read, spent
-from rsna_knee.agent.deepseek import PRO, run_tools
+from rsna_knee.agent.deepseek import FLASH, run_tools
 from rsna_knee.agent.journal import Journal, genome_hash
 from rsna_knee.constants import LABEL_COLS
 
 REPO = G.REPO
 RESEARCH_EVERY_S = 45 * 60
-DAILY_LLM_USD = 6.0            # DeepSeek spend per calendar day (planner + strategist + relabels)
+DAILY_LLM_USD = 15.0           # DeepSeek spend per calendar day (planner + strategist + relabels)
 RELABEL_MAX_USD = 12.0         # one relabel job (a full pro re-read of ~4 findings is ~$7-10)
 MAX_RELABELS = 12              # unique registered label sets (budget guard, not science)
 CLOSED_AXES = {"bb_lr", "head_lr", "wd", "epochs"}
@@ -268,7 +268,7 @@ TOOLS = [
 
 
 def research(state: dict, journal: Journal, results: Path, *, llm_tools=run_tools,
-             model: str = PRO, now: float | None = None) -> bool:
+             model: str = FLASH, now: float | None = None) -> bool:
     """One strategist turn if due. Returns True if DeepSeek ran."""
     now = now or time.time()
     if now < float(state.get("next_research_after") or 0):
