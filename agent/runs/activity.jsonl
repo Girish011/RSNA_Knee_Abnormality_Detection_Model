@@ -523,3 +523,4 @@
 {"ts": "2026-09-28T22:47:27", "kind": "train", "msg": "RunPod job n-ca830ada7798 launched: ['ca830ada7798']", "cost_usd": 0.0, "pod": "s0yb5c4835xdkr", "bundle": "girishbose/rsna-knee-rp-n-ca830ada7798-bundle", "result": "girishbose/rsna-knee-rp-n-ca830ada7798-out", "monitor": "https://s0yb5c4835xdkr-8000.proxy.runpod.net", "price_hr": 0.34, "est_hours": 4.7}
 {"ts": "2026-09-29T01:06:53", "kind": "plan", "msg": "members queued m-f8709fd3f8: 2 full-data arms from 5bc0a0f45d75 (~4.9 h, ~$3.63)", "cost_usd": 0.0, "job": "m-f8709fd3f8", "arms": ["m6edbb53fbab", "mb40244a6b78"]}
 {"ts": "2026-09-29T01:07:08", "kind": "note", "msg": "loop started (interval 600s)", "cost_usd": 0.0}
+{"ts": "2026-09-29T01:19:37", "kind": "submit", "msg": "pushed girishbose/ens-d4-5bc0-w20 v1 (RUNNING); D4 stack + 5bc0 w=0.2; user-approved; submit via submit_gate after COMPLETE", "cost_usd": 0.0, "kernel": "girishbose/ens-d4-5bc0-w20", "version": 1}

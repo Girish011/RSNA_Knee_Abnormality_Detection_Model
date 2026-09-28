@@ -25,7 +25,7 @@ Deadline **2026-10-22**.
 | `n-ca830ada7798` | `s0yb5c4835xdkr` | 0.34 | fold-0 bb_lr=1e-5 — ep11/16, gold 0.869 (5bc0 ended 0.909) → likely miss |
 | `m-f8709fd3f8` | queued | ~0.34 | **v5 warm-start**, full data, 6 ep, labels `relabel_8c56cdf0` + `dread` (2 arms, est ≤$3.6). Auto-launches when ca830 frees the slot. |
 
-Built, not pushed: `outputs/kernels/ens-d4-5bc0-w20/` (D4 + 5bc0 at w=0.2). Push/submit needs user approval.
+**Pushed** `girishbose/ens-d4-5bc0-w20` v1 (D4 + 5bc0 at w=0.2, user-approved) — RUNNING. When COMPLETE: `scripts/submit_gate.py submit --kernel outputs/kernels/ens-d4-5bc0-w20 --version 1 --why "D4 stack + 5bc0 w=0.2 first ensemble probe" --i-approve`.
 
 ## Money
 - Campaign: ~$34 of $300. RunPod balance **$10.06** (low). DeepSeek $47.94 (fine).
