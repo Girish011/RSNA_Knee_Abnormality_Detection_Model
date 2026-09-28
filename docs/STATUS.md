@@ -1,60 +1,36 @@
 # STATUS
 
-Last updated: 2026-09-24
+Last updated: 2026-09-29 (~01:15 IST)
 
-## Phase
-**Public-floor pivot + autonomous search loop** (DECISIONS 2026-09-23). Budget cap $300.
-User priority: **keep searching until fold-0 proxy >= 0.958** (top-10 band). Do not wait for Kaggle GPU reset; key rotation not required.
+## Where we really are (LB)
+| What | Public LB |
+|---|---:|
+| Top of board (rhoskeri) | 0.960 (20 teams ≥ 0.955) |
+| Public D4 stack (`jiweiliu/rsna-knee-fast-2xt4-inference`) | 0.943 |
+| Public single CoAtNet, full 4349 corpus | 0.924 |
+| **Ours** — single fold-0 dense80 CoAtNet `5bc0` | **0.920** (rank ~2352/4526) |
 
-## Autonomous loop (live since 2026-09-24 10:32 IST)
-- Process: launchd agent `~/Library/LaunchAgents/com.rsna.agentloop.plist` (runs `caffeinate -i python -m rsna_knee.agent.loop run --interval 600`, starts at login, restarts on crash; log `agent/runs/loop.log`). Dashboard: `com.rsna.dashboard`. Restart after code changes: `launchctl kickstart -k gui/$(id -u)/com.rsna.agentloop` (safe any time the loop is sleeping; state is on disk). Remove: `launchctl bootout gui/$(id -u)/com.rsna.agentloop`.
-- Control: `python -m rsna_knee.agent.loop status | pause | resume | approve | reject`; `touch agent/runs/STOP` exits it. Dashboard shows loop heartbeat and APPROVAL NEEDED.
-- Needs you only for: approvals (any action > $10), leaderboard submits, finals, budget changes. Keep/kill of a new best uses `agent/runs/holdout.json` (never shown to the planner).
-- Design and checks: DECISIONS 2026-09-24 "Autonomous loop goes live". First loop node = baseline (public CoAtNet recipe, dread labels) under the fold-0 / expert-holdout protocol.
+Gap is **ensemble strength**, not hyperparameters. lr/wd/head_lr/epoch micro-diffs all within ±0.003 proxy → axis closed.
+Deadline **2026-10-22**.
 
-## In flight (do not poll Kaggle; RunPod progress page is fine)
-| Job | Where | What | Pull when done |
-|---|---|---|---|
-| ~~baseline `7421b1b6a6fa`~~ DONE proxy **0.9215** / gold_dev 0.8878 / holdout 0.9251 | — | dread CoAtNet fold-0 | scored |
-| loop node `2c52aa6dd0b0` (relabel LatMen+Fracture) | pod `1x8mqill5c1g3l` ($0.22/h), https://1x8mqill5c1g3l-8000.proxy.runpod.net/STATUS | train `relabel_8c56cdf0` on best parent; target proxy>=0.958 | loop does it |
-| ~~`labels-ab-v1`~~ DONE: wash (0.9148 vs 0.9148), dread stays | RunPod pod `mw4c7rb992jk7u` (community RTX 3090, $0.22/hr; ep0 = 17.6 min → ~5 h/arm, ETA ~2026-09-24 06:30 UTC), progress `https://mw4c7rb992jk7u-8000.proxy.runpod.net/STATUS` (+`/job.log`, `/<arm>/train.log`) | CoAtNet-384 16 ep on public 44-slot corpus; arms `dread_s42` vs `blendv2_s42` | `kaggle datasets download girishbose/rsna-knee-rp-labels-ab-v1-out`; pod self-terminates after upload |
-| dense80 cache | Kaggle CPU `girishbose/rsna-knee-dense80-s0..s3` | 80-slot 2–98% train cache, ~10 GB per shard | `kaggle kernels output girishbose/rsna-knee-dense80-s{k}` (onto RunPod, not the Mac) |
+## Strategy (DECISIONS 2026-09-29)
+1. Submissions = **public D4 stack + our members, rank-blended** (`scripts/build_ensemble_kernel.py`).
+2. Members = **full-data** retrains (no fold), several arms per pod (`python -m rsna_knee.agent.members …`).
+3. **Warm start from public v5** full-SWA CoAtNet (CC0; 486/486 tensors load; public fine-tune → 0.932 standalone).
+4. Every LB submit through `scripts/submit_gate.py` (approval flag, 5/day, duplicate refusal, ledger).
 
-## Done this session (2026-09-24)
-- Label audit (`scripts/audit_public_labels.py`): public pilkwang LLM labels **0.870** macro AUC on 57 experts vs keyword v1 0.628 / v7 0.651 (paired +0.24 [0.19, 0.29]). dread omits the experts; Spearman 0.81 with pilk. Keyword teachers retired.
-- Calibration: pilk UNK cells are expert-positive 13.6% vs its flat 0.28 → `labels_llm_blend_v2` uses dread where pilk is UNK.
-- Found the public trainer (`dreaddevelopment/knee-mri-training-the-twelve-finding-model`), vendored as `runpod/train_knee.py`; CoAtNet-384 16 ep ≈ 3 h on a 4090.
-- RunPod runner: `src/rsna_knee/agent/runpod.py`, `runpod/run_job.sh`, `scripts/runpod_launch.py` (bundle → private Kaggle dataset → pod → results dataset → self-terminate; capacity fallbacks 4090 → 3090 → secure 4090).
-- Dense80 cache builder (public widedense test-time picker, 64→80 slots) pushed as 4 Kaggle CPU kernels.
+## Live
+| Job | Pod | $/h | What |
+|---|---|---:|---|
+| `n-ca830ada7798` | `s0yb5c4835xdkr` | 0.34 | fold-0 bb_lr=1e-5 — ep11/16, gold 0.869 (5bc0 ended 0.909) → likely miss |
+| `m-f8709fd3f8` | queued | ~0.34 | **v5 warm-start**, full data, 6 ep, labels `relabel_8c56cdf0` + `dread` (2 arms, est ≤$3.6). Auto-launches when ca830 frees the slot. |
 
-## Credentials (outside repo)
-- Kaggle: `~/.kaggle/access_token` holds only the Kaggle token (the old 3-line file is `~/.kaggle/access_token.bak_multiline`). RunPod + DeepSeek: `~/.rsna_agent/secrets.env`.
-- RunPod balance $44.9 before the A/B pod. DeepSeek untested on this machine.
-- RunPod host lessons: 3 community pods failed (torch 'CUDA unknown error' on 2, silent self-terminate on 1) and 1 secure pod hung in pip (torch upgrade via timm). Fixes in `run_job.sh`: pinned torch/torchvision/numpy, GPU guard with retries that terminates bad hosts; launcher filters host CUDA ≥ 12.4 and falls back secure 4090 → community 4090 → community 4090/3090.
-- User decided rotation is not required (keys were echoed into a session log on 2026-09-24).
+Built, not pushed: `outputs/kernels/ens-d4-5bc0-w20/` (D4 + 5bc0 at w=0.2). Push/submit needs user approval.
 
-## Public assets (licenses checked 2026-09-23)
-| Slug | What | License |
-|---|---|---|
-| `dreaddevelopment/knee-raptor-corpus` (+`-ext`) | train slice stacks, 44 slots x 336, 15-85% span | CC0 |
-| `dreaddevelopment/raptor-knee-widedense` | CoAtNet-384 weights, 64-slot geometry, 0.924 single, 0.9054 on 58 experts | CC0 |
-| `dreaddevelopment/raptor-knee-maxspan` | CoAtNet weights, max-span sampling | CC0 |
-| `dreaddevelopment/rsna-knee-labels` | report-distilled soft labels (no experts) | CC0 |
-| `pilkwang/rsna-knee-llm-labels` | LLM-read report labels | CC0 |
-| `tonylica/rsna-knee-bend-dinov3-0917-repro-assets` | 41-checkpoint bundle, public 0.941 | **other** (floor test only) |
-
-## Blocked
-- **Kaggle GPU weekly quota** until the weekly reset: no submits until then. Fork ready at `outputs/kernels/public_floor_rsna_base/`.
+## Money
+- Campaign: ~$34 of $300. RunPod balance **$10.06** (low). DeepSeek $47.94 (fine).
 
 ## Next 3 actions
-1. Loop trains continuously toward proxy **0.958** (DeepSeek `launch_runpod_train` tool auto-triggers pods; unused relabels still force-queued; 15 min stop cooldown).
-2. When dense80 shards finish (user reports): enable `CORPORA["dense80"]` so the loop can use the geometry lever.
-3. On GPU quota reset: submit floor fork + best loop weights (user approves).
-
-## Legacy (log only)
-- `girishbose/gf-mri-core-seed42-5fold` v2 (thin cache). Record verdict when user reports; does not block.
-
-## Do not
-- Poll Kaggle; reopen thin-recipe levers; treat 0.6144/0.728 as floors
-- Reports at test time; KneeCoT
-- Hill-climb the public LB; select finals on public LB alone
+1. When `m-f8709fd3f8` lands: compare member gold_dev/holdout vs v5 parent (0.921 gold-58) and 5bc0.
+2. Build `ens-d4-<best members>` kernel; user approves push → run → `submit_gate.py submit --i-approve`.
+3. Second member job: best recipe × 2–3 seeds + label diversity (weak findings: Synovitis, Lat OA, PF OA).

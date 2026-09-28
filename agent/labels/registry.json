@@ -17,5 +17,24 @@
   },
   "base": "dread",
   "rule": "pilk_unk"
+ },
+ "relabel_acb644bf": {
+  "file": "labels_relabel_acb644bf.parquet",
+  "audit": {
+   "Fracture": {
+    "dev_auc": 0.912,
+    "pilk_dev_auc": 0.878,
+    "prec": 0.62,
+    "kept": true
+   },
+   "Lateral Meniscus": {
+    "dev_auc": 0.965,
+    "pilk_dev_auc": 0.886,
+    "prec": 0.9,
+    "kept": true
+   }
+  },
+  "base": "relabel_8c56cdf0",
+  "rule": "both"
  }
 }

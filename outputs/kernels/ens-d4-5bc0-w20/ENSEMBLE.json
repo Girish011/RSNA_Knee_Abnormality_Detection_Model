@@ -1,0 +1,10 @@
+{
+ "base": "rsna-knee-fast-2xt4-inference.ipynb",
+ "members": [
+  "5bc0a0f45d75"
+ ],
+ "weights": [
+  "raptor_ft_5bc0a0f45d75.pt"
+ ],
+ "w": 0.2
+}

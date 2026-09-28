@@ -1,15 +1,16 @@
 {
  "paused": false,
  "active": {
-  "job": "n-2c52aa6dd0b0-r1",
-  "pod": "1x8mqill5c1g3l",
+  "job": "n-ca830ada7798",
+  "pod": "s0yb5c4835xdkr",
   "nodes": [
-   "2c52aa6dd0b0"
+   "ca830ada7798"
   ],
-  "result": "girishbose/rsna-knee-rp-n-2c52aa6dd0b0-r1-out",
-  "launched": 1790249096.335038,
+  "result": "girishbose/rsna-knee-rp-n-ca830ada7798-out",
+  "launched": 1790615847.718816,
   "est_hours": 4.66,
-  "price_hr": 0.22
+  "price_hr": 0.34,
+  "proxy_misses": 0
  },
  "pending": null,
  "next_plan_after": 0,
@@ -21,8 +22,29 @@
     "Lateral Meniscus",
     "Fracture"
    ]
+  },
+  {
+   "name": "relabel_acb644bf",
+   "registered": true,
+   "kept": [
+    "Fracture",
+    "Lateral Meniscus"
+   ]
+  },
+  {
+   "name": "relabel_0b24972f",
+   "registered": false,
+   "kept": []
+  },
+  {
+   "name": "relabel_acb644bf",
+   "registered": true,
+   "kept": [
+    "Fracture",
+    "Lateral Meniscus"
+   ]
   }
  ],
- "heartbeat": 1790249096.335063,
- "_orphan_retries": 1
+ "heartbeat": 1790624832.191168,
+ "_orphan_retries": 4
 }

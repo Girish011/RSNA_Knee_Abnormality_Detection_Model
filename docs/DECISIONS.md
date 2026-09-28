@@ -215,3 +215,52 @@ Format: date | decision | why | rejected
 - **Decision:** Planner uses DeepSeek native function calling. When a train is needed it must call `launch_runpod_train` (not only emit JSON text). The host validates the genome, then auto-starts the pod via existing one-pod / budget / >$10 approval gates. Also exposed: `get_runpod_status`, `request_relabel`, `stop_search`.
 - **Why:** User asked for DeepSeek tool calling so RunPod execution is auto-triggered whenever needed; JSON-only proposals could describe a train without a hard side-effect contract.
 - **Rejected:** Letting the model terminate/create pods with raw RunPod API args; skipping validation before queue.
+
+## 2026-09-25 — Target 0.958 is submit/LB AUC, not fold-0 proxy
+- **Decision (user clarification):** Campaign success is **Kaggle public / final macro AUC ≥ 0.958** (top-10 band). Fold-0 proxy is only the **local search compass** used between submits; hitting proxy 0.958 without a confirming LB score does **not** count as done.
+- **How the loop uses proxy:** keep searching while proxy is below ~0.958 *and* budget remains, then **submit** (user-approved) to read the real score. Calibrate proxy↔LB; do not hill-climb the public board or treat proxy as the trophy.
+- **Why:** User: “we need 0.958 when we submit, not specifically fold-0 proxy.”
+- **Rejected:** Stopping the campaign solely because local proxy crossed 0.958; equating proxy with competition AUC.
+
+## 2026-09-25 — Prefer community 3090 + kill dead pods early
+- **Decision:** Launcher prefers **community 3090** before community 4090 (secure 4090 last). On-pod `HEARTBEAT` every 60s; Mac `observe` terminates a RUNNING pod if proxy is unreachable for 2 ticks (~20 min) or HEARTBEAT is stale >20 min (after a 12 min boot grace), then infra-relaunches without download thrash.
+- **Why:** `kapkdevrgtovbs` (community 4090) vanished mid-train at ~2.84 h with no Kaggle upload (~$1 burned). Community 3090s completed the two successful protocol trains. Billing a silent-dead host until API 404 is waste.
+- **Rejected:** Moving all trains to secure cloud (pip hangs); mid-epoch checkpoint upload to Kaggle every N minutes (heavier; revisit if 3090 preference is not enough).
+
+## 2026-09-25 — Enable dense80 as the default search / submit corpus
+- **Decision (user):** `CORPORA["dense80"]=True`. Kaggle CPU shards `girishbose/rsna-knee-dense80-s0..s3` are COMPLETE. New trains download those kernel outputs on the pod (`CORPUS=dense80`), trainer reads `vols_s{0..3}` / masks / ids. Planner + auto-queue prefer a one-field `corpus=dense80` train on the best parent; `genome.BASE` defaults to dense80. Let the in-flight raptor44 `blend_v2` job finish, then switch.
+- **Why:** raptor44 has no public test-time builder (measurement only). dense80 matches the submit picker; public density 44→80 ≈ +0.006 LB. User asked to point DeepSeek / the loop at dense80.
+- **Rejected:** Waiting for more raptor44 label hill-climbing before enabling geometry; killing the live blend_v2 pod early.
+
+## 2026-09-26 — Loop must not idle on MAX_RELABELS / dream parents
+- **Decision:** `MAX_RELABELS=4` remains a **budget guard** on unique successful LLM relabel jobs (not a scientific AUC threshold). Counting is unique registered names (failed/duplicate entries do not burn the cap). When the cap is hit, or DeepSeek says stop, the host **forces the next unused menu train** from an online seed. Dream elites are never used as train genomes (resolve to best valid online, prefer dense80). Deterministic menu walk (unused dense80 labels → dense80 if missing → k/epochs/lrs/…) runs **before** DeepSeek so the campaign cannot burn API dollars while no pod is active.
+- **Why:** Overnight after the first dense80 score, UCT selected dream blends; stop-fallback validated `{blend:…}` and failed; relabel proposals hit a inflated list length and parked 15 min — ~7 h idle + LLM thrash.
+- **Rejected:** Removing the relabel cap entirely (unbounded DeepSeek label spend); letting DeepSeek edit trainer code.
+
+## 2026-09-27 — DeepSeek coder + owns every idle tick (user: make DeepSeek do all)
+- **Decision (user):** (1) Allowlisted code edits via `list_repo` / `read_repo_file` / `write_repo_file` / `run_agent_tests` on `src/rsna_knee/agent/`, `runpod/`, `tests/`, `agent/memory/`, `agent/labels/` (trainer ships on next bundle). (2) Remove host auto-queue of unused labels / dense80 / menu-before-LLM — **every idle plan calls DeepSeek first** (coder-first encouraged). (3) `stop_search` is **refused** while unused dense80 labels or menu genomes remain; a mandatory retry demands `launch_runpod_train`. Host menu train is only a **safety net** if DeepSeek still returns stop/no-launch after retry.
+- **Why:** User asked for DeepSeek to do all: no auto menu ahead, force launch, coder-first; previously auto-queue + soft stops left DeepSeek underused.
+- **Still forbidden:** secrets, paths outside allowlist, auto LB submit, skipping one-pod / $300 / >$10.
+- **Supersedes:** 2026-09-24 ban on LLM trainer edits (allowlisted only); host-first auto-queue from 2026-09-26.
+
+## 2026-09-28 — Speed: VRAM-safe menu + dream-first + CoAtNet lock
+- **Decision (user):** Make progress faster by cutting dead GPU work, not by swapping architectures.
+  1. **Ban OOM genomes:** `MENU.k=[8]`, `MENU.k_eval=[24]`; hard validate rejects `k>8` / `k_eval>24`. Historical parents clamp via `genome.clamp`. Measured: k=12/16 CUDA OOM on 24GB after dense80 download (~0.8 h waste).
+  2. **Settled recipe:** `arch=coatnet384` only on MENU; `BASE` = dense80 + CoAtNet-384 + k=8. No new backbones this week.
+  3. **Dream/replay first:** each idle `plan` runs free rank-mean + greedy per-label blends over saved OOF before DeepSeek; GPU trains only for unused labels / lr / epoch diffs.
+  4. **Efficiency final later:** fewer windows / lighter student from the same weights; not a parallel backbone research track.
+  5. **Phantoms:** keep post-create verify in launcher; capacity noise is RunPod community, not a model problem.
+- **Why:** User asked to implement the “actually makes training faster” levers after Jev/RLCD/Model-One were ruled wrong modality.
+- **Rejected:** Raising k again “to chase geometry” on 24GB; MobileOne/Jev/RLCD as the MRI backbone; spending budget on efficiency-student research before a scored dense80 k=8 win.
+
+## 2026-09-28 — First own-weights LB: proxy 0.9366 → public 0.920 (gap −0.017)
+- **Decision:** Record calibration from `submit-dense80-5bc0` v2 (ref 56643440): public LB **0.920** vs fold-0 online proxy **0.9366**. Gate future own-weights submits with this optimism in mind; do not equate proxy ≳ 0.936 with a 0.958-ready LB.
+- **Why:** First measured dense80 CoAtNet submit (epochs=20, `relabel_8c56cdf0`, k_eval=24×2). Trophy remains public/final ≥ 0.958 (DECISIONS 2026-09-25).
+- **Open:** Whether SWA/EMA / denser k_eval / rank-blend of top online OOF closes part of the gap before the next burn. Prefer one diagnosed change per submit.
+- **Rejected:** Treating the 0.920 as a floor-notebook result; auto-submitting every new proxy peak.
+
+## 2026-09-29 — Pivot to ensemble track: public D4 stack + our full-data members (v5 warm start)
+- **Decision:** Stop treating single fold-0 models as submissions. (1) Every submit = public D4 stack (`jiweiliu/rsna-knee-fast-2xt4-inference`, public 0.943, all-public inputs; vendored at `outputs/kernels/_base_d4/`) + our CoAtNet members, rank-blended per finding with one global weight `w` (`scripts/build_ensemble_kernel.py`; any failure in our leg restores the public output). (2) Submission weights come from a **member track** (`src/rsna_knee/agent/members.py`): full-data retrains (no fold hook), several arms per pod, auto-launched by the loop tick when no pod runs; the loop does not plan while a member job is queued/active. (3) Members may **warm-start** from public `raptor_ft_coatnet_v5_full_swa.pt` (`dreaddevelopment/raptor-knee-maxspan`, CC0-1.0, 486/486 tensors match, gold-58 0.921) via new trainer flag `--init_model`. (4) All LB submits go through `scripts/submit_gate.py` (needs `--i-approve` + `--why`, ≤5/day UTC, refuses duplicate code/members/w fingerprints, writes `agent/runs/submits.json`).
+- **Why:** LB 0.920 for our best single model sits below a public single CoAtNet (0.924, full corpus) and far below the public stack (0.943); the top-20 band is 0.955–0.960. Four one-field optimizer diffs landed within ±0.003 proxy. A public team fine-tuned v5 for 4 epochs to a standalone 0.932. Multi-arm pods pay the 40 GB dense80 pull once; `run_job.sh` now uploads a dataset version after every arm so a dying host loses at most one arm.
+- **Caveats:** v5 saw every train study, so fold-0 proxy of a v5-init model is leaky → warm starts are member-only, judged on gold_dev / holdout / LB. Adding a leg to a saturated stack may not show at 3 decimals (public example: 0.932 member swapped in → still 0.943); expect gains from several strong, diverse members, not one.
+- **Rejected:** More lr/wd/epoch sweeps; submitting single own models; per-label blend weights tuned in-sample (29-58 experts cannot support 12 weights).

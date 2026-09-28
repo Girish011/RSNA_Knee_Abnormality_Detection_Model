@@ -55,7 +55,18 @@ Add a bullet only when a result is measured; never add opinions.
 - Baseline CoAtNet-384 / dread / seed42 fold0: proxy 0.9215, gold_dev 0.8878, holdout 0.9251 (node 7421b1b6a6fa).
 - Teacher A/B dread vs blend_v2 on all-58 was a wash (0.9148 vs 0.9148); prefer targeted relabels over whole-teacher swaps.
 - relabel_8c56cdf0 (dread + pilk_unk fills for Lat Men + Fracture): Lat Men dev AUC 0.965 (pilk 0.886), Fracture 0.912 (pilk 0.878); train it next.
-- Campaign keeps searching until fold-0 proxy >= 0.958 or budget is exhausted; never park for hours on a planner stop.
+- Campaign trophy is Kaggle submit/LB macro AUC >= 0.958; fold-0 proxy is the local compass only.
+- dense80 Kaggle CPU shards girishbose/rsna-knee-dense80-s0..s3 are COMPLETE and ENABLED: prefer corpus=dense80 (submit geometry). raptor44 is measurement-only (no public test-time builder). Public density 44→80 moved ~0.926→0.932.
+- KILL k>=12 / k_eval=42 on 24GB community GPUs (2026-09-27): dense80 download succeeded then CUDA OOM mid-train (k=16 and k=12). Best scored dense80 proxy is k=8 (0.9344). Menu locked to k=8, k_eval=24, arch=coatnet384 until a full 24GB train finishes.
+- Prefer free dream/replay blends over GPU trains for logit mixing; train only unused labels or lr/epoch diffs.
+
+## LB reality + member track (2026-09-29)
+
+- Public LB: own single fold-0 dense80 CoAtNet (5bc0, proxy 0.9366) = 0.920. Public single CoAtNet on the full 4349 corpus = 0.924. Public D4 stack (DINO + RadImageNet + 4 CoAtNet families, rank fusion) = 0.943. Top-20 teams 0.955-0.960.
+- The gap to 0.958 is ensemble strength, not one-field hyperparameters. lr / wd / head_lr / epoch micro-diffs (912825, 8194b, 564c, ca830) all landed within ±0.003 proxy of each other: that axis is closed.
+- Submissions = public D4 stack + our members rank-blended (scripts/build_ensemble_kernel.py). Members are FULL-DATA retrains (no fold) trained by `python -m rsna_knee.agent.members queue ...`, several arms per pod (one dense80 download).
+- Public raptor_ft_coatnet_v5_full_swa.pt (dreaddevelopment/raptor-knee-maxspan, CC0, gold-58 0.921) loads 486/486 tensors into our RaptorClassifier. A public team fine-tuned it 4 epochs → standalone LB 0.932 (vs 0.924 parent). Warm starts are member-only: v5 saw every train study, so any fold-0 proxy of a v5-init model is leaky.
+- What a fold-0 GPU train should test now: things that change the ensemble, not the lr — unused/new label sets, label diversity for Synovitis / Lateral OA / PF OA (the weakest public findings: v5 gold 0.80 / 0.87 / 0.85), and geometry. Prefer proposing a relabel of those findings over another optimizer tweak.
 
 ## Constraints
 

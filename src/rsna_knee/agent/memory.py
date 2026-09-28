@@ -45,6 +45,12 @@ BANS: list[Ban] = [
         "three backbones bought ~0.001 LB publicly; geometry is the lever"),
     Ban("gold58_objective", r"\b(optimi[sz]e|maximi[sz]e|select)\w*\s+(on\s+)?(gold|58)\b",
         "gold-58 sd 0.021; it is a veto, not the search objective"),
+    Ban("oom_k_gt_8", r"""(["']k["']\s*:\s*|k\s*=\s*)(1[2-9]|[2-9]\d)\b""",
+        "k>8 CUDA OOM on 24GB (2026-09-27); stay at k=8 until a full train finishes"),
+    Ban("oom_k_eval_42", r"""(["']k_eval["']\s*:\s*|k_eval\s*=\s*)(42|[5-9]\d)\b""",
+        "k_eval>24 raises eval memory; stay at 24"),
+    Ban("new_backbone", r"\b(convnext|efficientnet|mobileone|new\s+backbone|backbone\s+swap)\b",
+        "CoAtNet-384 locked; efficiency student later from the same weights"),
 ]
 
 

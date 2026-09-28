@@ -50,6 +50,7 @@ def build_bundle(job: str, arms: list[Arm]) -> Path:
     d.mkdir(parents=True)
     shutil.copy(REPO / "runpod" / "train_knee.py", d)
     shutil.copy(REPO / "runpod" / "run_job.sh", d)
+    shutil.copy(REPO / "runpod" / "fetch_dense80.py", d)
     for f in PROTOCOL_FILES:
         shutil.copy(REPO / "agent" / "protocol" / f, d)
     train = pd.read_csv(REPO / "data" / "raw" / "train.csv")
@@ -73,11 +74,15 @@ def upload_bundle(d: Path) -> str:
     return slug
 
 
-def launch(job: str, arms: list[Arm], hours: float, *, capacity_rounds: int = 8) -> dict:
+def launch(job: str, arms: list[Arm], hours: float, *, capacity_rounds: int = 8,
+           corpus: str = "raptor44") -> dict:
     """Upload the bundle and start a pod. Returns {pod, costPerHr, monitor, bundle, result}.
 
-    Retries across community 4090 → 4090/3090 → secure 4090, with backoff, until a host is
-    free or ``capacity_rounds`` is exhausted.
+    Retries across community 3090 (preferred) → 4090 → secure 4090, with backoff, until a
+    host is free or ``capacity_rounds`` is exhausted.
+
+    Prefer community 3090: in this campaign those hosts finished ~4.2 h trains; community
+    4090s repeatedly vanished mid-train with no upload (pure spend burn).
     """
     assert_budget(hours * PRICE_HR)
     bundle = upload_bundle(build_bundle(job, arms))
@@ -85,30 +90,53 @@ def launch(job: str, arms: list[Arm], hours: float, *, capacity_rounds: int = 8)
     result = result_slug(job)
     base = {
         "name": f"rsna-{job}", "imageName": IMAGE, "computeType": "GPU", "gpuCount": 1,
-        "containerDiskInGb": 30, "volumeInGb": 100, "volumeMountPath": "/workspace",
+        "containerDiskInGb": 80 if corpus == "dense80" else 30,
+        "volumeInGb": 200 if corpus == "dense80" else 100,
+        "volumeMountPath": "/workspace",
         "ports": ["8000/http"],
         "allowedCudaVersions": ["13.0", "12.9", "12.8", "12.7", "12.6", "12.5", "12.4"],
         "env": {"KAGGLE_API_TOKEN": Path("~/.kaggle/access_token").expanduser().read_text().strip(),
                 "RUNPOD_API_KEY": runpod.secret("RUNPOD_API_KEY"),
-                "RESULT_DATASET": result, "RESULT_TITLE": f"rsna-knee-rp-{job}-out"},
+                "RESULT_DATASET": result, "RESULT_TITLE": f"rsna-knee-rp-{job}-out",
+                "CORPUS": corpus},
         "dockerStartCmd": ["bash", "-c", BOOT.replace("{bundle}", bundle)],
     }
+    # Order = reliability first, then speed/capacity. Secure last (pip hangs on secure hosts).
     attempts = [
-        {"cloudType": "COMMUNITY", "gpuTypeIds": [runpod.GPU_4090]},
-        {"cloudType": "COMMUNITY", "gpuTypeIds": [runpod.GPU_4090, runpod.GPU_3090]},
-        {"cloudType": "SECURE", "gpuTypeIds": [runpod.GPU_4090]},
         {"cloudType": "COMMUNITY", "gpuTypeIds": [runpod.GPU_3090]},
+        {"cloudType": "COMMUNITY", "gpuTypeIds": [runpod.GPU_3090, runpod.GPU_4090]},
+        {"cloudType": "COMMUNITY", "gpuTypeIds": [runpod.GPU_4090]},
+        {"cloudType": "SECURE", "gpuTypeIds": [runpod.GPU_4090]},
     ]
     pod = None
     last_err = ""
     for round_i in range(capacity_rounds):
         for extra in attempts:
             try:
-                pod = runpod.create_pod({**base, **extra})
-                break
+                cand = runpod.create_pod({**base, **extra})
             except RuntimeError as e:
                 last_err = str(e)[:160]
                 continue
+            # Community phantoms: API returns an id then 404 within a minute. Verify before
+            # treating the launch as real (avoids loop_state pointing at a ghost).
+            ok = False
+            for wait in (15, 30, 45):
+                time.sleep(wait if wait == 15 else 15)
+                try:
+                    live = runpod.get_pod(cand["id"])
+                except Exception as e:  # noqa: BLE001
+                    last_err = f"phantom {cand['id']}: {type(e).__name__}"
+                    live = None
+                if live is None:
+                    log("note", f"pod {cand['id']} vanished during verify; trying another host",
+                        job=job)
+                    break
+                if live.get("desiredStatus") in ("RUNNING", "EXITED"):
+                    pod = {**cand, **{k: live.get(k, cand.get(k)) for k in ("costPerHr", "desiredStatus")}}
+                    ok = True
+                    break
+            if ok:
+                break
         if pod is not None:
             break
         wait = min(30 * (round_i + 1), 120)

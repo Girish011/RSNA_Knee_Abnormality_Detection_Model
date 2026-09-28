@@ -8,7 +8,7 @@ Two replay worlds exist in this campaign:
    and the efficiency final are chosen.
 2. **Tree world.** A finished journal is a discovery tree. An exploration policy replays it
    by choosing which recorded nodes to reveal, in which batches, and when to stop
-   (Dream-RSI §3). The replay score trades best proxy AUC against GPU dollars.
+   (Dream-RSI \u00a73). The replay score trades best proxy AUC against GPU dollars.
 """
 
 from __future__ import annotations
@@ -49,6 +49,87 @@ def rank_blend(preds: Sequence[np.ndarray], weights: Sequence[float] | None = No
     weights = np.ones(len(preds)) if weights is None else np.asarray(weights, dtype=float)
     ranked = [np.apply_along_axis(rankdata, 0, p) / len(p) for p in preds]
     return np.tensordot(weights / weights.sum(), np.stack(ranked), axes=1)
+
+
+def _ranked(preds: Sequence[np.ndarray]) -> np.ndarray:
+    """(M, n, L) matrix of within-model ranks in [0, 1]; one row per blend member."""
+    return np.stack(
+        [np.apply_along_axis(rankdata, 0, np.asarray(p)) / len(p) for p in preds], axis=0
+    )
+
+
+def _col_auc(y: np.ndarray, s: np.ndarray) -> float | None:
+    """Rank-based single-label AUC (average ties; identical to roc_auc_score, no import)."""
+    pos = np.asarray(y) > 0.5
+    n_pos, n_neg = int(pos.sum()), int((~pos).sum())
+    if n_pos == 0 or n_neg == 0:
+        return None
+    r = rankdata(s)
+    return float((r[pos].sum() - n_pos * (n_pos + 1) / 2.0) / (n_pos * n_neg))
+
+
+def weighted_rank_blend(preds: Sequence[np.ndarray], weights) -> np.ndarray:
+    """Rank blend with per-label weights ``(L, M)`` or shared weights ``(M,)``."""
+    ranked = _ranked(preds)
+    L = ranked.shape[2]
+    w = np.asarray(weights, dtype=float)
+    if w.ndim == 1:
+        w = np.repeat(w[None, :], L, axis=0)
+    w = np.where(w.sum(axis=1, keepdims=True) > 0, w, 1.0)
+    w = w / w.sum(axis=1, keepdims=True)
+    return np.einsum("mnl,lm->nl", ranked, w)
+
+
+def greedy_rank_blend(
+    preds: Sequence[np.ndarray],
+    y: np.ndarray,
+    *,
+    grid: Sequence[float] = (0.0, 0.5, 1.0, 2.0),
+    passes: int = 2,
+    min_gain: float = 1e-4,
+) -> tuple[np.ndarray, np.ndarray, float]:
+    """Per-label coordinate ascent over blend weights, scored on ``y``.
+
+    Free (CPU) alternative to a new GPU train: instead of forcing every member to
+    contribute to every finding, each label gets its own weight vector, so a model that
+    is only good at meniscus work can be dropped to weight 0 on the other findings.
+    ``grid`` includes 0 so a member can be switched off entirely.
+    Returns ``(blend, weights (L, M), mean_label_auc)``.
+    """
+    ranked = _ranked(preds)
+    L, M = ranked.shape[2], ranked.shape[0]
+    y = np.asarray(y, dtype=float)
+    w = np.ones((L, M), dtype=float)
+    scores: list[float] = []
+    for j in range(L):
+        wj = w[j].copy()
+        # ranked is (M, n, L); weight vector is (M,) → (M,) @ (M, n) = (n,)
+        s = (wj / wj.sum()) @ ranked[:, :, j]
+        best = _col_auc(y[:, j], s)
+        best = 0.0 if best is None else best
+        for _ in range(passes):
+            moved = False
+            for m in range(M):
+                for g in grid:
+                    if abs(g - wj[m]) < 1e-9:
+                        continue
+                    trial = wj.copy()
+                    trial[m] = g
+                    if trial.sum() <= 0:
+                        continue
+                    a = _col_auc(y[:, j], (trial / trial.sum()) @ ranked[:, :, j])
+                    if a is not None and a > best + min_gain:
+                        wj, best, moved = trial, a, True
+            if not moved:
+                break
+        w[j] = wj
+        scores.append(best)
+    return weighted_rank_blend(preds, w), w, float(np.mean(scores))
+
+
+def greedy_rank_blend_auc(preds: Sequence[np.ndarray], y: np.ndarray, **kw) -> float:
+    """Just the mean label AUC of :func:`greedy_rank_blend` (cheap ranking helper)."""
+    return greedy_rank_blend(preds, y, **kw)[2]
 
 
 @dataclass(frozen=True)

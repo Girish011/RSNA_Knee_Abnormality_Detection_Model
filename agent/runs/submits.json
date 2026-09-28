@@ -1,0 +1,22 @@
+[
+ {
+  "date": "2026-09-28T14:16:22+00:00",
+  "kernel": "girishbose/submit-dense80-5bc0",
+  "version": 2,
+  "fingerprint": "2f5d26e408680188",
+  "why": "dense80 5bc0 epochs20 proxy0.9366",
+  "ref": 56643440,
+  "public_lb": 0.92,
+  "ensemble": null
+ },
+ {
+  "date": "2026-09-28T16:33:20+00:00",
+  "kernel": "girishbose/submit-dense80-5bc0 (duplicate)",
+  "version": 2,
+  "fingerprint": "2f5d26e408680188",
+  "why": "duplicate resubmit (no description)",
+  "ref": 56646862,
+  "public_lb": 0.92,
+  "ensemble": null
+ }
+]

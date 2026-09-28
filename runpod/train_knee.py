@@ -32,8 +32,8 @@ suspected, becomes something near 0.8 rather than a 1. Soft targets are far more
 forcing every hedged sentence into a hard label, and the loss here expects them. The 58 studies
 that come with real labels are held out and used only for validation, never trained on.
 
-Point --labels at your own parquet built that way. The format is one row per study: a
-StudyInstanceUID column plus the twelve finding columns, values between 0 and 1.
+Point --labels at your own parquet built that way. The format is one row per study:
+a StudyInstanceUID column plus the twelve finding columns, values between 0 and 1.
 
 WHAT THE MODEL DOES
 
@@ -102,38 +102,57 @@ def _find(*names, root="/kaggle/input"):
     return None
 
 
-class _TwoPartVols:
-    """Presents the two published corpus parts as one array of shape (4407, 44, 336, 336).
+class _MultiPartVols:
+    """Memory-mapped concat of corpus parts (raptor two-part or dense80 four shards).
 
-    Both parts stay memory-mapped and are never concatenated on disk: copying 22 GB would be
-    pointless when every read is a single study. Row order is part 1 then part 2, matching the
-    order the id files concatenate in. That ordering is the contract between volumes, masks and
-    ids, so do not sort any of them independently.
+    Row order is part0 then part1 then ...; never sort parts independently of ids/masks.
     """
-    def __init__(self, a, b):
-        self.a, self.b = a, b
-        self.n_a = a.shape[0]
-        self.shape = (a.shape[0] + b.shape[0],) + tuple(a.shape[1:])
+    def __init__(self, parts):
+        self.parts = list(parts)
+        self.offsets = []
+        n = 0
+        for p in self.parts:
+            self.offsets.append(n)
+            n += p.shape[0]
+        self.shape = (n,) + tuple(self.parts[0].shape[1:])
 
     def __len__(self):
         return self.shape[0]
 
     def __getitem__(self, row):
-        return self.a[row] if row < self.n_a else self.b[row - self.n_a]
+        for part, off in zip(self.parts, self.offsets):
+            if row < off + part.shape[0]:
+                return part[row - off]
+        raise IndexError(row)
+
+
+class _TwoPartVols(_MultiPartVols):
+    """Back-compat wrapper for the public 44-slot two-part corpus."""
+    def __init__(self, a, b):
+        super().__init__([a, b])
+        self.a, self.b, self.n_a = a, b, a.shape[0]
 
 
 def _open_corpus():
-    """Return (vols, masks), from a local single-file corpus or the two public parts."""
+    """Return (vols, masks), from local file, dense80 shards, or the public two-part corpus."""
     local_v = os.path.join(HERE, "all_vols.npy")
     if os.path.exists(local_v):
         return (np.load(local_v, mmap_mode="r"),
                 np.load(os.path.join(HERE, "all_masks.npy")))
+    # Own dense80 cache: vols_s{0..3}.npy + masks_s{0..3}.npy (80 slots, submit geometry).
+    shard_vs = [_find(f"vols_s{i}.npy") for i in range(4)]
+    shard_ms = [_find(f"masks_s{i}.npy") for i in range(4)]
+    if all(shard_vs) and all(shard_ms):
+        vols = _MultiPartVols([np.load(p, mmap_mode="r") for p in shard_vs])
+        masks = np.concatenate([np.load(p) for p in shard_ms], axis=0)
+        return vols, masks
     av, bv = _find("all_vols.npy"), _find("extra_vols.npy")
     am, bm = _find("all_masks.npy"), _find("extra_masks.npy")
     if not all((av, bv, am, bm)):
         raise SystemExit("Could not find the corpus. Attach both parts: "
                          "dreaddevelopment/knee-raptor-corpus and "
-                         "dreaddevelopment/knee-raptor-corpus-ext")
+                         "dreaddevelopment/knee-raptor-corpus-ext "
+                         "(or dense80 vols_s0..s3 / masks_s0..s3)")
     vols = _TwoPartVols(np.load(av, mmap_mode="r"), np.load(bv, mmap_mode="r"))
     masks = np.concatenate([np.load(am), np.load(bm)], axis=0)
     return vols, masks
@@ -143,9 +162,13 @@ def _open_ids():
     local = os.path.join(HERE, "all_ids.npy")
     if os.path.exists(local):
         return np.load(local, allow_pickle=True).astype(str)
+    shard_ids = [_find(f"ids_s{i}.npy") for i in range(4)]
+    if all(shard_ids):
+        return np.concatenate([np.load(p, allow_pickle=True).astype(str) for p in shard_ids])
     a, b = _find("all_ids.npy"), _find("extra_ids.npy")
     if not (a and b):
-        raise SystemExit("Could not find all_ids.npy / extra_ids.npy - attach both corpus parts.")
+        raise SystemExit("Could not find all_ids.npy / extra_ids.npy - attach both corpus parts "
+                         "(or dense80 ids_s0..s3).")
     return np.concatenate([np.load(a, allow_pickle=True).astype(str),
                            np.load(b, allow_pickle=True).astype(str)])
 LAB = ["ACL","MCL","Medial Meniscus","Lateral Meniscus","Medial OA","Lateral OA","PF OA",
@@ -175,7 +198,7 @@ class StudyWindows(Dataset):
     (matches the SSL input pipeline: ToTensor, no ImageNet norm)."""
     def __init__(self, root, ids, id2row, labels, res, k, train, aug=True, norm="none",
                  roi=False, roi_mode="tight", roi_pad=0.06, roi_overlap=0.12,
-                 roi_sbox=None, roi_cen=None):
+                 roi_sbox=None, roi_cen=None, eval_phase=0.0):
         self.root = root
         self.ids = ids
         self.id2row = id2row
@@ -185,6 +208,8 @@ class StudyWindows(Dataset):
         self._mean = torch.tensor([0.485, 0.456, 0.406]).view(3, 1, 1)
         self._std = torch.tensor([0.229, 0.224, 0.225]).view(3, 1, 1)
         self.vols = None; self.masks = None
+        # --- eval TTA: shift the deterministic eval window grid by this fraction of the span ---
+        self.eval_phase = float(eval_phase)
         # --- ROI anatomical joint-crop config ---
         self.roi = bool(roi)
         self.roi_mode, self.roi_pad, self.roi_overlap = roi_mode, roi_pad, roi_overlap
@@ -209,8 +234,10 @@ class StudyWindows(Dataset):
             pool = (cs * reps)
             random.shuffle(pool)
             return pool[:count]
-        # eval: evenly spaced deterministic
-        idx = np.linspace(0, len(cs) - 1, count).round().astype(int)
+        # eval: evenly spaced deterministic. eval_phase>0 shifts the grid, so successive TTA
+        # passes see *different* (overlapping) subsets of the slices instead of the same ones.
+        frac = (np.linspace(0.0, 1.0, count) + self.eval_phase) % 1.0
+        idx = np.round(frac * (len(cs) - 1)).astype(int)
         return [cs[i] for i in idx]
 
     def _resize(self, tri):
@@ -341,6 +368,9 @@ def main():
     ap.add_argument("--ckpt", default="timm",
                     help="'timm' for ImageNet-pretrained weights, or a path to your own "
                          "self-supervised checkpoint")
+    ap.add_argument("--init_model", default=None,
+                    help="warm-start the WHOLE classifier (backbone + attention head) from a "
+                         "raptor_ft_*.pt of the same arch, e.g. the public v5 full SWA")
     ap.add_argument("--arch", default="vit_small_patch16_224")
     ap.add_argument("--res", type=int, default=224)
     ap.add_argument("--k", type=int, default=12)
@@ -369,6 +399,13 @@ def main():
     ap.add_argument("--folds", type=int, default=0)
     ap.add_argument("--fold", type=int, default=-1)
     ap.add_argument("--fold_file", default=None)
+    # ---- weak-label robustness knobs (both are inference-reproducible) ----
+    ap.add_argument("--ema", type=float, default=0.999,
+                    help="decay for the exponential moving average of the weights "
+                         "(0 disables; the EMA checkpoint is saved as raptor_ft_<tag>_ema.pt)")
+    ap.add_argument("--eval_passes", type=int, default=2,
+                    help="TTA passes at eval: averages the sigmoid over N shifted deterministic "
+                         "window grids (1 = old behaviour, same windows every time)")
     # ---- anatomical ROI joint-crop (A/B lever). Default OFF -> identical to baseline. ----
     ap.add_argument("--roi", action="store_true")
     ap.add_argument("--roi_mode", default="compartment", choices=["tight", "safe", "compartment"])
@@ -383,8 +420,9 @@ def main():
     dev = "cuda" if torch.cuda.is_available() else "cpu"
     if a.smoke:
         a.epochs, a.bs, a.k, a.k_eval, a.limit, a.workers = 2, 4, 4, 6, 40, 0
+        a.eval_passes = 1
     print(f"device {dev} | res {a.res} | k {a.k}/{a.k_eval} | bs {a.bs} | tag {a.tag} | "
-          f"roi={a.roi}({a.roi_mode})", flush=True)
+          f"roi={a.roi}({a.roi_mode}) | ema={a.ema} | eval_passes={a.eval_passes}", flush=True)
 
     # ---- ids / labels ----
     ids = _open_ids()
@@ -454,11 +492,8 @@ def main():
                    roi_sbox=roi_sbox, roi_cen=roi_cen)
 
     tds = StudyWindows(HERE, train_ids, id2row, labels, a.res, a.k, train=True, norm=a.norm, **_roi_kw)
-    vds = StudyWindows(HERE, gold_ids, id2row, labels, a.res, a.k_eval, train=False, norm=a.norm, **_roi_kw)
     tl = DataLoader(tds, batch_size=a.bs, shuffle=True, num_workers=a.workers, drop_last=True,
                     collate_fn=collate, pin_memory=True, persistent_workers=a.workers > 0)
-    vl = DataLoader(vds, batch_size=max(2, a.bs // 2), shuffle=False, num_workers=a.workers,
-                    collate_fn=collate, persistent_workers=a.workers > 0)
 
     use_timm = a.ckpt in ("timm", "pretrained")
     bb = build_backbone(a.arch, pretrained=use_timm)
@@ -470,7 +505,18 @@ def main():
             bb.set_grad_checkpointing(True); print("[raptor] gradient checkpointing ON", flush=True)
         except Exception as e:
             print(f"[raptor] grad_ckpt unsupported for {a.arch}: {e}", flush=True)
-    model = RaptorClassifier(bb, F_dim=F_dim).to(dev)
+    model = RaptorClassifier(bb, F_dim=F_dim)
+    if a.init_model:
+        _ck = torch.load(a.init_model, map_location="cpu", weights_only=False)
+        _st = _ck.get("model", _ck) if isinstance(_ck, dict) else _ck
+        _miss, _unex = model.load_state_dict(_st, strict=False)
+        print(f"[init] warm-start from {os.path.basename(a.init_model)} | missing {len(_miss)} "
+              f"unexpected {len(_unex)}", flush=True)
+        if len(_miss) > 0.1 * len(model.state_dict()):
+            raise SystemExit(f"--init_model does not match {a.arch}: {len(_miss)} tensors missing")
+        src = f"init:{os.path.basename(a.init_model)}"
+        del _ck, _st
+    model = model.to(dev)
     if a.freeze_blocks > 0:
         # Backbones name their layer groups differently: ViT-style models use blocks.N., while
         # CoAtNet, MaxViT and ConvNeXt use stages.N. Matching only one of those froze nothing at
@@ -499,19 +545,53 @@ def main():
                                                 total_steps=steps, pct_start=0.15)
     lossf = nn.BCEWithLogitsLoss(pos_weight=pw)
 
+    # ---- TTA inference helper: average sigmoid over shifted eval-window grids ----
+    def _predict_ids(ids_sub, k_win, passes=None):
+        npass = max(1, int(a.eval_passes if passes is None else passes))
+        acc = None
+        model.eval()
+        for p in range(npass):
+            phase = 0.0 if npass == 1 else p / float(npass)
+            ds = StudyWindows(HERE, ids_sub, id2row, labels, a.res, k_win, train=False,
+                              norm=a.norm, eval_phase=phase, **_roi_kw)
+            dl = DataLoader(ds, batch_size=max(2, a.bs // 2), shuffle=False,
+                            num_workers=a.workers, collate_fn=collate, persistent_workers=False)
+            Ps = []
+            with torch.no_grad():
+                for x, y in dl:
+                    with torch.autocast(dev, dtype=torch.bfloat16, enabled=dev == "cuda"):
+                        Ps.append(torch.sigmoid(model(x.to(dev)).float()).cpu().numpy())
+            P = np.concatenate(Ps)
+            acc = P if acc is None else acc + P
+        model.eval()
+        return acc / npass
+
     @torch.no_grad()
     def evaluate():
-        model.eval(); P = []; Y = []
-        for x, y in vl:
-            with torch.autocast(dev, dtype=torch.bfloat16, enabled=dev == "cuda"):
-                o = torch.sigmoid(model(x.to(dev)).float())
-            P.append(o.cpu().numpy()); Y.append(y.numpy())
-        P = np.concatenate(P); Y = np.concatenate(Y)
+        model.eval()
+        P = _predict_ids(gold_ids, a.k_eval)
+        Y = np.stack([labels[u] for u in gold_ids]).astype(np.float32)
         aucs = {}
         for j, name in enumerate(LAB):
             if len(set(Y[:, j].astype(int))) > 1:
                 aucs[name] = float(roc_auc_score(Y[:, j], P[:, j]))
         return float(np.mean(list(aucs.values()))), aucs, P, Y
+
+    # ---- EMA of the weights: the gold-29 is far too small to pick an epoch reliably, and an
+    # exponential average of the trajectory is the standard defence against that. ----
+    ema = None
+    if a.ema and a.ema > 0:
+        with torch.no_grad():
+            ema = {k: v.detach().float().clone()
+                   for k, v in model.state_dict().items() if v.is_floating_point()}
+        print(f"[ema] tracking an exponential moving average of {len(ema)} tensors "
+              f"(decay {a.ema})", flush=True)
+
+    def _apply_ema(ema_dict):
+        sd = model.state_dict()
+        with torch.no_grad():
+            for k, v in ema_dict.items():
+                sd[k].copy_(v.to(sd[k].dtype))
 
     best = 0.0; best_state = None; best_P = None; t0 = time.time(); hist = []
     TOPK = max(1, a.topk); topk = []
@@ -526,6 +606,11 @@ def main():
             loss.backward()
             torch.nn.utils.clip_grad_norm_(model.parameters(), 3.0)
             opt.step(); sched.step(); tot += loss.item()
+            if ema is not None:
+                with torch.no_grad():
+                    for k, v in model.state_dict().items():
+                        if k in ema:
+                            ema[k].mul_(a.ema).add_(v.detach().float(), alpha=1 - a.ema)
         au, aucs, P, Y = evaluate()
         hist.append({"ep": ep, "loss": tot / len(tl), "gold_auc": au})
         if au > best:
@@ -544,6 +629,7 @@ def main():
                        "epochs": a.epochs, "bb_lr": a.bb_lr, "head_lr": a.head_lr,
                        "n_train": len(train_ids), "n_gold": len(gold_ids),
                        "roi": a.roi, "roi_mode": a.roi_mode,
+                       "ema": a.ema, "eval_passes": a.eval_passes,
                        "partial": True, "epochs_done": ep + 1},
                       open(os.path.join(HERE, f"raptor_ft_{a.tag}.json"), "w"), indent=1)
             print(f"  [ckpt] best-so-far saved at ep{ep} ({best:.4f})", flush=True)
@@ -555,6 +641,12 @@ def main():
             del topk[TOPK:]
         print(f"ep{ep} loss {tot/len(tl):.3f} | GOLD macro-AUC {au:.4f} (best {best:.4f}) | {time.time()-t0:.0f}s",
               flush=True)
+    # ---- snapshot the very end of the trajectory before any checkpoint is re-loaded. The gold-29
+    # peaks early (measured: ep4) while the weak-label signal keeps rising, so 'best'/'epens'/'swa'
+    # are all early-epoch based and the tail of the run is thrown away. Keeping the last-epoch
+    # weights and letting them vote in the OOF ensemble costs one extra inference pass and stops
+    # that mis-selection from silently discarding whatever the late epochs learned.
+    last_state = {k: v.detach().cpu().clone() for k, v in model.state_dict().items()}
     _, aucs, _, Y = evaluate()
     print(f"\nDONE {src} | BEST GOLD macro-AUC {best:.4f}", flush=True)
     for k, v in (best_state["aucs"] if best_state else aucs).items():
@@ -567,71 +659,62 @@ def main():
         json.dump({"tag": a.tag, "src": src, "best_gold_auc": best, "aucs": best_state["aucs"],
                    "hist": hist, "res": a.res, "epochs": a.epochs, "bb_lr": a.bb_lr,
                    "head_lr": a.head_lr, "n_train": len(train_ids), "n_gold": len(gold_ids),
-                   "roi": a.roi, "roi_mode": a.roi_mode, "partial": False, "epochs_done": a.epochs},
+                   "roi": a.roi, "roi_mode": a.roi_mode, "ema": a.ema,
+                   "eval_passes": a.eval_passes, "partial": False, "epochs_done": a.epochs},
                   open(os.path.join(HERE, f"raptor_ft_{a.tag}.json"), "w"), indent=1)
         print(f"saved raptor_ft_{a.tag}.pt / raptor_gold_{a.tag}.npz / raptor_ft_{a.tag}.json", flush=True)
 
-    # ---- CV OOF: predict the held-out fold at the best (gold-selected) weights ----
+    # ---- CV OOF: every surviving checkpoint is re-predicted on the held-out fold ----
+    oof_comp = {}          # name -> (N,12) probs on the held-out fold at the k_eval windows
+    gold_ema = None; gold_last = None
     if a.folds > 0 and oof_ids and best_state is not None:
-        model.load_state_dict(best_state["model"]); model.eval()
-        ods = StudyWindows(HERE, oof_ids, id2row, labels, a.res, a.k_eval, train=False, norm=a.norm, **_roi_kw)
-        ol = DataLoader(ods, batch_size=max(2, a.bs // 2), shuffle=False, num_workers=a.workers,
-                        collate_fn=collate, persistent_workers=False)
-        Po = []
-        with torch.no_grad():
-            for x, y in ol:
-                with torch.autocast(dev, dtype=torch.bfloat16, enabled=dev == "cuda"):
-                    o = torch.sigmoid(model(x.to(dev)).float())
-                Po.append(o.cpu().numpy())
-        Po = np.concatenate(Po)
         Yo = np.stack([labels[u] for u in oof_ids]).astype(np.float32)
-        np.savez(os.path.join(HERE, f"raptor_oof_{a.tag}_fold{a.fold}.npz"),
-                 pred=Po, truth=Yo, ids=np.array(oof_ids), fold=a.fold, nfolds=a.folds)
-        print(f"[cv] wrote raptor_oof_{a.tag}_fold{a.fold}.npz ({len(oof_ids)} studies; "
-              f"truth = soft labels)", flush=True)
-
-        # --- top-K epoch OOF (new) ---
-        # The epoch-ensemble used to be judged on gold only; that gate is too small to
-        # resolve the move. Re-run the held-out fold at each retained epoch instead.
+        oof_ids_arr = np.array(oof_ids)
+        model.load_state_dict(best_state["model"]); model.eval()
+        Po = _predict_ids(oof_ids, a.k_eval)
+        oof_comp["best"] = Po
+        np.savez(os.path.join(HERE, f"raptor_oof_{a.tag}_best_fold{a.fold}.npz"),
+                 pred=Po, truth=Yo, ids=oof_ids_arr, fold=a.fold, nfolds=a.folds)
+        print(f"[cv] best-epoch OOF: {len(oof_ids)} studies, truth = soft labels", flush=True)
+        # --- top-K epoch OOF (single pass each: the mean over epochs is the variance reducer) ---
         oof_by_ep = {best_state["epoch"]: Po}
         for t in topk:
             e = int(t["epoch"])
             if e in oof_by_ep:
                 continue
             model.load_state_dict(t["model"]); model.eval()
-            Pe = []
-            with torch.no_grad():
-                for x, y in ol:
-                    with torch.autocast(dev, dtype=torch.bfloat16, enabled=dev == "cuda"):
-                        Pe.append(torch.sigmoid(model(x.to(dev)).float()).cpu().numpy())
-            Pe = np.concatenate(Pe); oof_by_ep[e] = Pe
+            Pe = _predict_ids(oof_ids, a.k_eval, passes=1)
+            oof_by_ep[e] = Pe
             np.savez(os.path.join(HERE, f"raptor_oof_{a.tag}_ep{e}_fold{a.fold}.npz"),
-                     pred=Pe, truth=Yo, ids=np.array(oof_ids), fold=a.fold, nfolds=a.folds)
+                     pred=Pe, truth=Yo, ids=oof_ids_arr, fold=a.fold, nfolds=a.folds)
             print(f"[cv] wrote top-K epoch OOF ep{e}", flush=True)
         if len(oof_by_ep) > 1:
             Pens = np.mean(list(oof_by_ep.values()), axis=0)
+            oof_comp["epens"] = Pens
             np.savez(os.path.join(HERE, f"raptor_oof_{a.tag}_epens_fold{a.fold}.npz"),
-                     pred=Pens, truth=Yo, ids=np.array(oof_ids), fold=a.fold, nfolds=a.folds)
+                     pred=Pens, truth=Yo, ids=oof_ids_arr, fold=a.fold, nfolds=a.folds)
             print(f"[cv] wrote epoch-ensemble OOF over epochs {sorted(oof_by_ep)}", flush=True)
+        # --- last-epoch member: a late-trajectory snapshot, averaged in like any other member ---
+        model.load_state_dict(last_state); model.eval()
+        au_last, aucs_last, _, _ = evaluate()
+        gold_last = au_last
+        Pl = _predict_ids(oof_ids, a.k_eval, passes=1)
+        oof_comp["last"] = Pl
+        np.savez(os.path.join(HERE, f"raptor_oof_{a.tag}_last_fold{a.fold}.npz"),
+                 pred=Pl, truth=Yo, ids=oof_ids_arr, fold=a.fold, nfolds=a.folds)
+        print(f"[cv] last-epoch member: gold {au_last:.4f}; OOF written (epoch {a.epochs - 1})",
+              flush=True)
         model.load_state_dict(best_state["model"]); model.eval()
 
     if holdout_ids and best_state is not None:
         model.load_state_dict(best_state["model"]); model.eval()
-        hds = StudyWindows(HERE, holdout_ids, id2row, labels, a.res, a.k_eval, train=False, norm=a.norm, **_roi_kw)
-        hl = DataLoader(hds, batch_size=max(2, a.bs // 2), shuffle=False, num_workers=a.workers,
-                        collate_fn=collate, persistent_workers=False)
-        Ph = []
-        with torch.no_grad():
-            for x, y in hl:
-                with torch.autocast(dev, dtype=torch.bfloat16, enabled=dev == "cuda"):
-                    Ph.append(torch.sigmoid(model(x.to(dev)).float()).cpu().numpy())
-        np.savez(os.path.join(HERE, f"raptor_holdout_{a.tag}.npz"), pred=np.concatenate(Ph),
+        Ph = _predict_ids(holdout_ids, a.k_eval)
+        np.savez(os.path.join(HERE, f"raptor_holdout_{a.tag}.npz"), pred=Ph,
                  truth=np.stack([labels[u] for u in holdout_ids]), ids=np.array(holdout_ids))
         print(f"[holdout] wrote raptor_holdout_{a.tag}.npz ({len(holdout_ids)} studies)", flush=True)
 
     # --- weight-averaged checkpoint (new) ---
     if len(topk) > 1:
-        import copy
         sds = [t["model"] for t in topk]
         avg = {}
         for k in sds[0]:
@@ -652,21 +735,66 @@ def main():
         print(f"SWA over epochs {[int(t['epoch']) for t in topk]} | gold {au_swa:.4f} "
               f"(best-epoch {best:.4f}) {'BETTER' if au_swa > best else 'no gain'}", flush=True)
         if a.folds > 0 and oof_ids:
-            ods2 = StudyWindows(HERE, oof_ids, id2row, labels, a.res, a.k_eval, train=False,
-                                norm=a.norm, **_roi_kw)
-            ol2 = DataLoader(ods2, batch_size=max(2, a.bs // 2), shuffle=False,
-                             num_workers=a.workers, collate_fn=collate, persistent_workers=False)
-            Ps = []
-            with torch.no_grad():
-                for x, y in ol2:
-                    with torch.autocast(dev, dtype=torch.bfloat16, enabled=dev == "cuda"):
-                        Ps.append(torch.sigmoid(model(x.to(dev)).float()).cpu().numpy())
-            Ps = np.concatenate(Ps)
+            Ps = _predict_ids(oof_ids, a.k_eval)
+            oof_comp["swa"] = Ps
             np.savez(os.path.join(HERE, f"raptor_oof_{a.tag}_swa_fold{a.fold}.npz"),
                      pred=Ps, truth=np.stack([labels[u] for u in oof_ids]).astype(np.float32),
                      ids=np.array(oof_ids), fold=a.fold, nfolds=a.folds)
-            print(f"[cv] wrote SWA OOF", flush=True)
+            print("[cv] wrote SWA OOF", flush=True)
         model.load_state_dict(best_state["model"]); model.eval()
+
+    # --- EMA checkpoint (new): averaged weights, evaluated and OOF-predicted like any other ---
+    if ema is not None and best_state is not None:
+        _apply_ema(ema)
+        au_ema, aucs_ema, P_ema, Y_ema = evaluate()
+        gold_ema = au_ema
+        ema_state = {"model": {k: v.detach().cpu().clone() for k, v in model.state_dict().items()},
+                     "gold_auc": au_ema, "aucs": aucs_ema, "src": src, "res": a.res,
+                     "arch": a.arch, "lab": LAB, "epoch": a.epochs - 1, "ema_decay": a.ema}
+        torch.save(ema_state, os.path.join(HERE, f"raptor_ft_{a.tag}_ema.pt"))
+        np.savez(os.path.join(HERE, f"raptor_gold_{a.tag}_ema.npz"),
+                 pred=P_ema, truth=Y_ema, ids=np.array(gold_ids))
+        print(f"EMA(decay {a.ema}) | gold {au_ema:.4f} (best-epoch {best:.4f}) "
+              f"{'BETTER' if au_ema > best else 'no gain'}", flush=True)
+        if a.folds > 0 and oof_ids:
+            Pe = _predict_ids(oof_ids, a.k_eval)
+            oof_comp["ema"] = Pe
+            np.savez(os.path.join(HERE, f"raptor_oof_{a.tag}_ema_fold{a.fold}.npz"),
+                     pred=Pe, truth=np.stack([labels[u] for u in oof_ids]).astype(np.float32),
+                     ids=np.array(oof_ids), fold=a.fold, nfolds=a.folds)
+            print("[cv] wrote EMA OOF", flush=True)
+        json.dump({"tag": a.tag, "src": src, "best_gold_auc": best, "ema_gold_auc": au_ema,
+                   "last_gold_auc": gold_last,
+                   "swa_gold_auc": (swa_state["gold_auc"] if len(topk) > 1 else None),
+                   "aucs": best_state["aucs"], "aucs_ema": aucs_ema, "hist": hist,
+                   "res": a.res, "epochs": a.epochs, "bb_lr": a.bb_lr, "head_lr": a.head_lr,
+                   "n_train": len(train_ids), "n_gold": len(gold_ids), "roi": a.roi,
+                   "roi_mode": a.roi_mode, "ema": a.ema, "eval_passes": a.eval_passes,
+                   "oof_members": sorted(oof_comp), "partial": False, "epochs_done": a.epochs},
+                  open(os.path.join(HERE, f"raptor_ft_{a.tag}.json"), "w"), indent=1)
+        model.load_state_dict(best_state["model"]); model.eval()
+
+    # --- primary OOF: equal-weight average of this run's own checkpoints. Each member is a real
+    # saved checkpoint (so the same ensemble is usable at submit time); no fold-0 labels are used
+    # to weight them. The plain best-epoch file stays as ..._best_fold<f>.npz. ---
+    if oof_comp:
+        Yo = np.stack([labels[u] for u in oof_ids]).astype(np.float32)
+        members = sorted(oof_comp)
+        Po = np.mean([oof_comp[m] for m in members], axis=0)
+        if len(members) > 1:
+            for nm in members:
+                pp = oof_comp[nm]
+                _a = {}
+                for j, name in enumerate(LAB):
+                    if len(set(Yo[:, j].astype(int))) > 1:
+                        _a[name] = float(roc_auc_score(Yo[:, j], pp[:, j]))
+                if _a:
+                    print(f"[oof] {nm:6s} vs soft truth macro-AUC {np.mean(list(_a.values())):.4f}",
+                          flush=True)
+        np.savez(os.path.join(HERE, f"raptor_oof_{a.tag}_fold{a.fold}.npz"),
+                 pred=Po, truth=Yo, ids=np.array(oof_ids), fold=a.fold, nfolds=a.folds,
+                 members=np.array(members))
+        print(f"[cv] primary OOF = mean of {members} ({len(oof_ids)} studies)", flush=True)
 
     if len(topk) > 1:
         eps = [t["epoch"] for t in topk]

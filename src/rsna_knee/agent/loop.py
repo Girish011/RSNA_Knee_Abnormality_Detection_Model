@@ -31,10 +31,10 @@ import pandas as pd
 from sklearn.metrics import roc_auc_score
 
 from rsna_knee.agent import genome as G
-from rsna_knee.agent import labeler, launcher, runpod
+from rsna_knee.agent import labeler, launcher, members, runpod
 from rsna_knee.agent.activity import BUDGET_USD, JOURNAL, RUNS, log, read, spent
-from rsna_knee.agent.dream import rank_blend
-from rsna_knee.agent.journal import ROOT_ID, Journal, genome_hash, genome_hash
+from rsna_knee.agent.dream import greedy_rank_blend, rank_blend
+from rsna_knee.agent.journal import ROOT_ID, Journal, Node, genome_hash
 from rsna_knee.agent.planner import propose
 from rsna_knee.agent.search import Schedule, choose_operator, select
 from rsna_knee.constants import LABEL_COLS
@@ -48,11 +48,20 @@ COLD_START = REPO / "agent" / "memory" / "cold_start.md"
 PUB = REPO / "data" / "external" / "public_labels"
 APPROVAL_USD = 10.0
 VETO_DROP = 0.04
+# Cap on *successful unique* LLM relabel jobs (budget guard). Not a science threshold.
+# Rejection must fall through to a menu train — never idle the campaign.
 MAX_RELABELS = 4
-STOP_COOLDOWN_S = 15 * 60  # short; never park the campaign for hours
-PROXY_TARGET = 0.958  # top-10 band from AGENT_PLAN; loop keeps searching until met or budget dies
+STOP_COOLDOWN_S = 15 * 60  # only when the menu is fully exhausted
+# Local search bar only. True goal = Kaggle submit/LB macro AUC ≥ 0.958 (DECISIONS 2026-09-25).
+PROXY_TARGET = 0.958
 DOWNLOAD_TRIES = 8
 INFRA_RETRIES = 2
+# Kill hung/dead pods early instead of billing until the API notices.
+PROXY_MISS_LIMIT = 2          # consecutive observe ticks with unreachable proxy
+HEARTBEAT_STALE_S = 20 * 60   # no HEARTBEAT update → treat as dead
+HEALTH_GRACE_S = 12 * 60      # skip probe during boot/install/corpus download
+BOOT_STALL_S = 90 * 60        # installing/downloading/smoke with no progress past this → kill
+DENSE80_BOOT_STALL_S = 5 * 3600  # ~40 GB shard pull; allow several hours before kill
 
 
 # ------------------------------------------------------------------ state
@@ -137,6 +146,61 @@ def download_results(slug: str, dest: Path, tags: list[str]) -> bool:
     return (dest / "STATUS").exists()
 
 
+def _probe_pod_progress(pod_id: str) -> dict:
+    """Read STATUS / HEARTBEAT from the pod HTTP proxy. Never raises."""
+    import requests
+    base = runpod.proxy_url(pod_id)
+    out: dict = {"reachable": False, "status": None, "heartbeat_age_s": None}
+    try:
+        r = requests.get(f"{base}/STATUS", timeout=12)
+        if r.ok:
+            out["reachable"] = True
+            out["status"] = r.text.strip()[:200]
+    except Exception:
+        return out
+    try:
+        r = requests.get(f"{base}/HEARTBEAT", timeout=8)
+        if r.ok:
+            ts = int(r.text.strip().split()[0])
+            out["heartbeat_age_s"] = max(0.0, time.time() - ts)
+    except Exception:
+        pass
+    return out
+
+
+def _running_pod_unhealthy(a: dict) -> str | None:
+    """Return a reason if the RUNNING pod looks dead/hung; else None.
+
+    Legacy pods (no HEARTBEAT) are only flagged when the proxy itself is down —
+    STATUS does not change for hours during a healthy train.
+    """
+    if time.time() - a["launched"] < HEALTH_GRACE_S:
+        return None
+    probe = _probe_pod_progress(a["pod"])
+    if not probe["reachable"]:
+        misses = int(a.get("proxy_misses", 0)) + 1
+        a["proxy_misses"] = misses
+        if misses >= PROXY_MISS_LIMIT:
+            return f"proxy unreachable {misses} ticks (dead host / silent terminate)"
+        log("note", f"pod {a['pod']} proxy miss {misses}/{PROXY_MISS_LIMIT}", pod=a["pod"])
+        return None
+    a["proxy_misses"] = 0
+    st = (probe.get("status") or "").lower()
+    age_s = time.time() - a["launched"]
+    # Boot phases are allowed to take a while (dense80 ~40 GB), but not forever.
+    if st.startswith(("installing", "downloading", "smoke")):
+        limit = DENSE80_BOOT_STALL_S if "dense80" in st else BOOT_STALL_S
+        if age_s > limit:
+            return f"boot STATUS stuck on {st!r} for {age_s / 60:.0f} min (limit {limit / 60:.0f} min)"
+        return None
+    hb = probe.get("heartbeat_age_s")
+    if hb is None:
+        return None  # pre-heartbeat bundles: proxy up is enough
+    if hb > HEARTBEAT_STALE_S:
+        return f"HEARTBEAT stale ({hb / 60:.0f} min); job hung or crashed"
+    return None
+
+
 def observe(state: dict, journal: Journal) -> None:
     a = state["active"]
     if not a:
@@ -167,7 +231,18 @@ def observe(state: dict, journal: Journal) -> None:
             log("error", f"pod {a['pod']} exceeded {2 * a['est_hours'] + 1:.1f} h; terminated",
                 component="loop", pod=a["pod"])
         else:
-            return
+            why = _running_pod_unhealthy(a)
+            if why is None:
+                return
+            log("error", f"pod {a['pod']} unhealthy: {why}; terminating to stop burn",
+                component="loop", pod=a["pod"])
+            try:
+                runpod.terminate_pod(a["pod"])
+            except Exception:
+                pass
+            # No upload expected from a dead host — skip download thrash, infra-relaunch ASAP.
+            a["tries"] = DOWNLOAD_TRIES
+            # Fall through: log cost, try download once, infra-relaunch if empty.
     elif pod is not None:
         runpod.terminate_pod(a["pod"])  # stopped after a failed upload; stop volume billing
 
@@ -227,10 +302,11 @@ def _oof_for(node_id: str, root: Path) -> tuple[np.ndarray, np.ndarray] | None:
     return None
 
 
-def dream_blends(journal: Journal, root: Path, top: int = 4) -> None:
-    """Free replay: rank-mean blends of pairs among the best online nodes."""
+def dream_blends(journal: Journal, root: Path, top: int = 4) -> int:
+    """Free replay: rank-mean + greedy per-label blends among best online nodes. Returns # new dreams."""
     online = sorted((n for n in journal.valid_nodes() if n.kind == "online"),
                     key=lambda n: n.proxy_auc, reverse=True)[:top]
+    created = 0
     for i, a in enumerate(online):
         for b in online[i + 1:]:
             g = {"blend": sorted([a.id, b.id])}
@@ -243,43 +319,160 @@ def dream_blends(journal: Journal, root: Path, top: int = 4) -> None:
                                refs=[b.id], operator="aggregate")
             proxy = proxy_auc(rank_blend([pa[0], pb[0]]), pa[1])
             journal.record(node.id, proxy_auc=proxy)
+            created += 1
             log("dream", f"blend {a.id}+{b.id}: proxy {proxy:.4f} (singles {a.proxy_auc:.4f}/{b.proxy_auc:.4f})",
                 node=node.id)
+    # Greedy per-label weights over top online OOF (CPU) — often beats equal rank-mean.
+    packs: list[tuple[Node, np.ndarray, np.ndarray]] = []
+    for n in online:
+        o = _oof_for(n.id, root)
+        if o is not None:
+            packs.append((n, o[0], o[1]))
+    if len(packs) >= 2:
+        ids0 = packs[0][2]
+        if all(np.array_equal(ids0, p[2]) for p in packs[1:]):
+            ref, mask = reference()
+            keep = pd.Index(ids0.astype(str)).isin(ref.index)
+            if int(keep.sum()) >= 50:
+                y = ref.loc[ids0[keep]].to_numpy().astype(float)
+                preds = [p[1][keep] for p in packs]
+                g = {"blend": sorted(p[0].id for p in packs), "method": "greedy_rank"}
+                if genome_hash(g) not in journal.nodes:
+                    try:
+                        blend, _, _ = greedy_rank_blend(preds, y)
+                    except Exception as e:  # noqa: BLE001
+                        log("note", f"greedy dream skipped: {type(e).__name__}: {e}")
+                    else:
+                        full = np.zeros((len(ids0), len(LABEL_COLS)), dtype=float)
+                        full[keep] = blend
+                        node = journal.add(packs[0][0].id, g,
+                                           plan=f"dream: greedy rank blend {[p[0].id for p in packs]}",
+                                           kind="dream",
+                                           refs=[p[0].id for p in packs[1:]], operator="aggregate")
+                        proxy = proxy_auc(full, ids0)
+                        journal.record(node.id, proxy_auc=proxy)
+                        created += 1
+                        best_single = max(p[0].proxy_auc or 0 for p in packs)
+                        log("dream", f"greedy blend {[p[0].id for p in packs]}: "
+                            f"proxy {proxy:.4f} (best single {best_single:.4f})", node=node.id)
+    return created
 
 
 # ------------------------------------------------------------------ plan + act
 
-def _unused_label_sets(journal: Journal, state: dict) -> list[str]:
-    """Registered soft-label files that no finished/pending online node has trained on yet."""
+def _relabel_count(state: dict) -> int:
+    """Unique successful (registered) relabel jobs — duplicates / failed audits do not burn the cap."""
+    return len({r["name"] for r in state.get("relabels") or []
+                if r.get("registered") and r.get("name")})
+
+
+def _train_genome(node: Node | None) -> dict:
+    """Strip dream-only keys; snap historical parents (k=12/16) onto the live VRAM-safe MENU."""
+    raw = dict((node.genome if node else None) or G.BASE)
+    return G.clamp(raw)
+
+
+def _online_seed(journal: Journal, node: Node | None = None) -> Node | None:
+    """Dream elites have no train genome; expand from best valid online (prefer dense80)."""
+    online = [n for n in journal.nodes.values() if n.kind == "online" and n.valid
+              and "corpus" in (n.genome or {})]
+    if not online:
+        return None
+    if node is not None and node.kind == "online" and node.valid and "corpus" in (node.genome or {}):
+        return node
+    refs: list[str] = []
+    if node is not None:
+        refs.extend(node.refs or [])
+        blend = (node.genome or {}).get("blend") if isinstance(node.genome, dict) else None
+        if isinstance(blend, list):
+            refs.extend(str(x) for x in blend)
+    ranked_refs = [journal.nodes[r] for r in refs
+                   if r in journal.nodes and journal.nodes[r] in online]
+    pool = ranked_refs or online
+    dense = [n for n in pool if n.genome.get("corpus") == "dense80"]
+    return max(dense or pool, key=lambda n: n.proxy_auc or 0.0)
+
+
+def _unused_label_sets(journal: Journal, state: dict, *, corpus: str | None = None) -> list[str]:
+    """Label files not yet trained (done/pending) on the target corpus (default: dense80 if enabled)."""
+    want = corpus or ("dense80" if G.CORPORA.get("dense80") else None)
     used = {n.genome.get("labels") for n in journal.nodes.values()
-            if n.kind == "online" and n.genome.get("labels")}
-    out = []
+            if n.kind == "online" and n.status in ("done", "pending")
+            and n.genome.get("labels")
+            and (want is None or n.genome.get("corpus") == want)}
+    out: list[str] = []
     for r in state.get("relabels") or []:
-        if r.get("registered") and r.get("name") and r["name"] not in used:
+        if r.get("registered") and r.get("name") and r["name"] not in used and r["name"] not in out:
             out.append(r["name"])
-    for name in G.label_registry():
-        if name not in used and name not in ("dread", "blend_v2") and name not in out:
-            # only auto-queue registered relabels, not every registry entry
-            pass
+    for name in ("dread", "blend_v2"):
+        if name in G.label_registry() and name not in used and name not in out:
+            out.append(name)
     return out
 
 
 def _force_train_labels(state: dict, journal: Journal, parent: Node, labels: str, plan: str) -> None:
-    g = dict(parent.genome or G.BASE)
+    g = _train_genome(parent)
     g["labels"] = labels
-    if genome_hash(g) in journal.nodes:
-        log("gate", f"skip force-train {labels}: genome already exists")
+    existing = journal.nodes.get(genome_hash(g))
+    if existing is not None:
+        if existing.status == "failed":
+            existing.status, existing.error, existing.plan = "pending", "", plan
+            log("plan", f"retry failed labels={labels} node {existing.id}")
+            return start_train(state, journal, existing.id, attempt=1)
+        log("gate", f"skip force-train {labels}: genome already exists ({existing.status})")
         return
     node = journal.add(parent.id, g, plan=plan, operator="primary")
     _gate_or_start(state, journal, {"type": "train", "node": node.id}, G.est_hours(g))
 
 
+def _force_train_corpus(state: dict, journal: Journal, parent, corpus: str, plan: str) -> None:
+    """One-field corpus switch (primary); used to kick dense80 submit-geometry trains."""
+    g = _train_genome(parent)
+    g["corpus"] = corpus
+    if errs := G.validate(g):
+        log("gate", f"skip force-train corpus={corpus}: {errs}")
+        return
+    existing = journal.nodes.get(genome_hash(g))
+    if existing is not None:
+        if existing.status == "failed":
+            existing.status, existing.error, existing.plan = "pending", "", plan
+            log("plan", f"retry failed corpus={corpus} node {existing.id}")
+            return start_train(state, journal, existing.id, attempt=1)
+        log("gate", f"skip force-train corpus={corpus}: genome already exists ({existing.status})")
+        return
+    node = journal.add(parent.id, g, plan=plan, operator="primary")
+    _gate_or_start(state, journal, {"type": "train", "node": node.id}, G.est_hours(g))
+
+
+def _force_fallback_train(state: dict, journal: Journal, seed: Node, why: str) -> bool:
+    """Queue the next unused menu genome from an online seed. Returns True if a train was queued."""
+    base = _train_genome(seed)
+    fallback = _fallback_genome(base, journal)
+    if fallback is None:
+        return False
+    log("plan", f"{why}: auto-queue train {G.diff(base, fallback)}")
+    node = journal.add(seed.id, fallback, plan=f"{why}: {G.diff(base, fallback)}", operator="primary")
+    _gate_or_start(state, journal, {"type": "train", "node": node.id}, G.est_hours(fallback))
+    return True
+
+
 def start_train(state: dict, journal: Journal, node_id: str, attempt: int = 0) -> None:
-    g = journal.nodes[node_id].genome
+    node = journal.nodes[node_id]
+    g = dict(node.genome or {})
+    if errs := G.validate(g):
+        # Historical pending nodes may still carry k=12/16 — clamp once, then re-validate.
+        g = G.clamp(g)
+        node.genome = g
+        if errs2 := G.validate(g):
+            node.status, node.error = "failed", f"illegal genome: {errs2}"
+            log("gate", f"node {node_id} FAILED: illegal genome {errs2}")
+            return
+        log("note", f"clamped genome on {node_id} before launch: {errs} → k={g.get('k')} k_eval={g.get('k_eval')}")
     labels_file, args = G.to_cli(g, "/workspace/bundle")
     hours = G.est_hours(g)
     job = f"n-{node_id}" + (f"-r{attempt}" if attempt else "")
-    out = launcher.launch(job, [(node_id, labels_file, args)], hours)
+    corpus = g.get("corpus", "raptor44")
+    out = launcher.launch(job, [(node_id, labels_file, args)], hours, corpus=corpus)
     state["active"] = {"job": job, "pod": out["pod"], "nodes": [node_id], "result": out["result"],
                        "launched": time.time(), "est_hours": hours,
                        "price_hr": float(out.get("costPerHr") or launcher.PRICE_HR)}
@@ -299,11 +492,27 @@ def plan(state: dict, journal: Journal, rng: random.Random, llm=None) -> None:
         node = journal.add(ROOT_ID, dict(G.BASE), plan="baseline: public CoAtNet recipe, dread labels, fold-0 protocol")
         return _gate_or_start(state, journal, {"type": "train", "node": node.id}, G.est_hours(node.genome))
 
+    # Free CPU replay before any GPU rent (blends / greedy weights over saved OOF logits).
+    n_dreams = dream_blends(journal, RESULTS)
+    if n_dreams:
+        log("dream", f"pre-plan replay created {n_dreams} dream node(s); GPU only for label/lr/epoch diffs")
+
     # Orphaned pending online node (launch claimed then vanished): resume that train.
     orphans = [n for n in journal.nodes.values()
                if n.kind == "online" and n.status == "pending"]
     if orphans and not state.get("active"):
+        if _foreign_pods():
+            log("note", "skip orphan resume: another pod is already RUNNING")
+            return
         n = orphans[0]
+        if G.validate(n.genome or {}):
+            clamped = G.clamp(n.genome or {})
+            if G.validate(clamped):
+                n.status, n.error = "failed", f"illegal genome under VRAM ban: {G.validate(n.genome or {})}"
+                log("gate", f"drop orphan {n.id}: {n.error}")
+                return
+            n.genome = clamped
+            log("note", f"clamped orphan {n.id} to k={clamped.get('k')} before resume")
         log("plan", f"resume orphaned pending node {n.id}")
         start_train(state, journal, n.id, attempt=int((state.get("_orphan_retries") or 0)) + 1)
         state["_orphan_retries"] = int(state.get("_orphan_retries") or 0) + 1
@@ -312,20 +521,19 @@ def plan(state: dict, journal: Journal, rng: random.Random, llm=None) -> None:
     if orphans and state.get("active"):
         log("note", "skip plan: an online node is still pending")
         return
-    # Never idle while a registered relabel has not been trained: that is free expected gain.
-    unused = _unused_label_sets(journal, state)
-    best = journal.best()
-    online_valid = [n for n in journal.nodes.values() if n.kind == "online" and n.valid]
-    parent = best if best and best.kind == "online" else (
-        max(online_valid, key=lambda n: n.proxy_auc or 0.0) if online_valid else None)
-    if unused and parent is not None:
-        labels = unused[0]
-        log("plan", f"auto-queue train on unused labels {labels} (campaign target proxy>={PROXY_TARGET})")
-        return _force_train_labels(
-            state, journal, parent, labels,
-            plan=f"train registered relabel {labels} on best parent (target {PROXY_TARGET})")
 
+    if _foreign_pods():
+        log("note", "skip plan: foreign/hand-launched pod still RUNNING")
+        return
+
+    seed = _online_seed(journal)
+    if seed is None:
+        log("gate", "no valid online seed; cannot plan a train")
+        return
+
+    # DeepSeek owns the idle tick (coder-first + launch). Host only safety-nets if it still stops.
     parent, mode = select(journal, min(1.0, 1 - budget_left / BUDGET_USD), Schedule(), rng)
+    seed = _online_seed(journal, parent) or seed
     operator, refs = choose_operator(journal, parent, Schedule())
     kw = {"llm": llm} if llm else {}
     if not llm:
@@ -333,41 +541,49 @@ def plan(state: dict, journal: Journal, rng: random.Random, llm=None) -> None:
             "active": state.get("active"),
             "pending": state.get("pending"),
             "foreign_running": _foreign_pods(),
-            "policy": "one pod at a time; launch_runpod_train auto-triggers when idle and under gates",
+            "relabel_slots_left": max(0, MAX_RELABELS - _relabel_count(state)),
+            "unused_dense80_labels": _unused_label_sets(journal, state),
+            "coder": "CODER-FIRST: write_repo_file on agent/runpod/tests then run_agent_tests then launch",
+            "policy": ("VRAM: k=8 k_eval=24 only; arch=coatnet384; dream/replay already ran this tick; "
+                       "launch only unused dense80 labels or lr/epoch diffs"),
         }
-    p = propose(journal, parent, operator, refs, budget_left=budget_left, cold_start=COLD_START,
+    p = propose(journal, seed, operator, refs, budget_left=budget_left, cold_start=COLD_START,
                 target=PROXY_TARGET, **kw)
-    log("plan", f"[{mode}/{operator}] from {parent.id}: {p.type} - {p.plan or p.why}", cost_usd=p.cost_usd,
-        attempts=p.attempts, tools=len(getattr(p, "tool_trace", []) or []))
+    log("plan", f"[{mode}/{operator}] from {seed.id} (selected {parent.id}): {p.type} - {p.plan or p.why}",
+        cost_usd=p.cost_usd, attempts=p.attempts, tools=len(getattr(p, "tool_trace", []) or []))
     if p.type == "stop":
-        # Fall back to a cheap allowed train (k / epochs / head_lr) instead of parking for hours.
-        fallback = _fallback_genome(parent.genome or G.BASE, journal)
-        if fallback is not None:
-            log("plan", f"stop overridden: fallback train {G.diff(parent.genome or G.BASE, fallback)}")
-            node = journal.add(parent.id, fallback, plan="fallback after planner stop/ban wall",
-                               operator="primary")
-            return _gate_or_start(state, journal, {"type": "train", "node": node.id}, G.est_hours(fallback))
+        log("note", "DeepSeek stop/no-launch after retry; host safety-net menu train")
+        if _force_fallback_train(state, journal, seed, "safety-net after DeepSeek"):
+            return
         state["next_plan_after"] = time.time() + STOP_COOLDOWN_S
-        log("note", f"planner stop; retry in {STOP_COOLDOWN_S // 60} min (target {PROXY_TARGET} not met)")
+        log("note", f"planner stop; menu exhausted; retry in {STOP_COOLDOWN_S // 60} min "
+            f"(target {PROXY_TARGET} not met)")
         return
     if p.type == "relabel":
-        if len(state["relabels"]) >= MAX_RELABELS:
-            log("gate", "relabel rejected: MAX_RELABELS reached")
-            state["next_plan_after"] = time.time() + 600
+        if _relabel_count(state) >= MAX_RELABELS:
+            log("gate", "relabel rejected: MAX_RELABELS reached; forcing menu train")
+            if _force_fallback_train(state, journal, seed, "max-relabel fallback"):
+                return
+            state["next_plan_after"] = time.time() + STOP_COOLDOWN_S
             return
         n, est = labeler.estimate(p.labels, p.rule)
         return _gate_or_start(state, journal, {"type": "relabel", "labels": p.labels, "rule": p.rule,
                                                "base": p.base, "calls": n}, None, est)
-    node = journal.add(parent.id, p.genome, plan=p.plan, refs=refs, operator=operator)
+    node = journal.add(seed.id, p.genome, plan=p.plan, refs=refs, operator=operator)
     _gate_or_start(state, journal, {"type": "train", "node": node.id}, G.est_hours(p.genome))
 
 
 def _fallback_genome(parent: dict, journal: Journal) -> dict | None:
-    """Deterministic one-field diffs when the LLM only proposes banned levers."""
-    for field, values in (("k", [16, 8]), ("epochs", [20, 12]), ("head_lr", [2e-3, 5e-4]),
-                          ("bb_lr", [5e-5, 2e-5]), ("labels", ["blend_v2"])):
+    """Next unused one-field menu diff from a full online genome (never a dream blend)."""
+    base = G.clamp(parent)
+    label_opts = [x for x in G.label_registry() if x != base.get("labels")]
+    # Prefer unused labels + lr/epoch (GPU-needed). Never open k / k_eval / arch (VRAM + settled).
+    for field, values in (("corpus", ["dense80"]), ("labels", label_opts),
+                          ("epochs", [20, 12]), ("head_lr", [2e-3, 5e-4]),
+                          ("bb_lr", [5e-5, 2e-5, 1e-5]), ("wd", [0.05]),
+                          ("freeze_blocks", [1, 2])):
         for v in values:
-            g = dict(parent)
+            g = dict(base)
             if g.get(field) == v:
                 continue
             g[field] = v
@@ -408,7 +624,13 @@ def tick(llm=None, rng: random.Random | None = None) -> dict:
     rng = rng or random.Random(int(time.time()))
     try:
         observe(state, journal)
-        if state["active"] or state["paused"] or _foreign_pods():
+        # Full-data submission members take the next free pod slot before any new fold-0 train.
+        try:
+            members_busy = members.tick(loop_active=bool(state["active"]))
+        except Exception as e:  # noqa: BLE001 — never let the member track stall the loop
+            members_busy = False
+            log("error", f"members tick failed: {type(e).__name__}: {str(e)[:200]}", component="members")
+        if state["active"] or state["paused"] or members_busy or _foreign_pods():
             return state
         if state["pending"]:
             if state["pending"].get("approved"):

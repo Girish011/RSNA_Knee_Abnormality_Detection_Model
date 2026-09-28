@@ -472,5 +472,65 @@ Append one row (or block) per run. Never delete history.
 - verdict under the pre-registered rule (blend must win ≥2 of 3 with CI not centred below 0): **not met → dread stays**. Our reproduction of the public recipe (0.9148) matches the published 0.9167 within noise.
 - implication: whole-teacher swaps are exhausted; label work continues only as targeted relabels of weak cells (loop branch), and geometry (dense80) is the next large lever.
 
+### 2026-09-26 — dense80 r4 COMPLETE; loop unblocked after MAX_RELABELS idle
+- `b439c226df2b` (dense80 + `relabel_8c56cdf0`): proxy **0.9205**, gold_dev 0.8935, holdout 0.9185, SWA proxy 0.9280; ~3.18 h / ~$2.35 on `992pjhugouk5i7`. Below raptor parent 0.9259.
+- Loop then idled: UCT picked dream parents so stop-fallback could not build a genome; `len(relabels)>=4` parked ticks. Fixed: online seed, unique registered MAX_RELABELS, menu auto-queue before LLM (DECISIONS 2026-09-26).
+- Next train auto-queued: dense80 + `relabel_acb644bf` as `5de610f8e27c` on `lyg6uvw1itwymm`.
+
+### 2026-09-26 — dense80 r4 pull finished; training started
+- job `n-b439c226df2b-r4`, pod `992pjhugouk5i7` (community 4090, $0.74/h). Delivery: `runpod/fetch_dense80.py` (signed URLs + HTTP Range). Old `kaggle kernels output` path stays abandoned.
+- shards 0–3 OK (~9.95 GB `vols` each). Every `vols_s*.npy` hit IncompleteRead once; shard 3 resumed across 3 tries. `ALL SHARDS OK` ~19:25Z, then smoke, then `training b439c226df2b`.
+- genome: corpus `dense80`, labels `relabel_8c56cdf0`, parent `2c52aa6dd0b0` (proxy 0.9259), CoAtNet-384, 16 ep, fold-0 protocol (train 3479 / OOF 870 / gold-val 29). No dense80 AUC yet.
+- dataset / persistent-volume staging stays deferred; this pull did not fail.
+
+### 2026-09-28 — Public LB 0.920 (dense80 5bc0); proxy gap −0.017
+- Kernel `submit-dense80-5bc0` v2 COMPLETE; competition ref **56643440** publicScore **0.920**.
+- Online proxy was **0.9366** → gap **−0.0166**. First own-weights dense80 calibration (not floor notebook).
+- Journal `5bc0a0f45d75.public_lb = 0.920`. Trophy still ≥ 0.958.
+- Also seen: submit **56646862** PENDING with empty description — unknown/extra; do not assume it is ours without check.
+- Live meanwhile: `564c9dcf545c` head_lr→0.002 training on `wr0f1esmx83pe9` (ep12/16, gold best 0.8932). `68064` failed earlier (dense80 stall + capacity).
+- Implication: do not treat proxy ≳ 0.936 as “ready for 0.958”; next LB needs a gap story (checkpoint choice / denser eval / blend) or a much stronger proxy.
+
+### 2026-09-28 — LB submit PENDING: dense80 5bc0 (ref 56643440)
+- Kernel v2 COMPLETE: loaded `raptor_ft_5bc0a0f45d75.pt`, wrote `submission.csv` (3 visible test rows; hidden re-run pending).
+- `kaggle competitions submit -k girishbose/submit-dense80-5bc0 -v 2 -f submission.csv` → ref **56643440**, status PENDING. Message: dense80 5bc0 epochs20 proxy0.9366. 4 submits remaining today.
+- Not polling. Await user paste of publicScore.
+
+### 2026-09-28 — LB probe: v1 cancelled, v2 RUNNING
+- v1 `girishbose/submit-dense80-5bc0` → `CANCEL_ACKNOWLEDGED` (no output). Cause: metadata missing `docker_image` (working kernels pin `gcr.io/kaggle-private-byod/python@sha256:37c64f7…`).
+- v2 re-pushed with docker_image + same dense80/`5bc0` recipe; status **RUNNING**. Still not polling; competition-submit after user confirms done.
+
+### 2026-09-28 — LB probe pushed: submit-dense80-5bc0 (own weights)
+- User approved own-weights LB submit (online proxy 0.9366 clears ~0.936 gate).
+- Kernel `girishbose/submit-dense80-5bc0` v1 pushed (QUEUED). Internet OFF; GPU T4; competition + private weights dataset `rsna-knee-rp-n-5bc0a0f45d75-out`.
+- Infer: dense80 picker (80 slots, span 2–98%, 140 mm / 336), CoAtNet-384, imagenet, k_eval=24 with 2 phase passes; weight `raptor_ft_5bc0a0f45d75.pt`.
+- Source: `outputs/kernels/submit-dense80-5bc0/`. Forked public single-model infer pattern; not the floor notebook.
+- **Not polling.** After user confirms kernel done: `kaggle competitions submit -c rsna-knee-abnormality-detection -k girishbose/submit-dense80-5bc0 -m "dense80 5bc0 epochs20 proxy0.9366"` then log public LB here.
+
+### 2026-09-28 — 5bc0a0f45d75 DONE: epochs=20 new best online 0.9366
+- job `n-5bc0a0f45d75`, pod `gnfs79hsbciere` (3090, $0.22/h, ~7.19 h, ~$1.58).
+- genome: dense80 + `relabel_8c56cdf0`, k=8, **epochs 16→20**, wd=0.02.
+- **proxy 0.9366** (beats `fc744` 0.9344); gold_dev 0.9093; holdout 0.9151; SWA proxy 0.9366; reward +1.
+- Dreams after: pairwise ~0.9374–0.9376; greedy 4-way still **0.9378**.
+- Submit gate: online ≳ ~0.936 **met** — own-weights LB needs **user approve** (not floor notebook).
+- Next train queued: `68064bbaa4c3` = epochs=20 + wd 0.02→0.05 (capacity miss → phantom → `fy321k1c6g0vnu` r1 downloading dense80 as of 16:48 IST).
+
+### 2026-09-28 — n-8194b27c5318-r4 DONE: wd=0.05 no beat; loop idle bug
+- job `n-8194b27c5318-r4`, pod `lzxil9oay96gds` (3090, $0.22/h, ~3.57 h, ~$0.79).
+- genome: dense80 + `relabel_8c56cdf0`, k=8, wd 0.02→0.05 (one-field).
+- **proxy 0.9333** (best online still `fc744` **0.9344**); gold_dev 0.9038; holdout 0.9186; SWA proxy 0.9334; reward +1 (valid, no new best).
+- After score: pairwise dreams ~0.935–0.936; greedy 4-way still **0.9374**. Then loop stuck ~2 h: every tick `ValueError` in `greedy_rank_blend` (stale launchd import; disk matmul order already fixed). Restarted `com.rsna.agentloop`.
+- conclusion: **wd=0.05 closed as non-improving**. Next GPU = unused labels / lr / epoch at k=8.
+
+### 2026-09-28 — n-8194b27c5318-r4 confirmed training (wd=0.05, k=8)
+- (superseded by DONE entry above) Launched 19:57Z on `lzxil9oay96gds`; dense80 Range-resume OK; smoke OK; training from 20:07Z.
+
 ### 2026-09-24 — Autonomous loop live; first node launched
 - loop under launchd (`com.rsna.agentloop`); node `7421b1b6a6fa` = baseline (public recipe, dread, fold-0 protocol with expert holdout) on pod `lyk09i0lfpu0wr` (secure 4090, $0.74/h, est 4.7 h)
+
+### 2026-09-29 — Harness: member track, D4 ensemble kernel, submit gate, v5 warm start
+- New: `src/rsna_knee/agent/members.py` (full-data multi-arm pod jobs, hooked into `loop.tick`), `scripts/build_ensemble_kernel.py` (+ `outputs/kernels/_ours_leg/ours_leg.py`, `_base_d4/`), `scripts/submit_gate.py` (ledger seeded with refs 56643440 / 56646862, both 0.920), trainer `--init_model`, pod fetch of v5 when an arm asks, per-arm incremental result upload. Tests: `tests/test_members_ensemble.py`; suite 87 passed.
+- v5 check: `raptor_ft_coatnet_v5_full_swa.pt` → our `RaptorClassifier` missing 0 / unexpected 0; stored gold-58 0.9214 (Synovitis 0.797, PF OA 0.847, Lat OA 0.867 weakest).
+- Queued `m-f8709fd3f8`: v5 init, dense80, full data, 6 epochs, seed 42, arms `m6edbb53fbab` (relabel_8c56cdf0) + `mb40244a6b78` (dread); est 4.9 h / ≤$3.63 (auto-approved <$10). Launches after `ca830` finishes.
+- Built (not pushed): `outputs/kernels/ens-d4-5bc0-w20/` = D4 + 5bc0 fold-0 weights at w=0.2.
+- Live `ca830` (bb_lr 1e-5): ep11 gold 0.869 vs 5bc0 final 0.909 → expected miss.

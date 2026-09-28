@@ -14,8 +14,8 @@
   "gpu_hours": 0.0,
   "error": "",
   "reward": 0.0,
-  "visits": 1,
-  "value_sum": 2.0,
+  "visits": 65,
+  "value_sum": 42.0,
   "created": 1790226142.83037
  },
  {
@@ -44,8 +44,8 @@
   "gpu_hours": 4.173299885458416,
   "error": "",
   "reward": 2.0,
-  "visits": 1,
-  "value_sum": 2.0,
+  "visits": 65,
+  "value_sum": 42.0,
   "created": 1790227738.819778
  },
  {
@@ -67,6 +67,1748 @@
   "kind": "online",
   "refs": [],
   "operator": "primary",
+  "status": "done",
+  "proxy_auc": 0.9259008810348472,
+  "gold_auc": 0.8936106173394167,
+  "public_lb": null,
+  "gpu_hours": 4.1977936725484,
+  "error": "",
+  "reward": 2.0,
+  "visits": 63,
+  "value_sum": 39.0,
+  "created": 1790248592.9747689
+ },
+ {
+  "id": "23949dd8b81e",
+  "parent": "2c52aa6dd0b0",
+  "genome": {
+   "blend": [
+    "2c52aa6dd0b0",
+    "7421b1b6a6fa"
+   ]
+  },
+  "plan": "dream: rank blend 2c52aa6dd0b0+7421b1b6a6fa",
+  "kind": "dream",
+  "refs": [
+   "7421b1b6a6fa"
+  ],
+  "operator": "aggregate",
+  "status": "done",
+  "proxy_auc": 0.9288754687929305,
+  "gold_auc": null,
+  "public_lb": null,
+  "gpu_hours": 0.0,
+  "error": "",
+  "reward": 2.0,
+  "visits": 1,
+  "value_sum": 2.0,
+  "created": 1790264233.501827
+ },
+ {
+  "id": "1f7ece631b01",
+  "parent": "2c52aa6dd0b0",
+  "genome": {
+   "corpus": "raptor44",
+   "labels": "relabel_acb644bf",
+   "arch": "coatnet384",
+   "epochs": 16,
+   "k": 12,
+   "k_eval": 24,
+   "bb_lr": 3e-05,
+   "head_lr": 0.001,
+   "wd": 0.02,
+   "freeze_blocks": 0
+  },
+  "plan": "train registered relabel relabel_acb644bf on best parent (target 0.958)",
+  "kind": "online",
+  "refs": [],
+  "operator": "primary",
+  "status": "done",
+  "proxy_auc": 0.9233180336046058,
+  "gold_auc": 0.8933517368299976,
+  "public_lb": null,
+  "gpu_hours": 4.141644766661856,
+  "error": "",
+  "reward": 1.0,
+  "visits": 3,
+  "value_sum": 3.0,
+  "created": 1790266218.2560482
+ },
+ {
+  "id": "1b999765ac00",
+  "parent": "2c52aa6dd0b0",
+  "genome": {
+   "blend": [
+    "1f7ece631b01",
+    "2c52aa6dd0b0"
+   ]
+  },
+  "plan": "dream: rank blend 2c52aa6dd0b0+1f7ece631b01",
+  "kind": "dream",
+  "refs": [
+   "1f7ece631b01"
+  ],
+  "operator": "aggregate",
+  "status": "done",
+  "proxy_auc": 0.930634722442312,
+  "gold_auc": null,
+  "public_lb": null,
+  "gpu_hours": 0.0,
+  "error": "",
+  "reward": 2.0,
+  "visits": 1,
+  "value_sum": 2.0,
+  "created": 1790297085.036814
+ },
+ {
+  "id": "03581213a861",
+  "parent": "1f7ece631b01",
+  "genome": {
+   "blend": [
+    "1f7ece631b01",
+    "7421b1b6a6fa"
+   ]
+  },
+  "plan": "dream: rank blend 1f7ece631b01+7421b1b6a6fa",
+  "kind": "dream",
+  "refs": [
+   "7421b1b6a6fa"
+  ],
+  "operator": "aggregate",
+  "status": "done",
+  "proxy_auc": 0.9281779799476747,
+  "gold_auc": null,
+  "public_lb": null,
+  "gpu_hours": 0.0,
+  "error": "",
+  "reward": 1.0,
+  "visits": 1,
+  "value_sum": 1.0,
+  "created": 1790297085.054966
+ },
+ {
+  "id": "3495902cf48f",
+  "parent": "2c52aa6dd0b0",
+  "genome": {
+   "arch": "coatnet384",
+   "bb_lr": 3e-05,
+   "corpus": "raptor44",
+   "epochs": 16,
+   "freeze_blocks": 0,
+   "head_lr": 0.001,
+   "k": 12,
+   "k_eval": 24,
+   "labels": "blend_v2",
+   "wd": 0.02
+  },
+  "plan": "Train the unused blend_v2 label set on the best parent recipe (single-field labels= change) to test report-distilled soft labels.",
+  "kind": "online",
+  "refs": [],
+  "operator": "primary",
+  "status": "failed",
+  "proxy_auc": null,
+  "gold_auc": null,
+  "public_lb": null,
+  "gpu_hours": 3.7405573125018012,
+  "error": "hung kaggle corpus download after 3.74 h; abandoned for dense80",
+  "reward": -1.0,
+  "visits": 1,
+  "value_sum": -1.0,
+  "created": 1790304996.871011
+ },
+ {
+  "id": "b439c226df2b",
+  "parent": "2c52aa6dd0b0",
+  "genome": {
+   "corpus": "dense80",
+   "labels": "relabel_8c56cdf0",
+   "arch": "coatnet384",
+   "epochs": 16,
+   "k": 12,
+   "k_eval": 24,
+   "bb_lr": 3e-05,
+   "head_lr": 0.001,
+   "wd": 0.02,
+   "freeze_blocks": 0
+  },
+  "plan": "switch corpus to dense80 (submit geometry) on best parent labels",
+  "kind": "online",
+  "refs": [],
+  "operator": "primary",
+  "status": "done",
+  "proxy_auc": 0.920482847470085,
+  "gold_auc": 0.8934986717452392,
+  "public_lb": null,
+  "gpu_hours": 3.177351172235277,
+  "error": "",
+  "reward": 1.0,
+  "visits": 54,
+  "value_sum": 29.0,
+  "created": 1790318520.236647
+ },
+ {
+  "id": "75fe642387cc",
+  "parent": "2c52aa6dd0b0",
+  "genome": {
+   "blend": [
+    "2c52aa6dd0b0",
+    "b439c226df2b"
+   ]
+  },
+  "plan": "dream: rank blend 2c52aa6dd0b0+b439c226df2b",
+  "kind": "dream",
+  "refs": [
+   "b439c226df2b"
+  ],
+  "operator": "aggregate",
+  "status": "done",
+  "proxy_auc": 0.9302774107712115,
+  "gold_auc": null,
+  "public_lb": null,
+  "gpu_hours": 0.0,
+  "error": "",
+  "reward": 1.0,
+  "visits": 1,
+  "value_sum": 1.0,
+  "created": 1790373473.6305752
+ },
+ {
+  "id": "6927e4ed7102",
+  "parent": "1f7ece631b01",
+  "genome": {
+   "blend": [
+    "1f7ece631b01",
+    "b439c226df2b"
+   ]
+  },
+  "plan": "dream: rank blend 1f7ece631b01+b439c226df2b",
+  "kind": "dream",
+  "refs": [
+   "b439c226df2b"
+  ],
+  "operator": "aggregate",
+  "status": "done",
+  "proxy_auc": 0.9303751400693628,
+  "gold_auc": null,
+  "public_lb": null,
+  "gpu_hours": 0.0,
+  "error": "",
+  "reward": 1.0,
+  "visits": 1,
+  "value_sum": 1.0,
+  "created": 1790373473.648706
+ },
+ {
+  "id": "1464c4158a88",
+  "parent": "7421b1b6a6fa",
+  "genome": {
+   "blend": [
+    "7421b1b6a6fa",
+    "b439c226df2b"
+   ]
+  },
+  "plan": "dream: rank blend 7421b1b6a6fa+b439c226df2b",
+  "kind": "dream",
+  "refs": [
+   "b439c226df2b"
+  ],
+  "operator": "aggregate",
+  "status": "done",
+  "proxy_auc": 0.9277000377928689,
+  "gold_auc": null,
+  "public_lb": null,
+  "gpu_hours": 0.0,
+  "error": "",
+  "reward": 1.0,
+  "visits": 1,
+  "value_sum": 1.0,
+  "created": 1790373473.6663911
+ },
+ {
+  "id": "5de610f8e27c",
+  "parent": "b439c226df2b",
+  "genome": {
+   "corpus": "dense80",
+   "labels": "relabel_acb644bf",
+   "arch": "coatnet384",
+   "epochs": 16,
+   "k": 12,
+   "k_eval": 24,
+   "bb_lr": 3e-05,
+   "head_lr": 0.001,
+   "wd": 0.02,
+   "freeze_blocks": 0
+  },
+  "plan": "train labels=relabel_acb644bf on dense80 parent (target 0.958)",
+  "kind": "online",
+  "refs": [],
+  "operator": "primary",
+  "status": "done",
+  "proxy_auc": 0.9268101326247161,
+  "gold_auc": 0.8999400056465273,
+  "public_lb": null,
+  "gpu_hours": 2.860330590539508,
+  "error": "",
+  "reward": 1.0,
+  "visits": 12,
+  "value_sum": 14.0,
+  "created": 1790397615.104031
+ },
+ {
+  "id": "0e896ab82838",
+  "parent": "5de610f8e27c",
+  "genome": {
+   "blend": [
+    "2c52aa6dd0b0",
+    "5de610f8e27c"
+   ]
+  },
+  "plan": "dream: rank blend 5de610f8e27c+2c52aa6dd0b0",
+  "kind": "dream",
+  "refs": [
+   "2c52aa6dd0b0"
+  ],
+  "operator": "aggregate",
+  "status": "done",
+  "proxy_auc": 0.9322523593359926,
+  "gold_auc": null,
+  "public_lb": null,
+  "gpu_hours": 0.0,
+  "error": "",
+  "reward": 2.0,
+  "visits": 1,
+  "value_sum": 2.0,
+  "created": 1790408023.225205
+ },
+ {
+  "id": "a8ac442ef320",
+  "parent": "5de610f8e27c",
+  "genome": {
+   "blend": [
+    "1f7ece631b01",
+    "5de610f8e27c"
+   ]
+  },
+  "plan": "dream: rank blend 5de610f8e27c+1f7ece631b01",
+  "kind": "dream",
+  "refs": [
+   "1f7ece631b01"
+  ],
+  "operator": "aggregate",
+  "status": "done",
+  "proxy_auc": 0.9324747480063039,
+  "gold_auc": null,
+  "public_lb": null,
+  "gpu_hours": 0.0,
+  "error": "",
+  "reward": 2.0,
+  "visits": 1,
+  "value_sum": 2.0,
+  "created": 1790408023.2434728
+ },
+ {
+  "id": "a4ac313e2730",
+  "parent": "5de610f8e27c",
+  "genome": {
+   "blend": [
+    "5de610f8e27c",
+    "7421b1b6a6fa"
+   ]
+  },
+  "plan": "dream: rank blend 5de610f8e27c+7421b1b6a6fa",
+  "kind": "dream",
+  "refs": [
+   "7421b1b6a6fa"
+  ],
+  "operator": "aggregate",
+  "status": "done",
+  "proxy_auc": 0.9303649406031761,
+  "gold_auc": null,
+  "public_lb": null,
+  "gpu_hours": 0.0,
+  "error": "",
+  "reward": 1.0,
+  "visits": 1,
+  "value_sum": 1.0,
+  "created": 1790408023.261069
+ },
+ {
+  "id": "f734ee8037f6",
+  "parent": "5de610f8e27c",
+  "genome": {
+   "corpus": "dense80",
+   "labels": "dread",
+   "arch": "coatnet384",
+   "epochs": 16,
+   "k": 12,
+   "k_eval": 24,
+   "bb_lr": 3e-05,
+   "head_lr": 0.001,
+   "wd": 0.02,
+   "freeze_blocks": 0
+  },
+  "plan": "train labels=dread on dense80 parent (target 0.958)",
+  "kind": "online",
+  "refs": [],
+  "operator": "primary",
+  "status": "done",
+  "proxy_auc": 0.9312500071938971,
+  "gold_auc": 0.898938104759043,
+  "public_lb": null,
+  "gpu_hours": 4.354348259965579,
+  "error": "",
+  "reward": 1.0,
+  "visits": 7,
+  "value_sum": 7.0,
+  "created": 1790408027.32771
+ },
+ {
+  "id": "06bbb4d5f79b",
+  "parent": "f734ee8037f6",
+  "genome": {
+   "blend": [
+    "5de610f8e27c",
+    "f734ee8037f6"
+   ]
+  },
+  "plan": "dream: rank blend f734ee8037f6+5de610f8e27c",
+  "kind": "dream",
+  "refs": [
+   "5de610f8e27c"
+  ],
+  "operator": "aggregate",
+  "status": "done",
+  "proxy_auc": 0.9338163579466712,
+  "gold_auc": null,
+  "public_lb": null,
+  "gpu_hours": 0.0,
+  "error": "",
+  "reward": 2.0,
+  "visits": 1,
+  "value_sum": 2.0,
+  "created": 1790424426.310563
+ },
+ {
+  "id": "d702a6b0d396",
+  "parent": "f734ee8037f6",
+  "genome": {
+   "blend": [
+    "2c52aa6dd0b0",
+    "f734ee8037f6"
+   ]
+  },
+  "plan": "dream: rank blend f734ee8037f6+2c52aa6dd0b0",
+  "kind": "dream",
+  "refs": [
+   "2c52aa6dd0b0"
+  ],
+  "operator": "aggregate",
+  "status": "done",
+  "proxy_auc": 0.9351221155762878,
+  "gold_auc": null,
+  "public_lb": null,
+  "gpu_hours": 0.0,
+  "error": "",
+  "reward": 2.0,
+  "visits": 1,
+  "value_sum": 2.0,
+  "created": 1790424426.328995
+ },
+ {
+  "id": "dbee935008cc",
+  "parent": "f734ee8037f6",
+  "genome": {
+   "blend": [
+    "1f7ece631b01",
+    "f734ee8037f6"
+   ]
+  },
+  "plan": "dream: rank blend f734ee8037f6+1f7ece631b01",
+  "kind": "dream",
+  "refs": [
+   "1f7ece631b01"
+  ],
+  "operator": "aggregate",
+  "status": "done",
+  "proxy_auc": 0.9342663221556581,
+  "gold_auc": null,
+  "public_lb": null,
+  "gpu_hours": 0.0,
+  "error": "",
+  "reward": 1.0,
+  "visits": 1,
+  "value_sum": 1.0,
+  "created": 1790424426.3466098
+ },
+ {
+  "id": "44b422722e76",
+  "parent": "f734ee8037f6",
+  "genome": {
+   "corpus": "dense80",
+   "labels": "blend_v2",
+   "arch": "coatnet384",
+   "epochs": 16,
+   "k": 12,
+   "k_eval": 24,
+   "bb_lr": 3e-05,
+   "head_lr": 0.001,
+   "wd": 0.02,
+   "freeze_blocks": 0
+  },
+  "plan": "train labels=blend_v2 on dense80 parent (target 0.958)",
+  "kind": "online",
+  "refs": [],
+  "operator": "primary",
+  "status": "done",
+  "proxy_auc": 0.9249714170747741,
+  "gold_auc": 0.889143566147537,
+  "public_lb": null,
+  "gpu_hours": 4.8575084249840845,
+  "error": "",
+  "reward": 1.0,
+  "visits": 1,
+  "value_sum": 1.0,
+  "created": 1790424427.7226398
+ },
+ {
+  "id": "671697bc2fa5",
+  "parent": "f734ee8037f6",
+  "genome": {
+   "blend": [
+    "44b422722e76",
+    "f734ee8037f6"
+   ]
+  },
+  "plan": "dream: rank blend f734ee8037f6+44b422722e76",
+  "kind": "dream",
+  "refs": [
+   "44b422722e76"
+  ],
+  "operator": "aggregate",
+  "status": "done",
+  "proxy_auc": 0.9334917713942589,
+  "gold_auc": null,
+  "public_lb": null,
+  "gpu_hours": 0.0,
+  "error": "",
+  "reward": 1.0,
+  "visits": 1,
+  "value_sum": 1.0,
+  "created": 1790445020.5802739
+ },
+ {
+  "id": "02e089b1fbcb",
+  "parent": "5de610f8e27c",
+  "genome": {
+   "blend": [
+    "44b422722e76",
+    "5de610f8e27c"
+   ]
+  },
+  "plan": "dream: rank blend 5de610f8e27c+44b422722e76",
+  "kind": "dream",
+  "refs": [
+   "44b422722e76"
+  ],
+  "operator": "aggregate",
+  "status": "done",
+  "proxy_auc": 0.9305783753690391,
+  "gold_auc": null,
+  "public_lb": null,
+  "gpu_hours": 0.0,
+  "error": "",
+  "reward": 1.0,
+  "visits": 1,
+  "value_sum": 1.0,
+  "created": 1790445020.5981572
+ },
+ {
+  "id": "2272fec48a7f",
+  "parent": "2c52aa6dd0b0",
+  "genome": {
+   "blend": [
+    "2c52aa6dd0b0",
+    "44b422722e76"
+   ]
+  },
+  "plan": "dream: rank blend 2c52aa6dd0b0+44b422722e76",
+  "kind": "dream",
+  "refs": [
+   "44b422722e76"
+  ],
+  "operator": "aggregate",
+  "status": "done",
+  "proxy_auc": 0.9325440253157221,
+  "gold_auc": null,
+  "public_lb": null,
+  "gpu_hours": 0.0,
+  "error": "",
+  "reward": 1.0,
+  "visits": 1,
+  "value_sum": 1.0,
+  "created": 1790445020.6160798
+ },
+ {
+  "id": "d5c221a7a58d",
+  "parent": "f734ee8037f6",
+  "genome": {
+   "corpus": "dense80",
+   "labels": "dread",
+   "arch": "coatnet384",
+   "epochs": 16,
+   "k": 16,
+   "k_eval": 24,
+   "bb_lr": 3e-05,
+   "head_lr": 0.001,
+   "wd": 0.02,
+   "freeze_blocks": 0
+  },
+  "plan": "menu search: {'k': 16}",
+  "kind": "online",
+  "refs": [],
+  "operator": "primary",
+  "status": "failed",
+  "proxy_auc": null,
+  "gold_auc": null,
+  "public_lb": null,
+  "gpu_hours": 0.7355674119128122,
+  "error": "no results in /Users/girish11/RSNA_Knee_Abnormality_Detection_Model/outputs/runpod_results/n-d5c221a7a58d-r2 (see job.log)",
+  "reward": -1.0,
+  "visits": 1,
+  "value_sum": -1.0,
+  "created": 1790445021.903818
+ },
+ {
+  "id": "23eb0ed430b2",
+  "parent": "b439c226df2b",
+  "genome": {
+   "corpus": "dense80",
+   "labels": "relabel_8c56cdf0",
+   "arch": "coatnet384",
+   "epochs": 16,
+   "k": 16,
+   "k_eval": 24,
+   "bb_lr": 3e-05,
+   "head_lr": 0.001,
+   "wd": 0.02,
+   "freeze_blocks": 0
+  },
+  "plan": "menu search after DeepSeek stop: {'k': 16}",
+  "kind": "online",
+  "refs": [],
+  "operator": "primary",
+  "status": "failed",
+  "proxy_auc": null,
+  "gold_auc": null,
+  "public_lb": null,
+  "gpu_hours": 0.0,
+  "error": "pod vanished / no capacity after retries",
+  "reward": -1.0,
+  "visits": 1,
+  "value_sum": -1.0,
+  "created": 1790450387.7027378
+ },
+ {
+  "id": "b8e949d566ce",
+  "parent": "b439c226df2b",
+  "genome": {
+   "arch": "coatnet384",
+   "bb_lr": 3e-05,
+   "corpus": "dense80",
+   "epochs": 16,
+   "freeze_blocks": 0,
+   "head_lr": 0.001,
+   "k": 12,
+   "k_eval": 42,
+   "labels": "dread",
+   "wd": 0.02
+  },
+  "plan": "dense80 + dread labels, widen eval to k_eval=42 for near-full-slice inference on submit geometry",
+  "kind": "online",
+  "refs": [
+   "7421b1b6a6fa"
+  ],
+  "operator": "intra_branch",
+  "status": "failed",
+  "proxy_auc": null,
+  "gold_auc": null,
+  "public_lb": null,
+  "gpu_hours": 0.0,
+  "error": "pod vanished / no capacity after retries",
+  "reward": -1.0,
+  "visits": 1,
+  "value_sum": -1.0,
+  "created": 1790452999.447861
+ },
+ {
+  "id": "fc74488528c9",
+  "parent": "b439c226df2b",
+  "genome": {
+   "corpus": "dense80",
+   "labels": "relabel_8c56cdf0",
+   "arch": "coatnet384",
+   "epochs": 16,
+   "k": 8,
+   "k_eval": 24,
+   "bb_lr": 3e-05,
+   "head_lr": 0.001,
+   "wd": 0.02,
+   "freeze_blocks": 0
+  },
+  "plan": "menu search after DeepSeek stop: {'k': 8}",
+  "kind": "online",
+  "refs": [],
+  "operator": "primary",
+  "status": "done",
+  "proxy_auc": 0.9343752782641689,
+  "gold_auc": 0.901915478474403,
+  "public_lb": null,
+  "gpu_hours": 2.092534291413095,
+  "error": "",
+  "reward": 1.0,
+  "visits": 9,
+  "value_sum": 12.0,
+  "created": 1790458050.226586
+ },
+ {
+  "id": "79813e230af5",
+  "parent": "fc74488528c9",
+  "genome": {
+   "blend": [
+    "f734ee8037f6",
+    "fc74488528c9"
+   ]
+  },
+  "plan": "dream: rank blend fc74488528c9+f734ee8037f6",
+  "kind": "dream",
+  "refs": [
+   "f734ee8037f6"
+  ],
+  "operator": "aggregate",
+  "status": "done",
+  "proxy_auc": 0.9365413935779284,
+  "gold_auc": null,
+  "public_lb": null,
+  "gpu_hours": 0.0,
+  "error": "",
+  "reward": 2.0,
+  "visits": 1,
+  "value_sum": 2.0,
+  "created": 1790466342.496681
+ },
+ {
+  "id": "f4b567e4ac8e",
+  "parent": "fc74488528c9",
+  "genome": {
+   "blend": [
+    "5de610f8e27c",
+    "fc74488528c9"
+   ]
+  },
+  "plan": "dream: rank blend fc74488528c9+5de610f8e27c",
+  "kind": "dream",
+  "refs": [
+   "5de610f8e27c"
+  ],
+  "operator": "aggregate",
+  "status": "done",
+  "proxy_auc": 0.9345743423006708,
+  "gold_auc": null,
+  "public_lb": null,
+  "gpu_hours": 0.0,
+  "error": "",
+  "reward": 1.0,
+  "visits": 1,
+  "value_sum": 1.0,
+  "created": 1790466342.517075
+ },
+ {
+  "id": "5556dd72273a",
+  "parent": "fc74488528c9",
+  "genome": {
+   "blend": [
+    "2c52aa6dd0b0",
+    "fc74488528c9"
+   ]
+  },
+  "plan": "dream: rank blend fc74488528c9+2c52aa6dd0b0",
+  "kind": "dream",
+  "refs": [
+   "2c52aa6dd0b0"
+  ],
+  "operator": "aggregate",
+  "status": "done",
+  "proxy_auc": 0.9357977874799261,
+  "gold_auc": null,
+  "public_lb": null,
+  "gpu_hours": 0.0,
+  "error": "",
+  "reward": 1.0,
+  "visits": 1,
+  "value_sum": 1.0,
+  "created": 1790466342.538914
+ },
+ {
+  "id": "a9f373cbb957",
+  "parent": "b439c226df2b",
+  "genome": {
+   "corpus": "dense80",
+   "labels": "relabel_8c56cdf0",
+   "arch": "coatnet384",
+   "epochs": 20,
+   "k": 12,
+   "k_eval": 24,
+   "bb_lr": 3e-05,
+   "head_lr": 0.001,
+   "wd": 0.02,
+   "freeze_blocks": 0
+  },
+  "plan": "menu search after DeepSeek stop: {'epochs': 20}",
+  "kind": "online",
+  "refs": [],
+  "operator": "primary",
+  "status": "failed",
+  "proxy_auc": null,
+  "gold_auc": null,
+  "public_lb": null,
+  "gpu_hours": 0.6682528928253386,
+  "error": "no results in /Users/girish11/RSNA_Knee_Abnormality_Detection_Model/outputs/runpod_results/n-a9f373cbb957-r2 (see job.log)",
+  "reward": -1.0,
+  "visits": 1,
+  "value_sum": -1.0,
+  "created": 1790466372.791614
+ },
+ {
+  "id": "7ccb8db68c25",
+  "parent": "b439c226df2b",
+  "genome": {
+   "arch": "coatnet384",
+   "corpus": "dense80",
+   "epochs": 16,
+   "freeze_blocks": 0,
+   "head_lr": 0.001,
+   "k": 8,
+   "k_eval": 42,
+   "labels": "relabel_8c56cdf0",
+   "bb_lr": 3e-05,
+   "wd": 0.02
+  },
+  "plan": "intra_branch on the best dense80 lineage: keep the champion k=8 window sampling and widen eval coverage to k_eval=42 (near-full-slice inference grid) on relabel_8c56cdf0 labels",
+  "kind": "online",
+  "refs": [
+   "7421b1b6a6fa"
+  ],
+  "operator": "intra_branch",
+  "status": "failed",
+  "proxy_auc": null,
+  "gold_auc": null,
+  "public_lb": null,
+  "gpu_hours": 0.0,
+  "error": "pod vanished / no capacity after retries",
+  "reward": -1.0,
+  "visits": 1,
+  "value_sum": -1.0,
+  "created": 1790473541.445837
+ },
+ {
+  "id": "912825f6d602",
+  "parent": "b439c226df2b",
+  "genome": {
+   "arch": "coatnet384",
+   "bb_lr": 5e-05,
+   "corpus": "dense80",
+   "epochs": 16,
+   "freeze_blocks": 0,
+   "head_lr": 0.001,
+   "k": 8,
+   "k_eval": 24,
+   "labels": "relabel_8c56cdf0",
+   "wd": 0.02
+  },
+  "plan": "Keep the champion k=8 dense80/relabel_8c56cdf0 recipe and raise backbone LR to 5e-5 so the backbone adapts harder to the domain-specific MRI corpus.",
+  "kind": "online",
+  "refs": [
+   "7421b1b6a6fa"
+  ],
+  "operator": "intra_branch",
+  "status": "done",
+  "proxy_auc": 0.9331894943226753,
+  "gold_auc": 0.9047304141706148,
+  "public_lb": null,
+  "gpu_hours": 3.513446129096879,
+  "error": "",
+  "reward": 1.0,
+  "visits": 3,
+  "value_sum": 3.0,
+  "created": 1790478648.939858
+ },
+ {
+  "id": "6136555d23ca",
+  "parent": "fc74488528c9",
+  "genome": {
+   "blend": [
+    "912825f6d602",
+    "fc74488528c9"
+   ]
+  },
+  "plan": "dream: rank blend fc74488528c9+912825f6d602",
+  "kind": "dream",
+  "refs": [
+   "912825f6d602"
+  ],
+  "operator": "aggregate",
+  "status": "done",
+  "proxy_auc": 0.9357646853473643,
+  "gold_auc": null,
+  "public_lb": null,
+  "gpu_hours": 0.0,
+  "error": "",
+  "reward": 1.0,
+  "visits": 1,
+  "value_sum": 1.0,
+  "created": 1790491387.018323
+ },
+ {
+  "id": "e3389445a631",
+  "parent": "912825f6d602",
+  "genome": {
+   "blend": [
+    "912825f6d602",
+    "f734ee8037f6"
+   ]
+  },
+  "plan": "dream: rank blend 912825f6d602+f734ee8037f6",
+  "kind": "dream",
+  "refs": [
+   "f734ee8037f6"
+  ],
+  "operator": "aggregate",
+  "status": "done",
+  "proxy_auc": 0.9361402862482957,
+  "gold_auc": null,
+  "public_lb": null,
+  "gpu_hours": 0.0,
+  "error": "",
+  "reward": 1.0,
+  "visits": 1,
+  "value_sum": 1.0,
+  "created": 1790491387.036971
+ },
+ {
+  "id": "7dd0b277768a",
+  "parent": "912825f6d602",
+  "genome": {
+   "blend": [
+    "5de610f8e27c",
+    "912825f6d602"
+   ]
+  },
+  "plan": "dream: rank blend 912825f6d602+5de610f8e27c",
+  "kind": "dream",
+  "refs": [
+   "5de610f8e27c"
+  ],
+  "operator": "aggregate",
+  "status": "done",
+  "proxy_auc": 0.9338802367461362,
+  "gold_auc": null,
+  "public_lb": null,
+  "gpu_hours": 0.0,
+  "error": "",
+  "reward": 1.0,
+  "visits": 1,
+  "value_sum": 1.0,
+  "created": 1790491387.05484
+ },
+ {
+  "id": "fa6f4f72107b",
+  "parent": "b439c226df2b",
+  "genome": {
+   "arch": "coatnet384",
+   "bb_lr": 3e-05,
+   "corpus": "dense80",
+   "epochs": 12,
+   "freeze_blocks": 0,
+   "head_lr": 0.001,
+   "k": 12,
+   "k_eval": 24,
+   "labels": "dread",
+   "wd": 0.02
+  },
+  "plan": "intra_branch on the dense80 submit-geometry lineage: keep the champion recipe but probe the untried shorter schedule (epochs=12) with the best-measured dense80 label set (dread), for a clean direct A/B vs the 0.93125 dread/dense80/16ep node plus a diverse blend member.",
+  "kind": "online",
+  "refs": [
+   "7421b1b6a6fa"
+  ],
+  "operator": "intra_branch",
+  "status": "failed",
+  "proxy_auc": null,
+  "gold_auc": null,
+  "public_lb": null,
+  "gpu_hours": 0.0,
+  "error": "pod vanished / no capacity after retries",
+  "reward": -1.0,
+  "visits": 1,
+  "value_sum": -1.0,
+  "created": 1790491431.984694
+ },
+ {
+  "id": "4fb5ab2dfa2f",
+  "parent": "b439c226df2b",
+  "genome": {
+   "arch": "coatnet384",
+   "bb_lr": 3e-05,
+   "corpus": "dense80",
+   "epochs": 12,
+   "freeze_blocks": 0,
+   "head_lr": 0.001,
+   "k": 8,
+   "k_eval": 24,
+   "labels": "relabel_8c56cdf0",
+   "wd": 0.02
+  },
+  "plan": "intra_branch on champion dense80/relabel_8c56cdf0 lineage: try the untried epochs=12 and the champion k=8 window sampling together (2-field change vs parent b439c226df2b)",
+  "kind": "online",
+  "refs": [
+   "7421b1b6a6fa"
+  ],
+  "operator": "intra_branch",
+  "status": "done",
+  "proxy_auc": 0.9249695460106842,
+  "gold_auc": 0.891460507069943,
+  "public_lb": null,
+  "gpu_hours": 3.6821457735697427,
+  "error": "",
+  "reward": 1.0,
+  "visits": 1,
+  "value_sum": 1.0,
+  "created": 1790493535.746371
+ },
+ {
+  "id": "9ba23159fef6",
+  "parent": "b439c226df2b",
+  "genome": {
+   "arch": "coatnet384",
+   "bb_lr": 3e-05,
+   "corpus": "dense80",
+   "epochs": 16,
+   "freeze_blocks": 0,
+   "head_lr": 0.002,
+   "k": 12,
+   "k_eval": 24,
+   "labels": "dread",
+   "wd": 0.02
+  },
+  "plan": "Best-measured dense80 labels (dread) with a faster attention-pooling head (head_lr 1e-3 -> 2e-3) since the per-finding head is trained from scratch.",
+  "kind": "online",
+  "refs": [
+   "7421b1b6a6fa"
+  ],
+  "operator": "intra_branch",
+  "status": "failed",
+  "proxy_auc": null,
+  "gold_auc": null,
+  "public_lb": null,
+  "gpu_hours": 0.0,
+  "error": "pod vanished / no capacity after retries",
+  "reward": -1.0,
+  "visits": 1,
+  "value_sum": -1.0,
+  "created": 1790506951.16767
+ },
+ {
+  "id": "8e0583cba1e1",
+  "parent": "b439c226df2b",
+  "genome": {
+   "arch": "coatnet384",
+   "bb_lr": 3e-05,
+   "corpus": "dense80",
+   "epochs": 16,
+   "freeze_blocks": 0,
+   "head_lr": 0.001,
+   "k": 12,
+   "k_eval": 42,
+   "labels": "relabel_8c56cdf0",
+   "wd": 0.02
+  },
+  "plan": "intra_branch on parent b439c226df2b: single-field change to k_eval=42 (near-full-slice eval geometry) while keeping the parent's registered relabel_8c56cdf0 labels.",
+  "kind": "online",
+  "refs": [
+   "7421b1b6a6fa"
+  ],
+  "operator": "intra_branch",
+  "status": "failed",
+  "proxy_auc": null,
+  "gold_auc": null,
+  "public_lb": null,
+  "gpu_hours": 0.8326023572683334,
+  "error": "no results in /Users/girish11/RSNA_Knee_Abnormality_Detection_Model/outputs/runpod_results/n-8e0583cba1e1-r2 (see job.log)",
+  "reward": -1.0,
+  "visits": 1,
+  "value_sum": -1.0,
+  "created": 1790510232.694908
+ },
+ {
+  "id": "4510343ecbb6",
+  "parent": "b439c226df2b",
+  "genome": {
+   "arch": "coatnet384",
+   "bb_lr": 3e-05,
+   "corpus": "dense80",
+   "epochs": 12,
+   "freeze_blocks": 0,
+   "head_lr": 0.001,
+   "k": 16,
+   "k_eval": 24,
+   "labels": "relabel_8c56cdf0",
+   "wd": 0.02
+  },
+  "plan": "intra_branch on parent b439c226df2b: two-field change to untried epochs=12 and untried k=16 window sampling, keeping dense80 submit geometry and registered relabel_8c56cdf0 labels",
+  "kind": "online",
+  "refs": [
+   "7421b1b6a6fa"
+  ],
+  "operator": "intra_branch",
+  "status": "failed",
+  "proxy_auc": null,
+  "gold_auc": null,
+  "public_lb": null,
+  "gpu_hours": 0.0,
+  "error": "pod vanished / no capacity after retries",
+  "reward": -1.0,
+  "visits": 2,
+  "value_sum": -2.0,
+  "created": 1790516856.007966
+ },
+ {
+  "id": "140cc89a4fb3",
+  "parent": "b439c226df2b",
+  "genome": {
+   "arch": "coatnet384",
+   "bb_lr": 3e-05,
+   "corpus": "dense80",
+   "epochs": 12,
+   "freeze_blocks": 0,
+   "head_lr": 0.001,
+   "k": 12,
+   "k_eval": 42,
+   "labels": "relabel_8c56cdf0",
+   "wd": 0.02
+  },
+  "plan": "Parent b439c226df2b (dense80 relabel_8c56cdf0) with the remaining untried menu value epochs=12 plus near-full-slice eval geometry k_eval=42 (2-field intra_branch diff).",
+  "kind": "online",
+  "refs": [
+   "7421b1b6a6fa"
+  ],
+  "operator": "intra_branch",
+  "status": "failed",
+  "proxy_auc": null,
+  "gold_auc": null,
+  "public_lb": null,
+  "gpu_hours": 0.0,
+  "error": "terminated: one-pod race during phantom recovery",
+  "reward": 0.0,
+  "visits": 0,
+  "value_sum": 0.0,
+  "created": 1790518355.274925
+ },
+ {
+  "id": "4dcc74432337",
+  "parent": "b439c226df2b",
+  "genome": {
+   "arch": "coatnet384",
+   "bb_lr": 3e-05,
+   "corpus": "dense80",
+   "epochs": 12,
+   "freeze_blocks": 0,
+   "head_lr": 0.001,
+   "k": 12,
+   "k_eval": 24,
+   "labels": "relabel_8c56cdf0",
+   "wd": 0.02
+  },
+  "plan": "intra_branch on dense80 parent b439c226df2b: single-field change to untried epochs=12 (16 kept everywhere else: k=12, k_eval=24, bb_lr 3e-05, labels relabel_8c56cdf0) \u2014 tests whether early-stopping-style shorter schedule, which matched gold's epoch-4 peak trend, lifts proxy",
+  "kind": "online",
+  "refs": [
+   "7421b1b6a6fa"
+  ],
+  "operator": "intra_branch",
+  "status": "failed",
+  "proxy_auc": null,
+  "gold_auc": null,
+  "public_lb": null,
+  "gpu_hours": 0.8355397736363941,
+  "error": "no results in /Users/girish11/RSNA_Knee_Abnormality_Detection_Model/outputs/runpod_results/n-4dcc74432337-r2 (see job.log)",
+  "reward": -1.0,
+  "visits": 1,
+  "value_sum": -1.0,
+  "created": 1790523358.4813812
+ },
+ {
+  "id": "0c7882bfc94b",
+  "parent": "b439c226df2b",
+  "genome": {
+   "arch": "coatnet384",
+   "bb_lr": 3e-05,
+   "corpus": "dense80",
+   "epochs": 16,
+   "freeze_blocks": 0,
+   "head_lr": 0.002,
+   "k": 12,
+   "k_eval": 24,
+   "labels": "relabel_8c56cdf0",
+   "wd": 0.02
+  },
+  "plan": "intra_branch on dense80 parent b439c226df2b: single-field change to untried head_lr=0.002 (all else kept: coatnet384, epochs=16, k=12, k_eval=24, bb_lr=3e-05, wd=0.02, freeze_blocks=0, labels relabel_8c56cdf0) to test whether a stronger head step on the submit geometry lifts proxy above 0.9205.",
+  "kind": "online",
+  "refs": [
+   "7421b1b6a6fa"
+  ],
+  "operator": "intra_branch",
+  "status": "failed",
+  "proxy_auc": null,
+  "gold_auc": null,
+  "public_lb": null,
+  "gpu_hours": 1.337025510205163,
+  "error": "no results in /Users/girish11/RSNA_Knee_Abnormality_Detection_Model/outputs/runpod_results/n-0c7882bfc94b-r2 (see job.log)",
+  "reward": -1.0,
+  "visits": 1,
+  "value_sum": -1.0,
+  "created": 1790527917.729096
+ },
+ {
+  "id": "49735b0070b7",
+  "parent": "b439c226df2b",
+  "genome": {
+   "arch": "coatnet384",
+   "bb_lr": 5e-05,
+   "corpus": "dense80",
+   "epochs": 16,
+   "freeze_blocks": 0,
+   "head_lr": 0.001,
+   "k": 12,
+   "k_eval": 24,
+   "labels": "dread",
+   "wd": 0.02
+  },
+  "plan": "intra_branch on dense80 parent b439c226df2b: labels->dread (empirically +0.0108 on dense80) and bb_lr 3e-5->5e-5 (untried menu value) to give the pretrained backbone more capacity to adapt to the dense80 corpus distribution shift, eval geometry held fixed",
+  "kind": "online",
+  "refs": [
+   "7421b1b6a6fa"
+  ],
+  "operator": "intra_branch",
+  "status": "failed",
+  "proxy_auc": null,
+  "gold_auc": null,
+  "public_lb": null,
+  "gpu_hours": 0.0,
+  "error": "killed: k>8 VRAM ban (2026-09-28)",
+  "reward": 0.0,
+  "visits": 0,
+  "value_sum": 0.0,
+  "created": 1790534226.129323
+ },
+ {
+  "id": "6f09992789ed",
+  "parent": "fc74488528c9",
+  "genome": {
+   "blend": [
+    "5de610f8e27c",
+    "912825f6d602",
+    "f734ee8037f6",
+    "fc74488528c9"
+   ],
+   "method": "greedy_rank"
+  },
+  "plan": "dream: greedy rank blend ['fc74488528c9', '912825f6d602', 'f734ee8037f6', '5de610f8e27c']",
+  "kind": "dream",
+  "refs": [
+   "912825f6d602",
+   "f734ee8037f6",
+   "5de610f8e27c"
+  ],
+  "operator": "aggregate",
+  "status": "done",
+  "proxy_auc": 0.9374003406618906,
+  "gold_auc": null,
+  "public_lb": null,
+  "gpu_hours": 0.0,
+  "error": "",
+  "reward": 2.0,
+  "visits": 1,
+  "value_sum": 2.0,
+  "created": 1790538703.307628
+ },
+ {
+  "id": "8194b27c5318",
+  "parent": "b439c226df2b",
+  "genome": {
+   "arch": "coatnet384",
+   "bb_lr": 3e-05,
+   "corpus": "dense80",
+   "epochs": 16,
+   "freeze_blocks": 0,
+   "head_lr": 0.001,
+   "k": 8,
+   "k_eval": 24,
+   "labels": "relabel_8c56cdf0",
+   "wd": 0.05
+  },
+  "plan": "Single-field diff vs parent b439c226df2b: wd 0.02 -> 0.05 on the dense80 submit geometry at k=8, testing stronger regularization against the early-peak overfit signature.",
+  "kind": "online",
+  "refs": [],
+  "operator": "primary",
+  "status": "done",
+  "proxy_auc": 0.9333452880818428,
+  "gold_auc": 0.9037919375734021,
+  "public_lb": null,
+  "gpu_hours": 3.5728664935297436,
+  "error": "",
+  "reward": 1.0,
+  "visits": 3,
+  "value_sum": 3.0,
+  "created": 1790538740.070522
+ },
+ {
+  "id": "c3a3cfc1e483",
+  "parent": "fc74488528c9",
+  "genome": {
+   "blend": [
+    "8194b27c5318",
+    "fc74488528c9"
+   ]
+  },
+  "plan": "dream: rank blend fc74488528c9+8194b27c5318",
+  "kind": "dream",
+  "refs": [
+   "8194b27c5318"
+  ],
+  "operator": "aggregate",
+  "status": "done",
+  "proxy_auc": 0.9357925752474872,
+  "gold_auc": null,
+  "public_lb": null,
+  "gpu_hours": 0.0,
+  "error": "",
+  "reward": 1.0,
+  "visits": 1,
+  "value_sum": 1.0,
+  "created": 1790551951.109306
+ },
+ {
+  "id": "a5dd17d293ae",
+  "parent": "8194b27c5318",
+  "genome": {
+   "blend": [
+    "8194b27c5318",
+    "912825f6d602"
+   ]
+  },
+  "plan": "dream: rank blend 8194b27c5318+912825f6d602",
+  "kind": "dream",
+  "refs": [
+   "912825f6d602"
+  ],
+  "operator": "aggregate",
+  "status": "done",
+  "proxy_auc": 0.9351395980371048,
+  "gold_auc": null,
+  "public_lb": null,
+  "gpu_hours": 0.0,
+  "error": "",
+  "reward": 1.0,
+  "visits": 1,
+  "value_sum": 1.0,
+  "created": 1790551951.1275468
+ },
+ {
+  "id": "448ac4a0e297",
+  "parent": "8194b27c5318",
+  "genome": {
+   "blend": [
+    "8194b27c5318",
+    "f734ee8037f6"
+   ]
+  },
+  "plan": "dream: rank blend 8194b27c5318+f734ee8037f6",
+  "kind": "dream",
+  "refs": [
+   "f734ee8037f6"
+  ],
+  "operator": "aggregate",
+  "status": "done",
+  "proxy_auc": 0.935905950607507,
+  "gold_auc": null,
+  "public_lb": null,
+  "gpu_hours": 0.0,
+  "error": "",
+  "reward": 1.0,
+  "visits": 1,
+  "value_sum": 1.0,
+  "created": 1790551951.145634
+ },
+ {
+  "id": "07e80e04efca",
+  "parent": "fc74488528c9",
+  "genome": {
+   "blend": [
+    "8194b27c5318",
+    "912825f6d602",
+    "f734ee8037f6",
+    "fc74488528c9"
+   ],
+   "method": "greedy_rank"
+  },
+  "plan": "dream: greedy rank blend ['fc74488528c9', '8194b27c5318', '912825f6d602', 'f734ee8037f6']",
+  "kind": "dream",
+  "refs": [
+   "8194b27c5318",
+   "912825f6d602",
+   "f734ee8037f6"
+  ],
+  "operator": "aggregate",
+  "status": "done",
+  "proxy_auc": 0.9377839640196073,
+  "gold_auc": null,
+  "public_lb": null,
+  "gpu_hours": 0.0,
+  "error": "",
+  "reward": 2.0,
+  "visits": 1,
+  "value_sum": 2.0,
+  "created": 1790559351.164633
+ },
+ {
+  "id": "5bc0a0f45d75",
+  "parent": "b439c226df2b",
+  "genome": {
+   "arch": "coatnet384",
+   "bb_lr": 3e-05,
+   "corpus": "dense80",
+   "epochs": 20,
+   "freeze_blocks": 0,
+   "head_lr": 0.001,
+   "k": 8,
+   "k_eval": 24,
+   "labels": "relabel_8c56cdf0",
+   "wd": 0.02
+  },
+  "plan": "Single-field diff vs current k=8 dense80 parent: epochs 16 -> untried menu value 20, all else held (dense80 submit geometry, relabel_8c56cdf0 labels, k=8, k_eval=24, bb_lr=3e-05, head_lr=0.001, wd=0.02, freeze_blocks=0).",
+  "kind": "online",
+  "refs": [],
+  "operator": "primary",
+  "status": "done",
+  "proxy_auc": 0.9366017674609183,
+  "gold_auc": 0.9092660147294015,
+  "public_lb": 0.92,
+  "gpu_hours": 7.193964981105593,
+  "error": "",
+  "reward": 1.0,
+  "visits": 7,
+  "value_sum": 9.0,
+  "created": 1790559401.8695328
+ },
+ {
+  "id": "ce55ae72508e",
+  "parent": "5bc0a0f45d75",
+  "genome": {
+   "blend": [
+    "5bc0a0f45d75",
+    "fc74488528c9"
+   ]
+  },
+  "plan": "dream: rank blend 5bc0a0f45d75+fc74488528c9",
+  "kind": "dream",
+  "refs": [
+   "fc74488528c9"
+  ],
+  "operator": "aggregate",
+  "status": "done",
+  "proxy_auc": 0.9376343202329721,
+  "gold_auc": null,
+  "public_lb": null,
+  "gpu_hours": 0.0,
+  "error": "",
+  "reward": 1.0,
+  "visits": 1,
+  "value_sum": 1.0,
+  "created": 1790586021.8719602
+ },
+ {
+  "id": "56c86ad7b355",
+  "parent": "5bc0a0f45d75",
+  "genome": {
+   "blend": [
+    "5bc0a0f45d75",
+    "8194b27c5318"
+   ]
+  },
+  "plan": "dream: rank blend 5bc0a0f45d75+8194b27c5318",
+  "kind": "dream",
+  "refs": [
+   "8194b27c5318"
+  ],
+  "operator": "aggregate",
+  "status": "done",
+  "proxy_auc": 0.9374130932689863,
+  "gold_auc": null,
+  "public_lb": null,
+  "gpu_hours": 0.0,
+  "error": "",
+  "reward": 1.0,
+  "visits": 1,
+  "value_sum": 1.0,
+  "created": 1790586021.8907158
+ },
+ {
+  "id": "b61ee07d3819",
+  "parent": "5bc0a0f45d75",
+  "genome": {
+   "blend": [
+    "5bc0a0f45d75",
+    "912825f6d602"
+   ]
+  },
+  "plan": "dream: rank blend 5bc0a0f45d75+912825f6d602",
+  "kind": "dream",
+  "refs": [
+   "912825f6d602"
+  ],
+  "operator": "aggregate",
+  "status": "done",
+  "proxy_auc": 0.9373709752815933,
+  "gold_auc": null,
+  "public_lb": null,
+  "gpu_hours": 0.0,
+  "error": "",
+  "reward": 1.0,
+  "visits": 1,
+  "value_sum": 1.0,
+  "created": 1790586021.908588
+ },
+ {
+  "id": "6e58ad1f2126",
+  "parent": "5bc0a0f45d75",
+  "genome": {
+   "blend": [
+    "5bc0a0f45d75",
+    "8194b27c5318",
+    "912825f6d602",
+    "fc74488528c9"
+   ],
+   "method": "greedy_rank"
+  },
+  "plan": "dream: greedy rank blend ['5bc0a0f45d75', 'fc74488528c9', '8194b27c5318', '912825f6d602']",
+  "kind": "dream",
+  "refs": [
+   "fc74488528c9",
+   "8194b27c5318",
+   "912825f6d602"
+  ],
+  "operator": "aggregate",
+  "status": "done",
+  "proxy_auc": 0.9377749669633412,
+  "gold_auc": null,
+  "public_lb": null,
+  "gpu_hours": 0.0,
+  "error": "",
+  "reward": 1.0,
+  "visits": 1,
+  "value_sum": 1.0,
+  "created": 1790586021.963975
+ },
+ {
+  "id": "68064bbaa4c3",
+  "parent": "b439c226df2b",
+  "genome": {
+   "arch": "coatnet384",
+   "bb_lr": 3e-05,
+   "corpus": "dense80",
+   "epochs": 20,
+   "freeze_blocks": 0,
+   "head_lr": 0.001,
+   "k": 8,
+   "k_eval": 24,
+   "labels": "relabel_8c56cdf0",
+   "wd": 0.05
+  },
+  "plan": "dense80 / k=8 / epochs=20 with wd 0.02->0.05 (one-field menu diff) on registered relabel_8c56cdf0 labels: regularize the best known single model against the early gold overfit",
+  "kind": "online",
+  "refs": [
+   "7421b1b6a6fa"
+  ],
+  "operator": "intra_branch",
+  "status": "failed",
+  "proxy_auc": null,
+  "gold_auc": null,
+  "public_lb": null,
+  "gpu_hours": 0.0,
+  "error": "pod vanished / no capacity after retries",
+  "reward": -1.0,
+  "visits": 1,
+  "value_sum": -1.0,
+  "created": 1790586075.400967
+ },
+ {
+  "id": "564c9dcf545c",
+  "parent": "b439c226df2b",
+  "genome": {
+   "arch": "coatnet384",
+   "bb_lr": 3e-05,
+   "corpus": "dense80",
+   "epochs": 16,
+   "freeze_blocks": 0,
+   "head_lr": 0.002,
+   "k": 8,
+   "k_eval": 24,
+   "labels": "relabel_8c56cdf0",
+   "wd": 0.02
+  },
+  "plan": "Single-field diff on the safe-geometry dense80 parent: head_lr 0.001 -> untried 0.002, everything else held (epochs=16, window sampling 8, flat eval, bb_lr=3e-05, wd=0.02, freeze_blocks=0, labels relabel_8c56cdf0)",
+  "kind": "online",
+  "refs": [
+   "7421b1b6a6fa"
+  ],
+  "operator": "intra_branch",
+  "status": "done",
+  "proxy_auc": 0.9342087851811355,
+  "gold_auc": 0.8970436413245002,
+  "public_lb": null,
+  "gpu_hours": 2.675107622212834,
+  "error": "",
+  "reward": 1.0,
+  "visits": 2,
+  "value_sum": 2.0,
+  "created": 1790605883.856108
+ },
+ {
+  "id": "bf7f6a974e69",
+  "parent": "5bc0a0f45d75",
+  "genome": {
+   "blend": [
+    "564c9dcf545c",
+    "5bc0a0f45d75"
+   ]
+  },
+  "plan": "dream: rank blend 5bc0a0f45d75+564c9dcf545c",
+  "kind": "dream",
+  "refs": [
+   "564c9dcf545c"
+  ],
+  "operator": "aggregate",
+  "status": "done",
+  "proxy_auc": 0.9382508509748613,
+  "gold_auc": null,
+  "public_lb": null,
+  "gpu_hours": 0.0,
+  "error": "",
+  "reward": 2.0,
+  "visits": 1,
+  "value_sum": 2.0,
+  "created": 1790615656.01681
+ },
+ {
+  "id": "09254f327eb6",
+  "parent": "fc74488528c9",
+  "genome": {
+   "blend": [
+    "564c9dcf545c",
+    "fc74488528c9"
+   ]
+  },
+  "plan": "dream: rank blend fc74488528c9+564c9dcf545c",
+  "kind": "dream",
+  "refs": [
+   "564c9dcf545c"
+  ],
+  "operator": "aggregate",
+  "status": "done",
+  "proxy_auc": 0.9367501684020563,
+  "gold_auc": null,
+  "public_lb": null,
+  "gpu_hours": 0.0,
+  "error": "",
+  "reward": 1.0,
+  "visits": 1,
+  "value_sum": 1.0,
+  "created": 1790615656.03523
+ },
+ {
+  "id": "253c797885e8",
+  "parent": "564c9dcf545c",
+  "genome": {
+   "blend": [
+    "564c9dcf545c",
+    "8194b27c5318"
+   ]
+  },
+  "plan": "dream: rank blend 564c9dcf545c+8194b27c5318",
+  "kind": "dream",
+  "refs": [
+   "8194b27c5318"
+  ],
+  "operator": "aggregate",
+  "status": "done",
+  "proxy_auc": 0.9359936289749123,
+  "gold_auc": null,
+  "public_lb": null,
+  "gpu_hours": 0.0,
+  "error": "",
+  "reward": 1.0,
+  "visits": 1,
+  "value_sum": 1.0,
+  "created": 1790615656.053699
+ },
+ {
+  "id": "278f43bdf57a",
+  "parent": "5bc0a0f45d75",
+  "genome": {
+   "blend": [
+    "564c9dcf545c",
+    "5bc0a0f45d75",
+    "8194b27c5318",
+    "fc74488528c9"
+   ],
+   "method": "greedy_rank"
+  },
+  "plan": "dream: greedy rank blend ['5bc0a0f45d75', 'fc74488528c9', '564c9dcf545c', '8194b27c5318']",
+  "kind": "dream",
+  "refs": [
+   "fc74488528c9",
+   "564c9dcf545c",
+   "8194b27c5318"
+  ],
+  "operator": "aggregate",
+  "status": "done",
+  "proxy_auc": 0.9391437984828653,
+  "gold_auc": null,
+  "public_lb": null,
+  "gpu_hours": 0.0,
+  "error": "",
+  "reward": 2.0,
+  "visits": 1,
+  "value_sum": 2.0,
+  "created": 1790615656.108947
+ },
+ {
+  "id": "ca830ada7798",
+  "parent": "b439c226df2b",
+  "genome": {
+   "arch": "coatnet384",
+   "bb_lr": 1e-05,
+   "corpus": "dense80",
+   "epochs": 16,
+   "freeze_blocks": 0,
+   "head_lr": 0.001,
+   "k": 8,
+   "k_eval": 24,
+   "labels": "relabel_8c56cdf0",
+   "wd": 0.02
+  },
+  "plan": "Strict single-field diff vs the dense80 parent: backbone lr 3e-05 lowered to the untried menu value 1e-05, all other fields held (dense80 submit geometry, relabel_8c56cdf0 labels, safe window counts from the measured VRAM menu).",
+  "kind": "online",
+  "refs": [],
+  "operator": "primary",
   "status": "pending",
   "proxy_auc": null,
   "gold_auc": null,
@@ -76,6 +1818,6 @@
   "reward": 0.0,
   "visits": 0,
   "value_sum": 0.0,
-  "created": 1790248592.9747689
+  "created": 1790615733.872364
  }
 ]

@@ -16,22 +16,25 @@ LABEL_REGISTRY = REPO / "agent" / "labels" / "registry.json"
 
 ARCHS = {
     "coatnet384": ("coatnet_rmlp_2_rw_384.sw_in12k_ft_in1k", 384),
+    # convnext kept for historical CLI only — not on the active MENU (locked to CoAtNet).
     "convnext_b384": ("convnext_base.fb_in22k_ft_in1k_384", 384),
 }
-CORPORA = {"raptor44": True, "dense80": False}  # value: available to the loop
+CORPORA = {"raptor44": True, "dense80": True}  # dense80 = submit geometry (shards complete)
+# 24GB community cards OOM at k>=12 / k_eval=42 (measured 2026-09-27). Cap until a full train finishes.
 MENU = {
     "corpus": list(CORPORA),
-    "arch": list(ARCHS),
+    "arch": ["coatnet384"],
     "epochs": [12, 16, 20],
-    "k": [8, 12, 16],
-    "k_eval": [24, 42],
+    "k": [8],
+    "k_eval": [24],
     "bb_lr": [1e-5, 2e-5, 3e-5, 5e-5],
     "head_lr": [5e-4, 1e-3, 2e-3],
     "wd": [0.02, 0.05],
     "freeze_blocks": [0, 1, 2],
 }
 PROTOCOL = {"seed": 42, "folds": 5, "fold": 0}
-BASE = {"corpus": "raptor44", "labels": "dread", "arch": "coatnet384", "epochs": 16, "k": 12,
+# Settled recipe: CoAtNet-384 + dense80; k=8 is the only VRAM-safe window count on 24GB.
+BASE = {"corpus": "dense80", "labels": "dread", "arch": "coatnet384", "epochs": 16, "k": 8,
         "k_eval": 24, "bb_lr": 3e-5, "head_lr": 1e-3, "wd": 0.02, "freeze_blocks": 0}
 
 # Rough 4090 hours for a 4/5-fold run of each arch at 16 epochs (3090 is ~1.6x).
@@ -61,7 +64,33 @@ def validate(genome: dict) -> list[str]:
         errs.append(f"corpus {genome['corpus']} not available yet")
     if genome.get("labels") not in label_registry():
         errs.append(f"labels {genome.get('labels')!r} not in registry {sorted(label_registry())}")
+    # Hard VRAM guard (even if MENU is later widened by mistake).
+    k = genome.get("k")
+    if isinstance(k, (int, float)) and k > 8:
+        errs.append(f"k={k} banned: CUDA OOM on 24GB at k>=12; stay at k=8")
+    ke = genome.get("k_eval")
+    if isinstance(ke, (int, float)) and ke > 24:
+        errs.append(f"k_eval={ke} banned: raises eval memory; stay at 24")
     return errs
+
+
+def clamp(genome: dict) -> dict:
+    """Snap a (possibly historical) genome onto the live MENU; used when expanding parents."""
+    out = dict(BASE)
+    for k in list(MENU) + ["labels"]:
+        if k not in genome:
+            continue
+        if k == "labels":
+            if genome[k] in label_registry():
+                out[k] = genome[k]
+            continue
+        allowed = MENU[k]
+        if genome[k] in allowed:
+            out[k] = genome[k]
+        elif k == "k" and isinstance(genome[k], (int, float)):
+            below = [x for x in allowed if x <= genome[k]]
+            out[k] = max(below) if below else BASE["k"]
+    return out
 
 
 def diff(parent: dict, child: dict) -> dict:

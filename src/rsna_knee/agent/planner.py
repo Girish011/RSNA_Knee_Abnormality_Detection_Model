@@ -1,10 +1,7 @@
-"""LLM planner: propose the next node as a genome diff (or a relabel request), then validate.
+"""LLM planner + coder: genome trains, relabels, and allowlisted repo edits via DeepSeek tools.
 
-MLEvolve's planner/coder split, with the coder removed: the output is a typed genome that
-``genome.to_cli`` compiles, so a bad proposal is rejected by validation instead of crashing
-a rented GPU. DeepSeek uses native tool calls: ``launch_runpod_train`` auto-queues a pod
-(host starts it after budget/approval gates); validation errors are returned as tool results
-so the model can fix and re-call within one planning turn.
+DeepSeek may edit harness/trainer under ``coder.ALLOW_PREFIXES`` (user-approved 2026-09-27).
+Host still enforces one-pod / budget / >$10 approval and never auto-submits the LB.
 """
 
 from __future__ import annotations
@@ -14,7 +11,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable
 
-from rsna_knee.agent import genome as G
+from rsna_knee.agent import coder, genome as G
 from rsna_knee.agent.deepseek import FLASH, chat_json, run_tools
 from rsna_knee.agent.journal import ROOT_ID, Journal, Node, genome_hash
 from rsna_knee.agent.memory import BANS, check_bans, journal_records, load_cold_start, retrieve
@@ -23,26 +20,28 @@ from rsna_knee.constants import LABEL_COLS
 MAX_DIFF = {"primary": 1, "intra_branch": 2, "cross_branch": 2, "aggregate": 3}
 RELABEL_RULES = ["pilk_unk", "disagree", "both"]
 
-SYSTEM = """You are the planner of an autonomous ML search for the RSNA knee MRI competition
-(macro ROC AUC over 12 findings, hidden test is expert-read images, reports exist only in training).
-Campaign target: push fold-0 proxy AUC to at least 0.958 (top-10 band). Do not stop while budget
-remains and unused label sets or untried genome fields exist. You cannot write code: you either
-change fields of a typed genome or request a relabel of weak label cells.
+SYSTEM = """You are the FULL autonomous planner/coder for the RSNA knee MRI competition
+(macro ROC AUC over 12 findings). True success = Kaggle LB >= 0.958; fold-0 proxy is the compass.
 
-TOOL POLICY (mandatory):
-- Whenever a train is the right next step, you MUST call launch_runpod_train. Do not only describe
-  a train in text — the host only starts a GPU when that tool returns ok. The host auto-triggers
-  the RunPod pod after budget and approval gates.
-- Call get_runpod_status first if you are unsure whether a pod is already running (one pod at a time).
-- Prefer launch_runpod_train over stop while unused LABEL REGISTRY entries or menu fields remain.
-- Use request_relabel only for weak findings with evidence; use stop_search only when every menu
-  field and unused label set is exhausted.
-Never propose unfreeze, train-longer schedules past the menu, thin-cache work, or reports at test time."""
+Settled recipe (do not reopen): CoAtNet-384 + dense80 + better labels. No new backbones.
+VRAM (measured): k>8 and k_eval>24 CUDA-OOM on 24GB — menu is k=8, k_eval=24 only.
+Host already runs free dream/replay blends each idle tick — do NOT burn GPU to re-blend logits.
+Efficiency student / fewer windows = later, from the same weights; not this week's search.
 
-FORMAT = """Use tools. Prefer this order: (1) train any unused LABEL REGISTRY entry as a one-field
-labels= change via launch_runpod_train; (2) geometry k / epochs within menu; (3) targeted relabel.
-Never invent genome fields. After a successful tool call you may reply with a short JSON summary
-{"type":"train"|"relabel"|"stop","ok":true} or empty content."""
+YOU OWN EVERY IDLE TICK. The host will not auto-pick the next train for you.
+On every idle turn you MUST do real work, in this order when useful:
+1) Coder-first if stuck on harness/trainer bugs (phantoms, upload, OOM handling): list_repo →
+   read_repo_file → write_repo_file (allowlisted) → run_agent_tests → then launch_runpod_train.
+2) Otherwise launch_runpod_train on a GPU-needed diff only: unused dense80 LABEL REGISTRY entries,
+   then epochs / bb_lr / head_lr / wd within the menu. Never change k, k_eval, or arch.
+3) request_relabel only if RUNPOD HINT says relabel slots remain.
+NEVER call stop_search while unused labels or menu genomes remain — the tool will refuse.
+Do not write secrets. One pod / $300 / >$10 / no auto-LB still enforced by the host."""
+
+FORMAT = """Use tools every idle turn. Required outcome: launch_runpod_train (optionally after code edits).
+Prefer: (1) harness fixes if pods die / OOM; (2) unused dense80 labels or lr/epoch diffs at k=8;
+(3) request_relabel if slots remain. Never propose k>8, k_eval!=24, or a new backbone.
+After success reply with short JSON {"type":"train"|"relabel"|"code","ok":true}."""
 
 TOOLS: list[dict] = [
     {
@@ -60,7 +59,8 @@ TOOLS: list[dict] = [
             "name": "launch_runpod_train",
             "description": "Queue a CoAtNet train on RunPod for a full typed genome. Call this "
                            "whenever a train is needed. On ok the host auto-starts the pod "
-                           "(subject to one-pod, budget, and >$10 approval gates).",
+                           "(subject to one-pod, budget, and >$10 approval gates). "
+                           "Bundles the current runpod/train_knee.py so your trainer edits ship.",
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -97,7 +97,8 @@ TOOLS: list[dict] = [
         "type": "function",
         "function": {
             "name": "stop_search",
-            "description": "Stop only if every menu field and unused label set is exhausted.",
+            "description": "ONLY when every unused label and menu genome is exhausted. "
+                           "Usually refused — prefer launch_runpod_train.",
             "parameters": {
                 "type": "object",
                 "properties": {"why": {"type": "string"}},
@@ -106,7 +107,36 @@ TOOLS: list[dict] = [
             },
         },
     },
-]
+] + coder.CODER_TOOLS
+
+
+def _train_base(parent: Node) -> dict:
+    return G.clamp(dict(parent.genome or G.BASE))
+
+
+def work_remaining(journal: Journal, parent: Node) -> list[str]:
+    """Human-readable leftover search levers (stop_search is refused while non-empty)."""
+    reasons: list[str] = []
+    used_dense = {n.genome.get("labels") for n in journal.nodes.values()
+                  if n.kind == "online" and n.status in ("done", "pending")
+                  and n.genome.get("corpus") == "dense80" and n.genome.get("labels")}
+    unused = [k for k in G.label_registry() if k not in used_dense]
+    if unused:
+        reasons.append(f"unused dense80 labels: {unused[:6]}")
+    base = _train_base(parent)
+    for field, values in (("epochs", [20, 12]), ("head_lr", [2e-3, 5e-4]),
+                          ("bb_lr", [5e-5, 2e-5, 1e-5]), ("wd", [0.05]),
+                          ("freeze_blocks", [1, 2])):
+        for v in values:
+            g = dict(base)
+            if g.get(field) == v:
+                continue
+            g[field] = v
+            if G.validate(g) or genome_hash(g) in journal.nodes:
+                continue
+            reasons.append(f"untried {field}={v}")
+            return reasons
+    return reasons
 
 
 @dataclass
@@ -149,6 +179,8 @@ def build_prompt(journal: Journal, parent: Node, operator: str, refs: list[str],
         f"GENOME MENU: {json.dumps(G.MENU)}",
         f"LABEL REGISTRY (name -> audit on expert-dev): {json.dumps(reg)}",
         f"UNUSED LABEL SETS (prefer training these next): {unused or 'none'}",
+        "CORPUS POLICY: dense80 is ENABLED and is the submit geometry. Prefer corpus=dense80 "
+        "one-field trains over further raptor44-only work. raptor44 has no public test-time builder.",
         f"FINDINGS: {LABEL_COLS}",
         f"PARENT NODE: {_node_line(parent) if parent.id != ROOT_ID else 'root; base genome ' + json.dumps(G.BASE)}",
         f"OPERATOR: {operator} (change at most {MAX_DIFF.get(operator, 1)} genome field(s) vs the parent)",
@@ -167,6 +199,9 @@ def build_prompt(journal: Journal, parent: Node, operator: str, refs: list[str],
 def check(p: Proposal, journal: Journal, parent: Node, operator: str) -> list[str]:
     errs = []
     if p.type == "stop":
+        left = work_remaining(journal, parent)
+        if left:
+            errs.append(f"stop refused while work remains: {left}")
         return errs
     if p.type == "relabel":
         bad = [l for l in p.labels if l not in LABEL_COLS]
@@ -179,7 +214,8 @@ def check(p: Proposal, journal: Journal, parent: Node, operator: str) -> list[st
     elif p.type == "train":
         errs += G.validate(p.genome)
         if not errs:
-            d = G.diff(parent.genome or G.BASE, p.genome)
+            # Diff vs clamped parent so historical k=12/16 nodes don't force a fake multi-field change.
+            d = G.diff(_train_base(parent), p.genome)
             limit = MAX_DIFF.get(operator, 1)
             if parent.id != ROOT_ID and not d:
                 errs.append("genome identical to parent")
@@ -255,9 +291,6 @@ def _propose_json(journal: Journal, parent: Node, operator: str, refs: list[str]
 def _propose_tools(journal: Journal, parent: Node, operator: str, refs: list[str], *,
                    budget_left: float, cold_start: Path, model: str, target: float,
                    status_fn: Callable[[], dict]) -> Proposal:
-    prompt = build_prompt(journal, parent, operator, refs, budget_left, cold_start, target=target,
-                          runpod_hint="Call get_runpod_status if needed, then launch_runpod_train "
-                                      "to auto-trigger the pod when a train is required.")
     box: dict[str, Any] = {"proposal": None, "attempts": 0}
 
     def get_runpod_status() -> dict:
@@ -291,6 +324,11 @@ def _propose_tools(journal: Journal, parent: Node, operator: str, refs: list[str
 
     def stop_search(why: str = "", **_extra) -> dict:
         box["attempts"] += 1
+        left = work_remaining(journal, parent)
+        if left:
+            return {"ok": False,
+                    "errors": [f"stop_search refused; work remains: {left}"],
+                    "hint": "Call launch_runpod_train (or write_repo_file → run_agent_tests → launch) NOW."}
         box["proposal"] = Proposal(type="stop", why=str(why) or "model called stop_search")
         return {"ok": True, "stopped": True}
 
@@ -299,12 +337,37 @@ def _propose_tools(journal: Journal, parent: Node, operator: str, refs: list[str
         "launch_runpod_train": launch_runpod_train,
         "request_relabel": request_relabel,
         "stop_search": stop_search,
+        **coder.handlers(),
     }
-    _final, cost, trace = run_tools(SYSTEM, prompt, TOOLS, handlers, model=model, max_rounds=6)
+    try:
+        status_blob = status_fn() if status_fn else {}
+    except Exception as e:  # noqa: BLE001
+        status_blob = {"error": str(e)}
+    prompt = build_prompt(
+        journal, parent, operator, refs, budget_left, cold_start, target=target,
+        runpod_hint="CODER-FIRST when useful, then launch_runpod_train. "
+                    "stop_search is refused while unused labels/menu remain. "
+                    f"Status: {status_blob}")
+    _final, cost, trace = run_tools(SYSTEM, prompt, TOOLS, handlers, model=model, max_rounds=12)
     p = box["proposal"]
+    if p is None or p.type == "stop":
+        left = work_remaining(journal, parent)
+        if left:
+            nudge = (prompt + "\n\nMANDATORY RETRY: prior turn did not queue a train. "
+                     f"Remaining work: {left}. Call launch_runpod_train with a valid unused genome NOW. "
+                     "Do not call stop_search.")
+            box["proposal"] = None
+            _final2, cost2, trace2 = run_tools(SYSTEM, nudge, TOOLS, handlers, model=model, max_rounds=8)
+            cost += cost2
+            trace = list(trace) + list(trace2)
+            p = box["proposal"]
     if p is None:
-        return Proposal(type="stop",
-                        why="no tool accepted a proposal (call launch_runpod_train when a train is needed)",
-                        cost_usd=cost, attempts=max(1, box["attempts"]), tool_trace=trace)
+        wrote = any((t.get("name") == "write_repo_file" and (t.get("result") or {}).get("ok"))
+                    for t in trace)
+        why = ("code-only turn; host safety-net may train"
+               if wrote else
+               "no launch_runpod_train accepted after retry")
+        return Proposal(type="stop", why=why, cost_usd=cost,
+                        attempts=max(1, box["attempts"]), tool_trace=trace)
     p.cost_usd, p.attempts, p.tool_trace = cost, max(1, box["attempts"]), trace
     return p

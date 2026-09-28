@@ -1,0 +1,52 @@
+{
+ "queue": [
+  {
+   "job": "m-f8709fd3f8",
+   "arms": [
+    {
+     "tag": "m6edbb53fbab",
+     "genome": {
+      "corpus": "dense80",
+      "labels": "relabel_8c56cdf0",
+      "arch": "coatnet384",
+      "epochs": 6,
+      "k": 8,
+      "k_eval": 24,
+      "bb_lr": 3e-05,
+      "head_lr": 0.001,
+      "wd": 0.02,
+      "freeze_blocks": 0
+     },
+     "seed": 42,
+     "parent": "5bc0a0f45d75",
+     "init": "v5"
+    },
+    {
+     "tag": "mb40244a6b78",
+     "genome": {
+      "corpus": "dense80",
+      "labels": "dread",
+      "arch": "coatnet384",
+      "epochs": 6,
+      "k": 8,
+      "k_eval": 24,
+      "bb_lr": 3e-05,
+      "head_lr": 0.001,
+      "wd": 0.02,
+      "freeze_blocks": 0
+     },
+     "seed": 42,
+     "parent": "5bc0a0f45d75",
+     "init": "v5"
+    }
+   ],
+   "est_hours": 4.9,
+   "est_usd": 3.63,
+   "corpus": "dense80",
+   "approved": true,
+   "queued": 1790624213.1683068
+  }
+ ],
+ "active": null,
+ "done": {}
+}
