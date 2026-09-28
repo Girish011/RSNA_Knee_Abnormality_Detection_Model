@@ -32,8 +32,18 @@
     "Fracture",
     "Lateral Meniscus"
    ]
+  },
+  {
+   "name": "relabel_c7ab23d1",
+   "registered": true,
+   "kept": [
+    "Synovitis",
+    "PF OA",
+    "Lateral OA"
+   ]
   }
  ],
- "heartbeat": 1790626851.0519412,
- "_orphan_retries": 4
+ "heartbeat": 1790627929.523169,
+ "_orphan_retries": 4,
+ "next_research_after": 1790629980.575912
 }

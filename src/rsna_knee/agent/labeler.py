@@ -27,7 +27,7 @@ PUB = REPO / "data" / "external" / "public_labels"
 CACHE = REPO / "agent" / "labels" / "cache"
 PROMPT_VERSION = "v1"
 DISAGREE = 0.35
-EST_USD_PER_CALL = 0.0007  # flash, measured 2026-09-24 relabels; pro scales by PRICE ratio
+EST_USD_PER_CALL = 0.0012  # flash, measured 2026-09-29 (all-rule, 3 findings: $5.35 / 4407 reads); pro scales by PRICE ratio
 RULES = ("pilk_unk", "disagree", "both", "all")  # all = re-read every non-expert study
 MODELS = {"flash": FLASH, "pro": PRO}
 
