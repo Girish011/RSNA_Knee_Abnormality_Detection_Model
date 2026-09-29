@@ -1,6 +1,17 @@
 {
  "paused": false,
- "active": null,
+ "active": {
+  "job": "n-6e0c83b59036",
+  "pod": "n6n5lchdmm4jiz",
+  "nodes": [
+   "6e0c83b59036"
+  ],
+  "result": "girishbose/rsna-knee-rp-n-6e0c83b59036-out",
+  "launched": 1790685067.252929,
+  "est_hours": 4.66,
+  "price_hr": 0.74,
+  "proxy_misses": 0
+ },
  "pending": null,
  "next_plan_after": 0,
  "relabels": [
@@ -63,7 +74,7 @@
    "kept": []
   }
  ],
- "heartbeat": 1790675330.281802,
- "_orphan_retries": 4,
- "next_research_after": 1790678030.27513
+ "heartbeat": 1790686874.731053,
+ "_orphan_retries": 5,
+ "next_research_after": 1790687057.51689
 }

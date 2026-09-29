@@ -47,6 +47,9 @@ RESULTS = REPO / "outputs" / "runpod_results"
 COLD_START = REPO / "agent" / "memory" / "cold_start.md"
 PUB = REPO / "data" / "external" / "public_labels"
 APPROVAL_USD = 10.0
+# 2026-09-29: submissions come from full-data members; fold-0 ImageNet trains only re-measure
+# what member per-finding AUCs already show. Idle ticks go to the strategist instead.
+FOLD0_TRAINS = False
 VETO_DROP = 0.04
 # Cap on *successful unique* LLM relabel jobs (budget guard). Not a science threshold.
 # Rejection must fall through to a menu train — never idle the campaign.
@@ -643,7 +646,11 @@ def tick(llm=None, rng: random.Random | None = None) -> dict:
                 _execute(state, journal, item)
             return state
         if time.time() >= state.get("next_plan_after", 0):
-            plan(state, journal, rng, llm)
+            if FOLD0_TRAINS or llm is not None:
+                plan(state, journal, rng, llm)
+            else:
+                # Member-track era: idle GPU → strategist queues the next full-data member job.
+                strategist.research(state, journal, RESULTS)
     finally:
         state["heartbeat"] = time.time()
         journal.save()

@@ -1,55 +1,6 @@
 {
  "queue": [],
- "active": {
-  "job": "m-235f86f1af",
-  "arms": [
-   {
-    "tag": "m470c713b9fe",
-    "genome": {
-     "corpus": "dense80",
-     "labels": "bestof_v1",
-     "arch": "coatnet384",
-     "epochs": 6,
-     "k": 8,
-     "k_eval": 24,
-     "bb_lr": 3e-05,
-     "head_lr": 0.001,
-     "wd": 0.02,
-     "freeze_blocks": 0
-    },
-    "seed": 42,
-    "parent": "5bc0a0f45d75",
-    "init": "v5"
-   },
-   {
-    "tag": "m0b16e9a09f1",
-    "genome": {
-     "corpus": "dense80",
-     "labels": "bestof_v1",
-     "arch": "coatnet384",
-     "epochs": 6,
-     "k": 8,
-     "k_eval": 24,
-     "bb_lr": 3e-05,
-     "head_lr": 0.001,
-     "wd": 0.02,
-     "freeze_blocks": 0
-    },
-    "seed": 1337,
-    "parent": "5bc0a0f45d75",
-    "init": "v5"
-   }
-  ],
-  "est_hours": 4.9,
-  "est_usd": 3.63,
-  "corpus": "dense80",
-  "approved": true,
-  "queued": 1790669745.800844,
-  "pod": "x8jbm5dhhmzfpv",
-  "result": "girishbose/rsna-knee-rp-m-235f86f1af-out",
-  "launched": 1790675330.273955,
-  "price_hr": 0.22
- },
+ "active": null,
  "done": {
   "m6edbb53fbab": {
    "tag": "m6edbb53fbab",
@@ -350,6 +301,56 @@
    "swa_gold_dev": 0.9144020488716947,
    "holdout_auc": 0.9408247554532386,
    "finished": 1790675508.3493178
+  },
+  "m470c713b9fe": {
+   "tag": "m470c713b9fe",
+   "genome": {
+    "corpus": "dense80",
+    "labels": "bestof_v1",
+    "arch": "coatnet384",
+    "epochs": 6,
+    "k": 8,
+    "k_eval": 24,
+    "bb_lr": 3e-05,
+    "head_lr": 0.001,
+    "wd": 0.02,
+    "freeze_blocks": 0
+   },
+   "seed": 42,
+   "parent": "5bc0a0f45d75",
+   "init": "v5",
+   "job": "m-235f86f1af",
+   "dataset": "girishbose/rsna-knee-rp-m-235f86f1af-r1-out",
+   "weights": "raptor_ft_m470c713b9fe.pt",
+   "gold_dev": 0.9255006396613612,
+   "swa_gold_dev": 0.9193240911347319,
+   "holdout_auc": 0.9378505732027403,
+   "finished": 1790682887.5477839
+  },
+  "m0b16e9a09f1": {
+   "tag": "m0b16e9a09f1",
+   "genome": {
+    "corpus": "dense80",
+    "labels": "bestof_v1",
+    "arch": "coatnet384",
+    "epochs": 6,
+    "k": 8,
+    "k_eval": 24,
+    "bb_lr": 3e-05,
+    "head_lr": 0.001,
+    "wd": 0.02,
+    "freeze_blocks": 0
+   },
+   "seed": 1337,
+   "parent": "5bc0a0f45d75",
+   "init": "v5",
+   "job": "m-235f86f1af",
+   "dataset": "girishbose/rsna-knee-rp-m-235f86f1af-r1-out",
+   "weights": "raptor_ft_m0b16e9a09f1.pt",
+   "gold_dev": 0.9224445817552226,
+   "swa_gold_dev": 0.918067793825803,
+   "holdout_auc": 0.9421228725408292,
+   "finished": 1790682887.553469
   }
  }
 }
