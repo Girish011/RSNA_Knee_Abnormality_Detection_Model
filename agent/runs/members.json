@@ -61,6 +61,112 @@
    "queued": 1790696811.816585
   },
   {
+   "job": "f-7cdb6e8357",
+   "arms": [
+    {
+     "tag": "fed7b89dda00",
+     "genome": {
+      "corpus": "dense80",
+      "labels": "bestof_v1",
+      "arch": "coatnet384",
+      "epochs": 6,
+      "k": 8,
+      "k_eval": 24,
+      "bb_lr": 3e-05,
+      "head_lr": 0.001,
+      "wd": 0.02,
+      "freeze_blocks": 0
+     },
+     "seed": 42,
+     "parent": "5bc0a0f45d75",
+     "init": "v5",
+     "fold": 0
+    },
+    {
+     "tag": "fd1e82258115",
+     "genome": {
+      "corpus": "dense80",
+      "labels": "bestof_v1",
+      "arch": "coatnet384",
+      "epochs": 6,
+      "k": 8,
+      "k_eval": 24,
+      "bb_lr": 3e-05,
+      "head_lr": 0.001,
+      "wd": 0.02,
+      "freeze_blocks": 0
+     },
+     "seed": 42,
+     "parent": "5bc0a0f45d75",
+     "init": "v5",
+     "fold": 1
+    },
+    {
+     "tag": "fc7ec6e2dbdb",
+     "genome": {
+      "corpus": "dense80",
+      "labels": "bestof_v1",
+      "arch": "coatnet384",
+      "epochs": 6,
+      "k": 8,
+      "k_eval": 24,
+      "bb_lr": 3e-05,
+      "head_lr": 0.001,
+      "wd": 0.02,
+      "freeze_blocks": 0
+     },
+     "seed": 42,
+     "parent": "5bc0a0f45d75",
+     "init": "v5",
+     "fold": 2
+    },
+    {
+     "tag": "f04b6f06c47a",
+     "genome": {
+      "corpus": "dense80",
+      "labels": "bestof_v1",
+      "arch": "coatnet384",
+      "epochs": 6,
+      "k": 8,
+      "k_eval": 24,
+      "bb_lr": 3e-05,
+      "head_lr": 0.001,
+      "wd": 0.02,
+      "freeze_blocks": 0
+     },
+     "seed": 42,
+     "parent": "5bc0a0f45d75",
+     "init": "v5",
+     "fold": 3
+    },
+    {
+     "tag": "fbf529df0624",
+     "genome": {
+      "corpus": "dense80",
+      "labels": "bestof_v1",
+      "arch": "coatnet384",
+      "epochs": 6,
+      "k": 8,
+      "k_eval": 24,
+      "bb_lr": 3e-05,
+      "head_lr": 0.001,
+      "wd": 0.02,
+      "freeze_blocks": 0
+     },
+     "seed": 42,
+     "parent": "5bc0a0f45d75",
+     "init": "v5",
+     "fold": 4
+    }
+   ],
+   "est_hours": 8.8,
+   "est_usd": 6.51,
+   "corpus": "dense80",
+   "approved": true,
+   "queued": 1790707001.988596,
+   "kind": "oof"
+  },
+  {
    "job": "m-c15cb7b0ea",
    "arms": [
     {

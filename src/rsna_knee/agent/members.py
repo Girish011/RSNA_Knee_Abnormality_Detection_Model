@@ -21,6 +21,7 @@ import argparse
 import hashlib
 import json
 import re
+import subprocess
 import time
 from pathlib import Path
 
@@ -120,6 +121,50 @@ def queue(node_id: str, seeds: list[int], labels: list[str] | None = None,
     return job
 
 
+def fold_cli(genome: dict, fold: int, seed: int, init: str | None, epochs: int | None,
+             bundle_dir: str = "/workspace/bundle") -> tuple[str, str]:
+    """Protocol 5-fold arm (train folds != k, predict fold k OOF) with optional warm start."""
+    labels_file, args = G.to_cli(genome, bundle_dir)
+    args = re.sub(r"--fold \d+", f"--fold {int(fold)}", args)
+    args = re.sub(r"--seed \d+", f"--seed {int(seed)}", args)
+    if epochs:
+        args = re.sub(r"--epochs \d+", f"--epochs {int(epochs)}", args)
+    if init:
+        args += f" --init_model {INITS[init]}"
+    return labels_file, args
+
+
+def queue_folds(node_id: str, labels: str, init: str | None = "v5", epochs: int | None = 6,
+                seed: int = 42, m: dict | None = None) -> dict:
+    """5-fold OOF job: every non-expert train study gets an out-of-fold image prediction.
+    Feeds expert-anchored label fusion (scripts/fuse_labels.py), i.e. self-training."""
+    m = m if m is not None else load()
+    g = dict(G.clamp(_node_genome(node_id)), labels=labels)
+    if epochs:
+        g["epochs"] = int(epochs)
+    if errs := [e for e in G.validate(g) if not (epochs and e.startswith("epochs="))]:
+        raise SystemExit(f"illegal genome: {errs}")
+    arms = []
+    for k in range(G.PROTOCOL["folds"]):
+        key = json.dumps({**g, "fold": k, "seed": seed, "init": init, "fit": "oof"}, sort_keys=True)
+        arms.append({"tag": "f" + hashlib.sha1(key.encode()).hexdigest()[:11], "genome": g, "seed": seed,
+                     "parent": node_id, "init": init, "fold": k})
+    pending = {x["tag"] for j in m["queue"] + ([m["active"]] if m["active"] else []) for x in j["arms"]}
+    if all(a["tag"] in m["done"] or a["tag"] in pending for a in arms):
+        raise SystemExit("this 5-fold OOF set already exists or is queued")
+    per_arm = (G.est_hours(g) - 0.5)
+    hours = per_arm * len(arms) + 1.0
+    job = {"job": "f-" + hashlib.sha1("".join(a["tag"] for a in arms).encode()).hexdigest()[:10],
+           "arms": arms, "est_hours": round(hours, 2), "est_usd": round(hours * launcher.PRICE_HR, 2),
+           "corpus": g["corpus"], "approved": hours * launcher.PRICE_HR <= APPROVAL_USD,
+           "queued": time.time(), "kind": "oof"}
+    m["queue"].append(job)
+    save(m)
+    log("plan", f"5-fold OOF job queued {job['job']} ({labels}, init={init}, {epochs} ep; ~${job['est_usd']})",
+        job=job["job"])
+    return job
+
+
 def queue_eval(targets: list[str], m: dict | None = None) -> dict:
     """Queue an eval-only job: score checkpoints ("v5" or finished member / soup tags) with the
     member protocol (dense80 windows, gold-dev 29, holdout 29) so they compare 1:1 with members."""
@@ -164,6 +209,10 @@ def busy(m: dict | None = None) -> bool:
 def _launch(m: dict, job: dict) -> None:
     arms = []
     for a in job["arms"]:
+        if a.get("fold") is not None:
+            arms.append((a["tag"], *fold_cli(a["genome"], a["fold"], a["seed"], a.get("init"),
+                                             a["genome"]["epochs"])))
+            continue
         if a.get("eval_of"):
             lab, args = full_cli(a["genome"], a["seed"])
             args += f" --eval_only --init_model /workspace/input/init/{a['init_file']}"
@@ -184,6 +233,14 @@ def _collect(a: dict) -> dict[str, dict]:
     dest = RESULTS / a["job"]
     tags = [x["tag"] for x in a["arms"]]
     L.download_results(a["result"], dest, tags)
+    for x in a["arms"]:
+        if x.get("fold") is not None:
+            t, k = x["tag"], x["fold"]
+            for name in (f"{t}/raptor_oof_{t}_fold{k}.npz", f"{t}/raptor_oof_{t}_swa_fold{k}.npz"):
+                (dest / name).parent.mkdir(parents=True, exist_ok=True)
+                subprocess.run(["kaggle", "datasets", "download",
+                                a["result"], "-f", name, "-p", str((dest / name).parent)],
+                               capture_output=True, text=True)
     out = {}
     for x in a["arms"]:
         meta = dest / x["tag"] / f"raptor_ft_{x['tag']}.json"
@@ -277,7 +334,7 @@ def tick(loop_active: bool) -> bool:
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("cmd", choices=["queue", "eval", "status", "approve", "drop"])
+    ap.add_argument("cmd", choices=["queue", "eval", "folds", "status", "approve", "drop"])
     ap.add_argument("--targets", default="", help="eval: comma list of 'v5' / member or soup tags")
     ap.add_argument("--node")
     ap.add_argument("--seeds", default="42")
@@ -287,6 +344,10 @@ def main() -> None:
     ap.add_argument("--epochs", type=int, default=None, help="override epochs (warm starts: 4-8)")
     a = ap.parse_args()
     m = load()
+    if a.cmd == "folds":
+        print(json.dumps(queue_folds(a.node, a.labels, init=a.init or None, epochs=a.epochs, m=m),
+                         indent=1, default=str)[:1500])
+        return
     if a.cmd == "eval":
         print(json.dumps(queue_eval([t for t in a.targets.split(",") if t], m), indent=1, default=str))
         return

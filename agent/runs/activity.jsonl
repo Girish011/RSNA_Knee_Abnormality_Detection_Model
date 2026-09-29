@@ -656,3 +656,9 @@
 {"ts": "2026-09-29T21:16:00", "kind": "note", "msg": "loop started (interval 600s)", "cost_usd": 0.0}
 {"ts": "2026-09-29T21:16:51", "kind": "plan", "msg": "eval job queued e-dd366d455d: ['v5', 'soupbestof2'] (~$1.04)", "cost_usd": 0.0, "job": "e-dd366d455d"}
 {"ts": "2026-09-29T21:17:22", "kind": "note", "msg": "loop started (interval 600s)", "cost_usd": 0.0}
+{"ts": "2026-09-29T22:09:14", "kind": "research", "msg": "strategist turn: no action | {\"type\": \"stop\", \"why\": \"non-JSON final content: Stopping the source spelunking \\u2014 it's unproductive and outside coder-tool purpose. Here's where the turn landed.\\n\\n**What I evaluated and why nothing spent:**\\n\\n1. **Ensemble build \\u2014 blocked by design.*\"}", "cost_usd": 0.076, "tools": 16}
+{"ts": "2026-09-29T23:00:59", "kind": "research", "msg": "strategist turn: no action | ", "cost_usd": 0.0743, "tools": 20}
+{"ts": "2026-09-29T23:51:56", "kind": "research", "msg": "strategist turn: no action | {\"type\": \"stop\", \"why\": \"non-JSON final content: Both remaining levers are currently gated, so this turn is a state/summary turn rather than more spend:\\n\\n- **Relabel (Lateral OA, bestof_v1 base, pilk_unk, flash)** was constructed and rejected only o\"}", "cost_usd": 0.0258, "tools": 5}
+{"ts": "2026-09-30T00:06:41", "kind": "plan", "msg": "5-fold OOF job queued f-7cdb6e8357 (bestof_v1, init=v5, 6 ep; ~$6.51)", "cost_usd": 0.0, "job": "f-7cdb6e8357"}
+{"ts": "2026-09-30T00:06:42", "kind": "note", "msg": "loop started (interval 600s)", "cost_usd": 0.0}
+{"ts": "2026-09-30T00:06:50", "kind": "gate", "msg": "user-session: fold OOF job f-7cdb6e8357 moved ahead of m-c15cb7b0ea (self-training is the priority bet)", "cost_usd": 0.0}

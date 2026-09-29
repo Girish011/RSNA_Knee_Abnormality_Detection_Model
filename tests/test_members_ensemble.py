@@ -192,3 +192,15 @@ def test_bundle_writes_inits(tmp_path, monkeypatch):
     lines = (d / "inits.txt").read_text().splitlines()
     import shutil; shutil.rmtree(d)
     assert "raptor_ft_s.pt|u/soup|soup/raptor_ft_s.pt" in lines and any(l.startswith("raptor_ft_coatnet_v5") for l in lines)
+
+
+def test_fold_job_five_arms_with_fold_hook(msandbox):
+    job = members.queue_folds("p1", "dread", init="v5", epochs=6)
+    assert [a["fold"] for a in job["arms"]] == [0, 1, 2, 3, 4]
+    members._launch(members.load(), job)
+    (_, arms, _), = msandbox
+    for k, (_, _, args) in enumerate(arms):
+        assert f"--folds 5 --fold {k} " in args and "--init_model" in args and "--epochs 6" in args
+        assert "--holdout /workspace/bundle/expert_holdout.json" in args
+    with pytest.raises(SystemExit):
+        members.queue_folds("p1", "dread", init="v5", epochs=6)

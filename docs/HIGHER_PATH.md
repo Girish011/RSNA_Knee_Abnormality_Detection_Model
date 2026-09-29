@@ -1,4 +1,12 @@
-# Higher path: 0.943 → ≥ 0.955 (scoped 2026-09-29)
+# Higher path: 0.943 → top (rescoped 2026-09-30, lock 2026-10-16)
+
+## The lever (measured 2026-09-30)
+Experts label from IMAGES. Report label vs expert: macro 0.870; our image members: 0.932 (9/12 findings better).
+Every team trains on report labels → **the training target is the ceiling**. Expert-anchored self-training
+(report + out-of-fold image prediction, fused per finding on expert-dev) produced labels at 0.932–0.943 on the
+untouched holdout vs 0.883 for the report. Run order: 5-fold OOF → fuse → retrain members → per-finding routing in
+the final blend (bypasses the ~10% swap dilution) → k=16 on 48 GB → PF OA view specialist.
+
 
 ## Why the current path plateaus
 Public D4 final blend = transformer/RadImageNet branch + CoAt/Raptor branch (CoAt weight 0.60; 0.75–1.0 for ACL,

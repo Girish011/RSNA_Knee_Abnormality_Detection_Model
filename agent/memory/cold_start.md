@@ -69,6 +69,8 @@ Add a bullet only when a result is measured; never add opinions.
 - What a fold-0 GPU train should test now: things that change the ensemble, not the lr — unused/new label sets, label diversity for Synovitis / Lateral OA / PF OA (the weakest public findings: v5 gold 0.80 / 0.87 / 0.85), and geometry. Prefer proposing a relabel of those findings over another optimizer tweak.
 - LB 2026-09-29: D4 stack (public 0.943) + our 0.920 fold-0 model as a rank TAIL at w=0.2 scored 0.941 — a weak tail leg HURTS. Next test is a SWAP: our v5-fine-tuned member replaces v5 inside the stack's dominant maxspan arms (kernel swap-d4-m6ed). Do not build more tail-leg kernels until the swap result is known; members are only useful if individually stronger than v5 (holdout 0.927–0.939 so far).
 
+- 2026-09-30 KEY: experts label from images. Report label vs expert macro 0.870; our image members 0.932. Fused (report + OOF image, fit on dev experts) labels score 0.93–0.94 on holdout. Priority = self-training: 5-fold OOF jobs (`members folds`) → `scripts/fuse_labels.py --oof-job ... --write fused_vN` → members on fused labels. Do not queue more same-recipe seed members while a fold/fusion round is pending.
+
 ## Constraints
 
 - Reports and any text model are train-only; test.csv has no Report field.

@@ -111,7 +111,9 @@ def member_findings(results: Path) -> dict[str, dict]:
         dev = json.loads(js[0].read_text()).get("aucs") or {}
         z = np.load(ho[0], allow_pickle=True)
         hold = _per_label(z["truth"].astype(int), z["pred"])
-        out[tag] = {"labels": f"eval:{r['eval_of']}" if r.get("eval_of") else r["genome"]["labels"],
+        kind = (f"eval:{r['eval_of']}" if r.get("eval_of")
+                else f"oof:{r['genome']['labels']}" if r.get("fold") is not None else r["genome"]["labels"])
+        out[tag] = {"labels": kind,
                     "seed": r["seed"],
                     "auc58": {l: round((dev[l] + hold[l]) / 2, 3) for l in LABEL_COLS if l in dev and l in hold}}
     return out

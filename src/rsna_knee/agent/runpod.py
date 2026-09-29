@@ -15,6 +15,9 @@ GRAPHQL = "https://api.runpod.io/graphql"
 SECRETS = Path(os.path.expanduser("~/.rsna_agent/secrets.env"))
 GPU_4090 = "NVIDIA GeForce RTX 4090"
 GPU_3090 = "NVIDIA GeForce RTX 3090"
+# 48 GB cards at ~4090 community prices (2026-09-30): capacity fallback, and room for k>8.
+GPU_A6000 = "NVIDIA RTX A6000"
+GPU_A40 = "NVIDIA A40"
 
 
 def secret(name: str) -> str:

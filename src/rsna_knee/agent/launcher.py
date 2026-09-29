@@ -114,7 +114,9 @@ def launch(job: str, arms: list[Arm], hours: float, *, capacity_rounds: int = 8,
         {"cloudType": "COMMUNITY", "gpuTypeIds": [runpod.GPU_3090]},
         {"cloudType": "COMMUNITY", "gpuTypeIds": [runpod.GPU_3090, runpod.GPU_4090]},
         {"cloudType": "COMMUNITY", "gpuTypeIds": [runpod.GPU_4090]},
+        {"cloudType": "COMMUNITY", "gpuTypeIds": [runpod.GPU_A6000, runpod.GPU_A40]},
         {"cloudType": "SECURE", "gpuTypeIds": [runpod.GPU_4090]},
+        {"cloudType": "SECURE", "gpuTypeIds": [runpod.GPU_A6000, runpod.GPU_A40]},
     ]
     pod = None
     last_err = ""
