@@ -33,7 +33,7 @@ Full-data members (all v5 warm start, 6 ep) — holdout-29 vs 5bc0's 0.915:
 
 Running: `m-ba432f8ff9` on `gwv2vbmlsnl1xh`; queued `m-97b7c3b133` (blend_v2), fold-0 `b6e0905842b6` (label A/B, pending).
 LB: `ens-d4-5bc0-w20` ref 56651119 = **0.941** vs base D4 V11 **0.943** (Kaggle page) → a weak (0.920) tail leg at w=0.2 costs ~0.002.
-Built, not pushed: **`swap-d4-m6ed`** (our best member replaces v5 in the dominant maxspan arms, 70% of Raptor family; no tail) and `ens-d4-m6-w30` (tail leg, 6 members).
+Submitted **`swap-d4-m6ed`** → ref **56665556** PENDING (audit confirms our checkpoint loaded in both v5 arms). Also built, not pushed: (our best member replaces v5 in the dominant maxspan arms, 70% of Raptor family; no tail) and `ens-d4-m6-w30` (tail leg, 6 members).
 
 ## Money
 - Campaign: ~$34 of $300. RunPod balance **$10.06** (low). DeepSeek $47.94 (fine).
