@@ -605,3 +605,14 @@
 {"ts": "2026-09-29T12:59:45", "kind": "train", "msg": "RunPod job m-4f1a723c63 launched: ['m9e3f8e11e19', 'm27663be2f7c']", "cost_usd": 0.0, "pod": "o231yhvdzpfh86", "bundle": "girishbose/rsna-knee-rp-m-4f1a723c63-bundle", "result": "girishbose/rsna-knee-rp-m-4f1a723c63-out", "monitor": "https://o231yhvdzpfh86-8000.proxy.runpod.net", "price_hr": 0.74, "est_hours": 4.9}
 {"ts": "2026-09-29T13:39:53", "kind": "note", "msg": "strategist skipped: DeepSeek spend today $15.01 >= cap $15.0", "cost_usd": 0.0}
 {"ts": "2026-09-29T13:45:45", "kind": "plan", "msg": "members queued m-235f86f1af: 2 full-data arms from 5bc0a0f45d75 (~4.9 h, ~$3.63)", "cost_usd": 0.0, "job": "m-235f86f1af", "arms": ["m470c713b9fe", "m0b16e9a09f1"]}
+{"ts": "2026-09-29T13:46:02", "kind": "note", "msg": "loop started (interval 600s)", "cost_usd": 0.0}
+{"ts": "2026-09-29T14:26:14", "kind": "note", "msg": "strategist skipped: DeepSeek spend today $15.01 >= cap $15.0", "cost_usd": 0.0}
+{"ts": "2026-09-29T15:16:25", "kind": "cost", "msg": "member pod o231yhvdzpfh86 ~2.28 h at $0.74/h", "cost_usd": 1.6856, "pod": "o231yhvdzpfh86"}
+{"ts": "2026-09-29T15:17:02", "kind": "gate", "msg": "member m9e3f8e11e19 (relabel_bd5c19da, seed 3): gold_dev 0.92208117881829 holdout 0.9348188533173053", "cost_usd": 0.0, "member": "m9e3f8e11e19", "job": "m-4f1a723c63"}
+{"ts": "2026-09-29T15:17:02", "kind": "error", "msg": "member job m-4f1a723c63 missing arms ['m27663be2f7c']", "cost_usd": 0.0, "component": "members"}
+{"ts": "2026-09-29T15:18:03", "kind": "note", "msg": "RunPod capacity miss round 1/8; retry in 30s", "cost_usd": 0.0, "job": "m-235f86f1af", "err": "create_pod 500: {\"error\":\"create pod: There are no instances currently available\",\"status\":500}\n"}
+{"ts": "2026-09-29T15:18:50", "kind": "train", "msg": "RunPod job m-235f86f1af launched: ['m470c713b9fe', 'm0b16e9a09f1']", "cost_usd": 0.0, "pod": "x8jbm5dhhmzfpv", "bundle": "girishbose/rsna-knee-rp-m-235f86f1af-bundle", "result": "girishbose/rsna-knee-rp-m-235f86f1af-out", "monitor": "https://x8jbm5dhhmzfpv-8000.proxy.runpod.net", "price_hr": 0.22, "est_hours": 4.9}
+{"ts": "2026-09-29T15:18:50", "kind": "note", "msg": "strategist skipped: DeepSeek spend today $15.01 >= cap $15.0", "cost_usd": 0.0}
+{"ts": "2026-09-29T15:21:48", "kind": "gate", "msg": "member m27663be2f7c (relabel_bd5c19da, seed 11): gold_dev 0.9136597079254235 holdout 0.9408247554532386 (re-collected after partial-snapshot race)", "cost_usd": 0.0, "member": "m27663be2f7c", "job": "m-4f1a723c63"}
+{"ts": "2026-09-29T15:22:12", "kind": "note", "msg": "loop started (interval 600s)", "cost_usd": 0.0}
+{"ts": "2026-09-29T15:22:13", "kind": "error", "msg": "member pod x8jbm5dhhmzfpv vanished before billing; requeueing m-235f86f1af", "cost_usd": 0.0, "component": "members", "pod": "x8jbm5dhhmzfpv"}

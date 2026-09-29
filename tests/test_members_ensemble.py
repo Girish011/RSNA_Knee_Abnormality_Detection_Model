@@ -137,3 +137,26 @@ def test_swap_v5_rewires_both_arms_and_roots(tmp_path):
     assert "coatnet_v5" in out["cells"][1]["source"]  # preflight keeps the public v5 requirement
     with pytest.raises(SystemExit):
         BEK.swap_v5({"cells": [{"cell_type": "code", "source": "x=1"}]}, "a.pt", "u/d")
+
+
+def test_observe_waits_for_final_snapshot(msandbox, monkeypatch, tmp_path):
+    monkeypatch.setattr(members, "RESULTS", tmp_path / "res")
+    m = members.load()
+    m["active"] = {"job": "m-x", "pod": "p", "result": "u/m-x-out", "launched": 0, "est_hours": 1,
+                   "price_hr": 0.34, "cost_logged": True,
+                   "arms": [{"tag": "a1", "genome": G.BASE, "seed": 1}, {"tag": "a2", "genome": G.BASE, "seed": 2}]}
+    monkeypatch.setattr(members.runpod, "get_pod", lambda pid: None)
+    status = {"text": "uploading partial after a1"}
+
+    def fake_collect(a):
+        (tmp_path / "res" / "m-x").mkdir(parents=True, exist_ok=True)
+        (tmp_path / "res" / "m-x" / "STATUS").write_text(status["text"])
+        tags = ["a1"] if "partial" in status["text"] else ["a1", "a2"]
+        return {t: {"genome": G.BASE, "seed": 1, "gold_dev": 0.9, "holdout_auc": 0.93} for t in tags}
+
+    monkeypatch.setattr(members, "_collect", fake_collect)
+    members.observe(m)
+    assert m["active"] is not None and not m["done"]          # partial snapshot: keep waiting
+    status["text"] = "uploading (all arms finished)"
+    members.observe(m)
+    assert m["active"] is None and set(m["done"]) == {"a1", "a2"}

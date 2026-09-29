@@ -539,3 +539,8 @@ Append one row (or block) per run. Never delete history.
 - ref 56651119 `ens-d4-5bc0-w20` public **0.941**; base `jiweiliu/rsna-knee-fast-2xt4-inference` V11 public 0.943 (Kaggle page). Adding a 0.920 single model as a rank tail hurts ~0.002. Run fit inside the time limit.
 - Members (v5 init, full data, 6 ep): holdout-29 0.927–0.939 (5bc0 0.915); gold_dev 0.910–0.918. 8 finished incl. m1017be7a34b / m5243dee1bf9 (8c56 seeds 7/13: 0.933 / 0.931).
 - New `--swap-v5 <member>` build mode: the stack's maxspan-v5 arms (normal w0.60 + reverse w0.10 of the Raptor family; 140 mm / 336 px / 2–98% / 64 slots ≈ our dense80) load our member instead of v5. Public precedent: fine-tuned v5 swapped in ranked above the 0.943 control. Built `swap-d4-m6ed` (m6edbb53fbab).
+
+### 2026-09-29 — members 11–13; partial-snapshot race fixed
+- blend_v2 (mcef16e20c0c / md767d1cc09d): macro-58 0.925 / 0.923, Synovitis 0.79–0.81 (no relabel), holdout 0.935 / 0.930.
+- relabel_bd5c19da (two stacked Synovitis reads on c7ab): m9e3f8e11e19 / m27663be2f7c macro-58 0.928 / 0.927, Synovitis 0.861 / 0.868, PF OA 0.840 / 0.861, holdout 0.935 / **0.941** (best so far).
+- Bug: members.observe finalized on the per-arm partial Kaggle version (served for minutes after the final push) → m27663be2f7c marked missing. Now waits until the snapshot STATUS says "all arms finished" (the snapshot predates "done"); m27663be2f7c re-collected by hand. Test added.

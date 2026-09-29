@@ -190,8 +190,14 @@ def observe(m: dict) -> None:
             cost_usd=elapsed_h * a["price_hr"], pod=a["pod"])
         a["cost_logged"] = True
     got = _collect(a)
-    if not got and a.get("tries", 0) + 1 < DOWNLOAD_TRIES:
+    st_file = RESULTS / a["job"] / "STATUS"
+    final = st_file.exists() and "all arms finished" in st_file.read_text()  # snapshot predates "done"
+    # Multi-arm pods push a partial version after each arm; Kaggle serves the previous version
+    # for a few minutes after the final push. Do not finalize on a partial snapshot.
+    if (not got or (not final and len(got) < len(a["arms"]))) and a.get("tries", 0) + 1 < DOWNLOAD_TRIES:
         a["tries"] = a.get("tries", 0) + 1
+        log("note", f"member job {a['job']}: {len(got)}/{len(a['arms'])} arms visible, STATUS not final; "
+            f"retry {a['tries']}/{DOWNLOAD_TRIES}", job=a["job"])
         return
     m["done"].update(got)
     missing = [x["tag"] for x in a["arms"] if x["tag"] not in got]

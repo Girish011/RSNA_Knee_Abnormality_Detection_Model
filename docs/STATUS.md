@@ -31,7 +31,7 @@ Full-data members (all v5 warm start, 6 ep) — holdout-29 vs 5bc0's 0.915:
 | m1df0b4ac76d | relabel_c7ab23d1 | 7 | 0.914 | 0.927 |
 | mdbe175a745e | relabel_d19bf15e (DeepSeek LatOA/PF) | 7 | 0.916 | 0.934 |
 
-Running: `m-ba432f8ff9` on `gwv2vbmlsnl1xh`; queued `m-97b7c3b133` (blend_v2), fold-0 `b6e0905842b6` (label A/B, pending).
+Running: `m-235f86f1af` (bestof_v1 = 8c56 + c7ab Synovitis; seeds 42/1337) on `x8jbm5dhhmzfpv`. 13 members done; best holdout `m27663be2f7c` (bd5c19da, 0.941).
 LB: `ens-d4-5bc0-w20` ref 56651119 = **0.941** vs base D4 V11 **0.943** (Kaggle page) → a weak (0.920) tail leg at w=0.2 costs ~0.002.
 Submitted **`swap-d4-m6ed`** → ref **56665556** PENDING (audit confirms our checkpoint loaded in both v5 arms). Also built, not pushed: (our best member replaces v5 in the dominant maxspan arms, 70% of Raptor family; no tail) and `ens-d4-m6-w30` (tail leg, 6 members).
 
