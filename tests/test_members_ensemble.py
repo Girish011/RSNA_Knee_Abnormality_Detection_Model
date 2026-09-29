@@ -218,3 +218,25 @@ def test_two_member_jobs_run_in_parallel(msandbox, monkeypatch):
     m = members.load()
     assert len(msandbox) == 2 and len(m["running"]) == 2 and len(m["queue"]) == 1
     assert m["active"]["job"] == m["running"][0]["job"]
+
+
+def test_auto_self_train_gate(msandbox):
+    job = members.queue_folds("p1", "dread", init="v5", epochs=6)
+    m = members.load()
+    m["queue"].append({"job": "m-other", "arms": [], "approved": True})
+    fail = lambda **kw: {"macro": {"report": .88, "image": .93, "fused": .89}, "passed": False,  # noqa: E731
+                         "name": None, "n_fused": 0}
+    assert members.auto_self_train(m, job, fail)["passed"] is False
+    assert [j["job"] for j in m["queue"]][-1] == "m-other" and len(m["queue"]) == 2
+    ok = lambda **kw: {"macro": {"report": .88, "image": .93, "fused": .94}, "passed": True,  # noqa: E731
+                       "name": "fused_x", "n_fused": 4349}
+    import json as _j
+    reg = members.G.label_registry
+    members.G.label_registry = lambda: {**reg(), "fused_x": {"file": "labels_fused_x.parquet"}}
+    try:
+        members.auto_self_train(m, job, ok)
+    finally:
+        members.G.label_registry = reg
+    first = m["queue"][0]
+    assert {a["genome"]["labels"] for a in first["arms"]} == {"fused_x"} and len(first["arms"]) == 2
+    assert all(a["init"] == "v5" for a in first["arms"])

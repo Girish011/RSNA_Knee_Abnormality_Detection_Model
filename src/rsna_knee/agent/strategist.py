@@ -74,8 +74,10 @@ You run WHILE the GPU trains. Each turn, do the highest-value actions, typically
 1) analyze_results first (per-finding evidence).
 2) request_relabel for weak findings when a new read could beat the registry (rule 'all' with
    model 'pro' re-reads every study; 'pilk_unk'/'disagree' re-read only uncertain cells).
-3) Keep ONE member job queued behind the running pod: diverse, strong recipes (new label sets,
-   seeds, init=v5). Do not queue near-duplicates of members already done or queued.
+3) SELF-TRAINING is the main bet (experts label images; report labels score 0.870 vs our image
+   models 0.932 on experts). When a fused_* label set appears with members trained on it, compare
+   their per-finding AUCs; if fused beats bestof_v1, start the next round with queue_fold_job on the
+   newest fused set. Keep ONE other member job queued at most; no near-duplicate seeds.
 4) queue_next_train only for label/corpus levers (fold-0 compass), never closed axes.
 5) build_ensemble_kernel when new members finished and the ledger has no submit with them yet.
 Use coder tools only for real harness bugs. End with a short JSON summary of what you did and why.
@@ -247,6 +249,17 @@ def handlers(state: dict, journal: Journal, results: Path, actions: list[str]) -
                 "est_usd": job["est_usd"], "approved": job["approved"],
                 "note": "" if job["approved"] else "needs user approval (> $10)"}
 
+    def queue_fold_job(node: str = "", labels: str = "", why: str = "", **_):
+        """Next self-training round: 5-fold OOF on a label set (usually the newest fused_*)."""
+        try:
+            job = members.queue_folds(node, labels, init="v5", epochs=6)
+        except SystemExit as e:
+            return {"ok": False, "errors": [str(e)]}
+        actions.append(f"5-fold OOF job {job['job']} on {labels}")
+        log("research", f"strategist queued 5-fold OOF {job['job']} on {labels}: {why[:160]}", job=job["job"])
+        return {"ok": True, "job": job["job"], "est_usd": job["est_usd"],
+                "note": "on completion the host fuses labels and queues members automatically if the gate passes"}
+
     def queue_next_train(parent: str = "", genome: dict | None = None, plan: str = "", why: str = "", **_):
         g = dict(genome or {})
         if errs := _check_next_train(g, journal, parent):
@@ -284,6 +297,7 @@ def handlers(state: dict, journal: Journal, results: Path, actions: list[str]) -
     return {"analyze_results": analyze_results, "get_runpod_status": get_runpod_status,
             "request_relabel": request_relabel, "queue_member_job": queue_member_job,
             "queue_next_train": queue_next_train, "build_ensemble_kernel": build_ensemble_kernel,
+            "queue_fold_job": queue_fold_job,
             **coder.handlers()}
 
 
@@ -310,6 +324,10 @@ TOOLS = [
          "labels": {"type": "array", "items": {"type": "string"}},
          "init": {"type": "string", "enum": ["v5"]}, "epochs": {"type": "integer"},
          "why": {"type": "string"}}, ["node", "seeds", "labels", "why"]),
+    _fn("queue_fold_job", "Start a self-training round: 5-fold OOF on a label set (v5 init, 6 ep). On "
+        "completion the HOST fuses report+image labels, gates on holdout experts and queues members.",
+        {"node": {"type": "string"}, "labels": {"type": "string"}, "why": {"type": "string"}},
+        ["node", "labels", "why"]),
     _fn("queue_next_train", "Queue the next fold-0 compass train (label/corpus levers; closed axes refused).",
         {"parent": {"type": "string"}, "genome": {"type": "object"}, "plan": {"type": "string"},
          "why": {"type": "string"}}, ["parent", "genome", "plan", "why"]),

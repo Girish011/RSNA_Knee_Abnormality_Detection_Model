@@ -248,7 +248,8 @@ def _collect(a: dict) -> dict[str, dict]:
     for x in a["arms"]:
         if x.get("fold") is not None:
             t, k = x["tag"], x["fold"]
-            for name in (f"{t}/raptor_oof_{t}_fold{k}.npz", f"{t}/raptor_oof_{t}_swa_fold{k}.npz"):
+            for name in (f"{t}/raptor_oof_{t}_fold{k}.npz", f"{t}/raptor_oof_{t}_swa_fold{k}.npz",
+                         f"{t}/raptor_gold_{t}.npz"):
                 (dest / name).parent.mkdir(parents=True, exist_ok=True)
                 subprocess.run(["kaggle", "datasets", "download",
                                 a["result"], "-f", name, "-p", str((dest / name).parent)],
@@ -329,6 +330,47 @@ def _observe_one(m: dict, a: dict) -> None:
     if missing:
         log("error", f"member job {a['job']} missing arms {missing}", component="members")
     _finish(m, a)
+    if a.get("kind") == "oof" and not missing:
+        auto_self_train(m, a)
+
+
+FUSED_SEEDS = [42, 1337]
+
+
+def _load_fusion():
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("fuse_labels", G.REPO / "scripts" / "fuse_labels.py")
+    fl = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(fl)
+    return fl.run_fusion
+
+
+def auto_self_train(m: dict, a: dict, run_fusion=None) -> dict | None:
+    """Self-training step (host, deterministic): 5-fold OOF landed → fuse report + image labels
+    on expert-dev, gate on expert-holdout, and on PASS queue members on the fused labels.
+    No LLM judgement: the gate is a measured number. Failures are logged, never raised."""
+    try:
+        base = a["arms"][0]["genome"]["labels"]
+        name = "fused_" + a["job"].split("-", 1)[1][:8]
+        r = (run_fusion or _load_fusion())(oof_job=a["job"], write=name, base=base)
+    except Exception as e:  # noqa: BLE001
+        log("error", f"self-training fusion for {a['job']} failed: {type(e).__name__}: {str(e)[:200]}",
+            component="members")
+        return None
+    mac = r["macro"]
+    log("gate", f"self-training {a['job']}: holdout macro report {mac['report']:.3f} image {mac['image']:.3f} "
+        f"fused {mac['fused']:.3f} → {'PASS' if r['passed'] else 'FAIL'}"
+        + (f"; registered {r['name']} ({r['n_fused']} studies)" if r["name"] else ""), job=a["job"])
+    if not r["name"]:
+        return r
+    arm = a["arms"][0]
+    try:
+        queue(arm["parent"], FUSED_SEEDS, [r["name"]], m, init=arm.get("init"),
+              epochs=arm["genome"]["epochs"])
+        m["queue"].insert(0, m["queue"].pop())   # fused members jump the queue
+    except SystemExit as e:
+        log("error", f"self-training queue for {r['name']} refused: {e}", component="members")
+    return r
 
 
 def tick(loop_active: bool) -> bool:

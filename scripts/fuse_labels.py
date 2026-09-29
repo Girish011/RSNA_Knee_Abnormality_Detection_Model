@@ -97,45 +97,65 @@ def fit_eval(report: pd.DataFrame, image: pd.DataFrame, gold: pd.DataFrame, dev:
     return models, pd.DataFrame(rows).set_index("finding")
 
 
-def main() -> None:
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--image-node", help="online node with fold-0 OOF (smoke test)")
-    ap.add_argument("--oof-job", help="members 5-fold OOF job id (f-...)")
-    ap.add_argument("--report", default="pilk", help="report-label source available for experts too")
-    ap.add_argument("--write", help="write data/processed/labels_<name>.parquet and register it")
-    ap.add_argument("--C", type=float, default=1.0)
-    a = ap.parse_args()
+GATE = 0.02   # fused labels must beat report labels by this much macro AUC on the holdout experts
+
+
+def run_fusion(oof_job: str | None = None, image_node: str | None = None, write: str | None = None,
+               base: str = "bestof_v1", C: float = 1.0, gate: float = GATE) -> dict:
+    """Fit on expert-dev, score on expert-holdout; optionally write + register a fused label set.
+
+    The fused file starts from ``base`` (so studies without an OOF prediction keep their labels)
+    and replaces every study that has an out-of-fold image prediction. Written only if the gate
+    passes. Returns {"table", "macro": {...}, "passed", "name", "n_fused"}."""
     train = pd.read_csv(REPO / "data" / "raw" / "train.csv").set_index("StudyInstanceUID")
     gold = train[train[LABEL_COLS].notna().all(axis=1)][LABEL_COLS]
     split = json.loads((REPO / "agent" / "protocol" / "expert_split.json").read_text())
     report = pd.read_csv(REPO / "data" / "external" / "public_labels" / "pilk" / "report_labels_v2.csv"
                          ).set_index("StudyInstanceUID")[LABEL_COLS]
-    oof, exp = image_preds(a.image_node, a.oof_job)
+    oof, exp = image_preds(image_node, oof_job)
     dev = [u for u in split["dev"] if u in exp.index and u in report.index]
     hold = [u for u in split["holdout"] if u in exp.index and u in report.index]
-    models, tab = fit_eval(report, exp, gold, dev, hold, a.C)
-    pd.set_option("display.width", 140)
-    print(f"fit on dev={len(dev)} experts, scored on holdout={len(hold)} (AUC vs expert label)")
-    print(tab.round(3).to_string())
-    print("macro  report %.3f  image %.3f  fused %.3f" % tuple(tab[c].mean() for c in ("report", "image", "fused")))
-    if not a.write:
-        return
-    ids = [u for u in oof.index if u in report.index]
-    fused = pd.DataFrame(index=ids, columns=LABEL_COLS, dtype=float)
-    for l, m in models.items():
-        fused[l] = m.predict_proba(np.c_[logit(report.loc[ids, l]), logit(oof.loc[ids, l])])[:, 1]
-    out = fused.rename_axis("StudyInstanceUID").reset_index()
-    fname = f"labels_{a.write}.parquet"
-    out.to_parquet(REPO / "data" / "processed" / fname, index=False)
+    models, tab = fit_eval(report, exp, gold, dev, hold, C)
+    macro = {c: float(tab[c].mean()) for c in ("report", "image", "fused")}
+    passed = macro["fused"] >= macro["report"] + gate
+    out = {"table": tab, "macro": macro, "passed": passed, "name": None, "n_fused": 0,
+           "n_dev": len(dev), "n_hold": len(hold)}
+    if not write or not passed:
+        return out
     reg_f = REPO / "agent" / "labels" / "registry.json"
     reg = json.loads(reg_f.read_text())
-    reg[a.write] = {"file": fname, "rule": "expert-anchored fusion (report + OOF image)",
-                    "source": a.oof_job or a.image_node,
-                    "audit": {l: {"holdout_fused": round(float(tab.loc[l, "fused"]), 3),
-                                  "holdout_report": round(float(tab.loc[l, "report"]), 3), "kept": True}
-                              for l in LABEL_COLS}}
+    base_df = pd.read_parquet(REPO / "data" / "processed" / reg[base]["file"]).set_index("StudyInstanceUID")
+    ids = [u for u in oof.index if u in report.index and u in base_df.index]
+    for l, m in models.items():
+        base_df.loc[ids, l] = m.predict_proba(np.c_[logit(report.loc[ids, l]), logit(oof.loc[ids, l])])[:, 1]
+    fname = f"labels_{write}.parquet"
+    base_df.reset_index().to_parquet(REPO / "data" / "processed" / fname, index=False)
+    reg[write] = {"file": fname, "base": base, "rule": "expert-anchored fusion (report + OOF image)",
+                  "source": oof_job or image_node, "n_fused": len(ids),
+                  "holdout_macro": {k: round(v, 4) for k, v in macro.items()},
+                  "audit": {l: {"holdout_fused": round(float(tab.loc[l, "fused"]), 3),
+                                "holdout_report": round(float(tab.loc[l, "report"]), 3), "kept": True}
+                            for l in LABEL_COLS}}
     reg_f.write_text(json.dumps(reg, indent=1))
-    print(f"wrote {fname} ({len(out)} studies) and registered {a.write}")
+    out.update(name=write, n_fused=len(ids))
+    return out
+
+
+def main() -> None:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--image-node", help="online node / member with expert predictions (smoke test)")
+    ap.add_argument("--oof-job", help="members 5-fold OOF job id (f-...)")
+    ap.add_argument("--write", help="write data/processed/labels_<name>.parquet and register it")
+    ap.add_argument("--base", default="bestof_v1")
+    ap.add_argument("--C", type=float, default=1.0)
+    a = ap.parse_args()
+    r = run_fusion(a.oof_job, a.image_node, a.write, a.base, a.C)
+    pd.set_option("display.width", 140)
+    print(f"fit on dev={r['n_dev']} experts, scored on holdout={r['n_hold']} (AUC vs expert label)")
+    print(r["table"].round(3).to_string())
+    print("macro  report %.3f  image %.3f  fused %.3f" % tuple(r["macro"][c] for c in ("report", "image", "fused")))
+    print(f"gate (fused >= report + {GATE}): {'PASS' if r['passed'] else 'FAIL'}"
+          + (f" → wrote + registered {r['name']} ({r['n_fused']} studies fused)" if r["name"] else ""))
 
 
 if __name__ == "__main__":

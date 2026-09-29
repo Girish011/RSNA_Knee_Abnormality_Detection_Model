@@ -44,7 +44,7 @@ Forward/reverse maxspan arms share ONE model → several members only as a weigh
 ## Now (2026-09-30 00:30 IST) — self-training round 1
 - **2 pods allowed** (user). Running: `f-7cdb6e8357` 5-fold OOF (bestof_v1, v5, 6 ep) on `t5ibizzt71f4l5` (A40 $0.49/h); `m-6c83c7d7f7` (bestof seeds) on slow 3090 `6xc11q3uqpdrdi`.
 - Queue: `e-dd366d455d` (v5 + soupbestof2 eval) → `m-c15cb7b0ea`.
-- Next: `scripts/fuse_labels.py --oof-job f-7cdb6e8357 --write fused_v1` → members on fused_v1 → per-finding routing.
+- **Automatic on completion:** host fuses report + OOF image labels (fit dev experts, gate: holdout macro fused ≥ report + 0.02) → registers `fused_7cdb6e83` → queues 2 v5 members on it at the FRONT of the queue. DeepSeek can start round 2 (`queue_fold_job`). LB submits + final blend stay with the user.
 - Launcher order (deadline mode): community 4090 → 48 GB A6000/A40 → 3090 → secure.
 
 ## Money
