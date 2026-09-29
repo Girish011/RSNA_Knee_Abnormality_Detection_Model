@@ -14,8 +14,8 @@
   "gpu_hours": 0.0,
   "error": "",
   "reward": 0.0,
-  "visits": 67,
-  "value_sum": 42.0,
+  "visits": 72,
+  "value_sum": 48.0,
   "created": 1790226142.83037
  },
  {
@@ -44,8 +44,8 @@
   "gpu_hours": 4.173299885458416,
   "error": "",
   "reward": 2.0,
-  "visits": 67,
-  "value_sum": 42.0,
+  "visits": 72,
+  "value_sum": 48.0,
   "created": 1790227738.819778
  },
  {
@@ -74,8 +74,8 @@
   "gpu_hours": 4.1977936725484,
   "error": "",
   "reward": 2.0,
-  "visits": 65,
-  "value_sum": 39.0,
+  "visits": 70,
+  "value_sum": 45.0,
   "created": 1790248592.9747689
  },
  {
@@ -242,8 +242,8 @@
   "gpu_hours": 3.177351172235277,
   "error": "",
   "reward": 1.0,
-  "visits": 56,
-  "value_sum": 29.0,
+  "visits": 61,
+  "value_sum": 35.0,
   "created": 1790318520.236647
  },
  {
@@ -1504,8 +1504,8 @@
   "gpu_hours": 7.193964981105593,
   "error": "",
   "reward": 1.0,
-  "visits": 8,
-  "value_sum": 8.0,
+  "visits": 10,
+  "value_sum": 11.0,
   "created": 1790559401.8695328
  },
  {
@@ -1871,15 +1871,124 @@
    "7421b1b6a6fa"
   ],
   "operator": "intra_branch",
-  "status": "pending",
-  "proxy_auc": null,
+  "status": "done",
+  "proxy_auc": 0.9361865346563941,
+  "gold_auc": 0.913113296251168,
+  "public_lb": null,
+  "gpu_hours": 2.4918613552384907,
+  "error": "",
+  "reward": 1.0,
+  "visits": 3,
+  "value_sum": 3.0,
+  "created": 1790684989.923845
+ },
+ {
+  "id": "2d99006fdb30",
+  "parent": "5bc0a0f45d75",
+  "genome": {
+   "blend": [
+    "5bc0a0f45d75",
+    "6e0c83b59036"
+   ]
+  },
+  "plan": "dream: rank blend 5bc0a0f45d75+6e0c83b59036",
+  "kind": "dream",
+  "refs": [
+   "6e0c83b59036"
+  ],
+  "operator": "aggregate",
+  "status": "done",
+  "proxy_auc": 0.9391116321808916,
   "gold_auc": null,
   "public_lb": null,
   "gpu_hours": 0.0,
   "error": "",
-  "reward": 0.0,
-  "visits": 0,
-  "value_sum": 0.0,
-  "created": 1790684989.923845
+  "reward": 1.0,
+  "visits": 1,
+  "value_sum": 1.0,
+  "created": 1790694074.030968
+ },
+ {
+  "id": "c6f77d8d5057",
+  "parent": "6e0c83b59036",
+  "genome": {
+   "blend": [
+    "6e0c83b59036",
+    "fc74488528c9"
+   ]
+  },
+  "plan": "dream: rank blend 6e0c83b59036+fc74488528c9",
+  "kind": "dream",
+  "refs": [
+   "fc74488528c9"
+  ],
+  "operator": "aggregate",
+  "status": "done",
+  "proxy_auc": 0.9374754796392392,
+  "gold_auc": null,
+  "public_lb": null,
+  "gpu_hours": 0.0,
+  "error": "",
+  "reward": 1.0,
+  "visits": 1,
+  "value_sum": 1.0,
+  "created": 1790694074.048558
+ },
+ {
+  "id": "b961e33dea14",
+  "parent": "6e0c83b59036",
+  "genome": {
+   "blend": [
+    "564c9dcf545c",
+    "6e0c83b59036"
+   ]
+  },
+  "plan": "dream: rank blend 6e0c83b59036+564c9dcf545c",
+  "kind": "dream",
+  "refs": [
+   "564c9dcf545c"
+  ],
+  "operator": "aggregate",
+  "status": "done",
+  "proxy_auc": 0.9379165624215049,
+  "gold_auc": null,
+  "public_lb": null,
+  "gpu_hours": 0.0,
+  "error": "",
+  "reward": 1.0,
+  "visits": 1,
+  "value_sum": 1.0,
+  "created": 1790694074.065613
+ },
+ {
+  "id": "baf1b8e07072",
+  "parent": "5bc0a0f45d75",
+  "genome": {
+   "blend": [
+    "564c9dcf545c",
+    "5bc0a0f45d75",
+    "6e0c83b59036",
+    "fc74488528c9"
+   ],
+   "method": "greedy_rank"
+  },
+  "plan": "dream: greedy rank blend ['5bc0a0f45d75', '6e0c83b59036', 'fc74488528c9', '564c9dcf545c']",
+  "kind": "dream",
+  "refs": [
+   "6e0c83b59036",
+   "fc74488528c9",
+   "564c9dcf545c"
+  ],
+  "operator": "aggregate",
+  "status": "done",
+  "proxy_auc": 0.9407363967216841,
+  "gold_auc": null,
+  "public_lb": null,
+  "gpu_hours": 0.0,
+  "error": "",
+  "reward": 2.0,
+  "visits": 1,
+  "value_sum": 2.0,
+  "created": 1790694074.1187
  }
 ]

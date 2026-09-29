@@ -120,6 +120,41 @@ def queue(node_id: str, seeds: list[int], labels: list[str] | None = None,
     return job
 
 
+def queue_eval(targets: list[str], m: dict | None = None) -> dict:
+    """Queue an eval-only job: score checkpoints ("v5" or finished member / soup tags) with the
+    member protocol (dense80 windows, gold-dev 29, holdout 29) so they compare 1:1 with members."""
+    m = m if m is not None else load()
+    base = G.clamp(dict(G.BASE, corpus="dense80"))
+    arms, inits = [], []
+    for t in targets:
+        if t == "v5":
+            fname, ds, path = "raptor_ft_coatnet_v5_full_swa.pt", "dreaddevelopment/raptor-knee-maxspan", \
+                "raptor_ft_coatnet_v5_full_swa.pt"
+        elif t in m["done"]:
+            r = m["done"][t]
+            fname, ds, path = r["weights"], r["dataset"], r.get("path") or f"{t}/{r['weights']}"
+        else:
+            raise SystemExit(f"unknown eval target {t}")
+        inits.append((fname, ds, path))
+        tag = "e" + hashlib.sha1(f"eval|{t}|{fname}".encode()).hexdigest()[:11]
+        pending = {x["tag"] for j in m["queue"] + ([m["active"]] if m["active"] else []) for x in j["arms"]}
+        if tag in m["done"] or tag in pending:
+            continue
+        arms.append({"tag": tag, "genome": base, "seed": 42, "parent": t, "eval_of": t,
+                     "init_file": fname})
+    if not arms:
+        raise SystemExit("every requested eval already exists")
+    hours = 1.0 + 0.2 * len(arms)
+    job = {"job": "e-" + hashlib.sha1("".join(a["tag"] for a in arms).encode()).hexdigest()[:10],
+           "arms": arms, "inits": inits, "est_hours": round(hours, 2),
+           "est_usd": round(hours * launcher.PRICE_HR, 2), "corpus": "dense80", "approved": True,
+           "queued": time.time()}
+    m["queue"].insert(0, job)   # evals are cheap and unblock decisions: run first
+    save(m)
+    log("plan", f"eval job queued {job['job']}: {targets} (~${job['est_usd']})", job=job["job"])
+    return job
+
+
 def busy(m: dict | None = None) -> bool:
     """True while a member job is active or queued-and-approved (the loop must not plan)."""
     m = m if m is not None else load()
@@ -127,10 +162,18 @@ def busy(m: dict | None = None) -> bool:
 
 
 def _launch(m: dict, job: dict) -> None:
-    arms = [(a["tag"], *full_cli(a["genome"], a["seed"], init=a.get("init"),
-                                 epochs=a["genome"]["epochs"])) for a in job["arms"]]
+    arms = []
+    for a in job["arms"]:
+        if a.get("eval_of"):
+            lab, args = full_cli(a["genome"], a["seed"])
+            args += f" --eval_only --init_model /workspace/input/init/{a['init_file']}"
+            arms.append((a["tag"], lab, args))
+        else:
+            arms.append((a["tag"], *full_cli(a["genome"], a["seed"], init=a.get("init"),
+                                             epochs=a["genome"]["epochs"])))
     out = launcher.launch(job["job"] + (f"-r{job['retries']}" if job.get("retries") else ""),
-                          arms, job["est_hours"], corpus=job["corpus"])
+                          arms, job["est_hours"], corpus=job["corpus"],
+                          inits=[tuple(x) for x in job.get("inits") or []])
     m["active"] = {**job, "pod": out["pod"], "result": out["result"], "launched": time.time(),
                    "price_hr": float(out.get("costPerHr") or launcher.PRICE_HR)}
 
@@ -168,7 +211,8 @@ def observe(m: dict) -> None:
     if pod is None and elapsed_h < 0.5 and not a.get("cost_logged"):
         log("error", f"member pod {a['pod']} vanished before billing; requeueing {a['job']}",
             component="members", pod=a["pod"])
-        job = {k: a[k] for k in ("job", "arms", "est_hours", "est_usd", "corpus", "approved", "queued")}
+        job = {k: a[k] for k in ("job", "arms", "est_hours", "est_usd", "corpus", "approved", "queued")
+               if k in a} | ({"inits": a["inits"]} if a.get("inits") else {})
         job["retries"] = a.get("retries", 0) + 1
         m["active"] = None
         if job["retries"] <= L.INFRA_RETRIES:
@@ -233,7 +277,8 @@ def tick(loop_active: bool) -> bool:
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("cmd", choices=["queue", "status", "approve", "drop"])
+    ap.add_argument("cmd", choices=["queue", "eval", "status", "approve", "drop"])
+    ap.add_argument("--targets", default="", help="eval: comma list of 'v5' / member or soup tags")
     ap.add_argument("--node")
     ap.add_argument("--seeds", default="42")
     ap.add_argument("--labels", default=None, help="comma list; default = the node's labels")
@@ -242,6 +287,9 @@ def main() -> None:
     ap.add_argument("--epochs", type=int, default=None, help="override epochs (warm starts: 4-8)")
     a = ap.parse_args()
     m = load()
+    if a.cmd == "eval":
+        print(json.dumps(queue_eval([t for t in a.targets.split(",") if t], m), indent=1, default=str))
+        return
     if a.cmd == "queue":
         if not a.node:
             raise SystemExit("--node required")
@@ -264,7 +312,7 @@ def main() -> None:
                           "queue": [(j["job"], len(j["arms"]), j["est_usd"], j.get("approved")) for j in m["queue"]]},
                          indent=1, default=str))
         for tag, r in m["done"].items():
-            print(f"{tag} {r['genome']['labels']:18s} seed={r['seed']:<5} init={r.get('init')} "
+            print(f"{tag} {r['genome']['labels']:18s} seed={str(r['seed']):<5} init={r.get('init')} "
                   f"ep={r['genome']['epochs']} gold_dev={r['gold_dev']} "
                   f"holdout={r['holdout_auc']} {r['dataset']}/{r['weights']}")
 

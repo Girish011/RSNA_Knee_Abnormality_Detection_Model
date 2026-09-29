@@ -371,6 +371,8 @@ def main():
     ap.add_argument("--init_model", default=None,
                     help="warm-start the WHOLE classifier (backbone + attention head) from a "
                          "raptor_ft_*.pt of the same arch, e.g. the public v5 full SWA")
+    ap.add_argument("--eval_only", action="store_true",
+                    help="score --init_model on gold-dev + holdout and exit (no training)")
     ap.add_argument("--arch", default="vit_small_patch16_224")
     ap.add_argument("--res", type=int, default=224)
     ap.add_argument("--k", type=int, default=12)
@@ -592,6 +594,21 @@ def main():
         with torch.no_grad():
             for k, v in ema_dict.items():
                 sd[k].copy_(v.to(sd[k].dtype))
+
+    if a.eval_only:
+        # Score a finished checkpoint (public v5, a weight soup, ...) with the SAME windows,
+        # dev split and holdout as every member, so it is directly comparable.
+        assert a.init_model, "--eval_only needs --init_model"
+        au, aucs, P, Y = evaluate()
+        np.savez(os.path.join(HERE, f"raptor_gold_{a.tag}.npz"), pred=P, truth=Y, ids=np.array(gold_ids))
+        if holdout_ids:
+            Ph = _predict_ids(holdout_ids, a.k_eval)
+            np.savez(os.path.join(HERE, f"raptor_holdout_{a.tag}.npz"), pred=Ph,
+                     truth=np.stack([labels[u] for u in holdout_ids]), ids=np.array(holdout_ids))
+        json.dump({"tag": a.tag, "src": src, "best_gold_auc": au, "aucs": aucs, "eval_only": True},
+                  open(os.path.join(HERE, f"raptor_ft_{a.tag}.json"), "w"), indent=1)
+        print(f"[eval_only] {os.path.basename(a.init_model)} gold-dev {au:.4f} | holdout written", flush=True)
+        return
 
     best = 0.0; best_state = None; best_P = None; t0 = time.time(); hist = []
     TOPK = max(1, a.topk); topk = []

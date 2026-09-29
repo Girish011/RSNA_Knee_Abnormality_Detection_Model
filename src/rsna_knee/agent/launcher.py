@@ -44,7 +44,11 @@ def result_slug(job: str) -> str:
     return f"{USER}/rsna-knee-rp-{job}-out"
 
 
-def build_bundle(job: str, arms: list[Arm]) -> Path:
+V5_INIT = ("raptor_ft_coatnet_v5_full_swa.pt", "dreaddevelopment/raptor-knee-maxspan",
+           "raptor_ft_coatnet_v5_full_swa.pt")
+
+
+def build_bundle(job: str, arms: list[Arm], inits: list[tuple[str, str, str]] | None = None) -> Path:
     d = REPO / "outputs" / "runpod_bundle" / job
     shutil.rmtree(d, ignore_errors=True)
     d.mkdir(parents=True)
@@ -58,6 +62,10 @@ def build_bundle(job: str, arms: list[Arm]) -> Path:
     for _, labels, _ in arms:
         shutil.copy(REPO / "data" / "processed" / labels, d)
     (d / "arms.txt").write_text("".join(f"{t}|{lab}|{extra}\n" for t, lab, extra in arms))
+    inits = list(inits or [])
+    if any(V5_INIT[0] in extra for _, _, extra in arms) and V5_INIT not in inits:
+        inits.append(V5_INIT)
+    (d / "inits.txt").write_text("".join(f"{f}|{ds}|{path}\n" for f, ds, path in dict.fromkeys(inits)))
     (d / "dataset-metadata.json").write_text(json.dumps({
         "title": f"rsna-knee-rp-{job}-bundle", "id": f"{USER}/rsna-knee-rp-{job}-bundle",
         "licenses": [{"name": "CC0-1.0"}]}))
@@ -75,7 +83,7 @@ def upload_bundle(d: Path) -> str:
 
 
 def launch(job: str, arms: list[Arm], hours: float, *, capacity_rounds: int = 8,
-           corpus: str = "raptor44") -> dict:
+           corpus: str = "raptor44", inits: list[tuple[str, str, str]] | None = None) -> dict:
     """Upload the bundle and start a pod. Returns {pod, costPerHr, monitor, bundle, result}.
 
     Retries across community 3090 (preferred) → 4090 → secure 4090, with backoff, until a
@@ -85,7 +93,7 @@ def launch(job: str, arms: list[Arm], hours: float, *, capacity_rounds: int = 8,
     4090s repeatedly vanished mid-train with no upload (pure spend burn).
     """
     assert_budget(hours * PRICE_HR)
-    bundle = upload_bundle(build_bundle(job, arms))
+    bundle = upload_bundle(build_bundle(job, arms, inits))
     time.sleep(30)
     result = result_slug(job)
     base = {

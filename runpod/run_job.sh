@@ -86,17 +86,19 @@ else
       || finish "download $ds failed"
   done
 fi
-# Warm-start checkpoint (public v5 full SWA, same CoAtNet arch) only when an arm asks for it.
-if grep -q -- "--init_model" "$B/arms.txt"; then
-  status "downloading init checkpoint"
+# Checkpoints an arm starts from or scores (--init_model): inits.txt = file|dataset|path-in-dataset.
+if [ -s "$B/inits.txt" ]; then
+  status "downloading init checkpoints"
   mkdir -p /workspace/input/init
-  for i in 1 2 3; do
-    kaggle datasets download dreaddevelopment/raptor-knee-maxspan -f raptor_ft_coatnet_v5_full_swa.pt \
-      -p /workspace/input/init -q && break
-    sleep 20
-  done
-  (cd /workspace/input/init && for z in *.zip; do [ -f "$z" ] && unzip -o -q "$z" && rm -f "$z"; done)
-  [ -f /workspace/input/init/raptor_ft_coatnet_v5_full_swa.pt ] || finish "init checkpoint download failed"
+  while IFS='|' read -r fname ds path; do
+    [ -z "$fname" ] && continue
+    for i in 1 2 3; do
+      kaggle datasets download "$ds" -f "$path" -p /workspace/input/init -q </dev/null && break
+      sleep 20
+    done
+    (cd /workspace/input/init && for z in *.zip; do [ -f "$z" ] && unzip -o -q "$z" && rm -f "$z"; done)
+    [ -f "/workspace/input/init/$fname" ] || finish "init checkpoint $fname download failed"
+  done < "$B/inits.txt"
 fi
 ls -la /workspace/input/*/
 cp "$B/train.csv" "$OUT/train.csv"

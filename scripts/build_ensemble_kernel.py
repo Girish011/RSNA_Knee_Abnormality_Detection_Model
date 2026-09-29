@@ -99,6 +99,8 @@ def resolve_members(ids: list[str]) -> list[tuple[str, str]]:
     done = json.loads(MEMBERS.read_text())["done"] if MEMBERS.exists() else {}
     out = []
     for i in ids:
+        if i in done and done[i].get("eval_of"):
+            raise SystemExit(f"{i} is an eval record of {done[i]['eval_of']}, not a model")
         if i in done:
             out.append((done[i]["dataset"], done[i]["weights"]))
         elif i.startswith("m") and len(i) == 12:
@@ -120,12 +122,21 @@ def _src(cell: dict) -> str:
     return cell["source"] if isinstance(cell["source"], str) else "".join(cell["source"])
 
 
-def swap_v5(nb: dict, weight: str, dataset: str) -> dict:
-    """Point the stack's maxspan-v5 arms (normal + reverse, 70% of the Raptor family) at our
-    member and register our dataset with the asset finder. Everything else stays public."""
+def swap_v5(nb: dict, weights: list[str], datasets: list[str]) -> dict:
+    """Point the stack's maxspan-v5 arms at our member(s): one weight → both arms (normal w0.60 +
+    reverse w0.10 of the Raptor family); two → normal=first, reverse=second. Our datasets are
+    registered with the asset finder. Everything else stays public."""
     nb = copy.deepcopy(nb)
-    slug = dataset.split("/", 1)[1]
-    roots = f"'/kaggle/input/datasets/{dataset}', '/kaggle/input/{slug}', "
+    if isinstance(weights, str):
+        weights, datasets = [weights], [datasets]
+    if len(set(weights)) > 1:
+        # The stack runs forward + reverse maxspan through ONE loaded model (fast path) and raises
+        # "MaxSpan forward/reverse arms no longer share preprocessing" otherwise (seen 2026-09-29).
+        raise SystemExit("maxspan forward/reverse share one model: swap a single member "
+                         "(or a weight-soup of several, as one checkpoint)")
+    order = [weights[0], weights[-1]]
+    roots = "".join(f"'/kaggle/input/datasets/{d}', '/kaggle/input/{d.split('/', 1)[1]}', "
+                    for d in dict.fromkeys(datasets))
     n_roots = n_arms = 0
     for c in nb["cells"]:
         t = _src(c)
@@ -133,8 +144,10 @@ def swap_v5(nb: dict, weight: str, dataset: str) -> dict:
             t = t.replace("ASSET_ROOTS = [", "ASSET_ROOTS = [" + roots, 1)
             n_roots += 1
         if '"name": "maxspan-v5"' in t:
-            n_arms += t.count(f'"file": "{V5}"')
-            t = t.replace(f'"file": "{V5}"', f'"file": "{weight}"')
+            for w in order:
+                if f'"file": "{V5}"' in t:
+                    t = t.replace(f'"file": "{V5}"', f'"file": "{w}"', 1)
+                    n_arms += 1
         c["source"] = t
     if n_roots != 1 or n_arms != 2:
         raise SystemExit(f"swap anchors drifted: roots {n_roots}, v5 arms {n_arms} (want 1, 2)")
@@ -148,10 +161,11 @@ def build(name: str, member_ids: list[str], w: float, out_root: Path | None = No
     nb_path = next(BASE.glob("*.ipynb"))
     nb = json.loads(nb_path.read_text())
     meta = json.loads((BASE / "kernel-metadata.json").read_text())
-    swap_ds = None
+    swap_dss: list[str] = []
     if swap:
-        (swap_ds, swap_w), = resolve_members([swap])
-        nb = swap_v5(nb, swap_w, swap_ds)
+        pairs = resolve_members(swap.split(","))[:2]
+        swap_dss = [d for d, _ in pairs]
+        nb = swap_v5(nb, [w for _, w in pairs], swap_dss)
     members = resolve_members(member_ids) if w > 0 else []
     files = [f for _, f in members]
     if len(set(files)) != len(files):
@@ -169,7 +183,7 @@ def build(name: str, member_ids: list[str], w: float, out_root: Path | None = No
     code_file = f"{name}.ipynb"
     (d / code_file).write_text(json.dumps(nb2, indent=1))
     datasets = [s for s in meta.get("dataset_sources", []) if s]
-    for slug in [m[0] for m in members] + ([swap_ds] if swap_ds else []):
+    for slug in [m[0] for m in members] + swap_dss:
         if slug not in datasets:
             datasets.append(slug)
     meta2 = {**{k: v for k, v in meta.items() if k not in ("id_no",)},
@@ -188,7 +202,8 @@ def main() -> None:
     ap.add_argument("--name", required=True)
     ap.add_argument("--members", default="", help="comma list of node ids / member tags")
     ap.add_argument("--w", type=float, default=0.2, help="global rank weight of our leg (0 = no leg)")
-    ap.add_argument("--swap-v5", default=None, help="member tag replacing v5 in the maxspan arms")
+    ap.add_argument("--swap-v5", default=None,
+                    help="member tag replacing v5 in both maxspan arms, or 'normal,reverse' tags")
     a = ap.parse_args()
     d = build(a.name, [m for m in a.members.split(",") if m], a.w, swap=a.swap_v5)
     print(f"built {d}\npush (user-approved): kaggle kernels push -p {d}")

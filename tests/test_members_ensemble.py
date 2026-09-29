@@ -160,3 +160,35 @@ def test_observe_waits_for_final_snapshot(msandbox, monkeypatch, tmp_path):
     status["text"] = "uploading (all arms finished)"
     members.observe(m)
     assert m["active"] is None and set(m["done"]) == {"a1", "a2"}
+
+
+def test_swap_v5_refuses_two_different_members():
+    nb = {"cells": [{"cell_type": "code", "source": "ASSET_ROOTS = []\n"},
+                    {"cell_type": "code", "source": '"name": "maxspan-v5", "file": "raptor_ft_coatnet_v5_full_swa.pt"'}]}
+    with pytest.raises(SystemExit, match="share one model"):
+        BEK.swap_v5(nb, ["raptor_ft_ma.pt", "raptor_ft_mb.pt"], ["u/d1", "u/d1"])
+
+
+def test_eval_job_ships_inits_and_eval_flag(msandbox):
+    m = members.load()
+    m["done"]["mx"] = {"dataset": "u/rsna-knee-soup-x", "weights": "raptor_ft_mx.pt", "genome": G.BASE}
+    members.save(m)
+    job = members.queue_eval(["v5", "mx"])
+    assert members.load()["queue"][0]["job"] == job["job"] and len(job["arms"]) == 2
+    members._launch(members.load(), job)
+    (_, arms, _), = msandbox
+    assert all("--eval_only --init_model /workspace/input/init/" in a[2] for a in arms)
+    assert "--fold " not in arms[0][2]
+    with pytest.raises(SystemExit):
+        members.queue_eval(["v5", "mx"])  # already queued → refused
+
+
+def test_bundle_writes_inits(tmp_path, monkeypatch):
+    from rsna_knee.agent import launcher
+    monkeypatch.setattr(launcher, "REPO", launcher.REPO)
+    d = launcher.build_bundle("t-inits", [("a", "labels_dread.parquet",
+                                           "--init_model /workspace/input/init/raptor_ft_coatnet_v5_full_swa.pt")],
+                              [("raptor_ft_s.pt", "u/soup", "soup/raptor_ft_s.pt")])
+    lines = (d / "inits.txt").read_text().splitlines()
+    import shutil; shutil.rmtree(d)
+    assert "raptor_ft_s.pt|u/soup|soup/raptor_ft_s.pt" in lines and any(l.startswith("raptor_ft_coatnet_v5") for l in lines)

@@ -544,3 +544,10 @@ Append one row (or block) per run. Never delete history.
 - blend_v2 (mcef16e20c0c / md767d1cc09d): macro-58 0.925 / 0.923, Synovitis 0.79–0.81 (no relabel), holdout 0.935 / 0.930.
 - relabel_bd5c19da (two stacked Synovitis reads on c7ab): m9e3f8e11e19 / m27663be2f7c macro-58 0.928 / 0.927, Synovitis 0.861 / 0.868, PF OA 0.840 / 0.861, holdout 0.935 / **0.941** (best so far).
 - Bug: members.observe finalized on the per-arm partial Kaggle version (served for minutes after the final push) → m27663be2f7c marked missing. Now waits until the snapshot STATUS says "all arms finished" (the snapshot predates "done"); m27663be2f7c re-collected by hand. Test added.
+
+### 2026-09-29 — swap LB 0.943; one-model maxspan slot; soups + eval-only jobs
+- ref 56665556 swap-d4-m6ed = **0.943** (base 0.943; tail variant was 0.941). Submitted ref 56680743 swap-d4-m0b16 (bestof_v1 member).
+- Two-member swap errored: the stack asserts forward/reverse maxspan arms share file + preprocessing (one loaded model). Builder now refuses two different members.
+- `scripts/make_soup.py`: uniform weight soup of same-init members → one checkpoint. soupbestof2 (m0b16 + m470c): backbone rel. dist 0.011 (each ~0.009 from v5), attention head 0.69, clsW 0.40 → head averaging is the risk; do not submit unvalidated.
+- `--eval_only` trainer flag + `members eval --targets v5,<tag>`: score any checkpoint on the member protocol (dense80, gold-dev 29, holdout 29); pods fetch checkpoints from `inits.txt`. Queued e-dd366d455d (v5, soupbestof2). First apples-to-apples v5 baseline.
+- Fold-0 `6e0c83b59036` (c7ab labels, ImageNet) finished: proxy 0.9362, gold_dev 0.913.

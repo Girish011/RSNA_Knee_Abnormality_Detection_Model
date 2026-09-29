@@ -33,8 +33,14 @@ Full-data members (all v5 warm start, 6 ep) — holdout-29 vs 5bc0's 0.915:
 
 **Best label set: `bestof_v1`** — members m470c713b9fe / m0b16e9a09f1 macro-58 **0.932** (gold_dev 0.926 / 0.922, holdout 0.938 / **0.942**). 15 members done.
 Running: fold-0 `n-6e0c83b59036` on `n6n5lchdmm4jiz` ($0.74/h; launched by the retired idle planner — user may terminate). Fold-0 trains now disabled.
-LB: `ens-d4-5bc0-w20` ref 56651119 = **0.941** vs base D4 V11 **0.943** (Kaggle page) → a weak (0.920) tail leg at w=0.2 costs ~0.002.
-Submitted **`swap-d4-m6ed`** → ref **56665556** PENDING (audit confirms our checkpoint loaded in both v5 arms). Also built, not pushed: (our best member replaces v5 in the dominant maxspan arms, 70% of Raptor family; no tail) and `ens-d4-m6-w30` (tail leg, 6 members).
+
+## LB (2026-09-29 21:20 IST)
+| ref | kernel | public |
+|---|---|---:|
+| 56651119 | D4 + 5bc0 tail w=0.2 | 0.941 |
+| 56665556 | swap m6edbb53fbab → v5 arms | **0.943** (= base; tail penalty gone) |
+| 56680743 | swap m0b16e9a09f1 (bestof_v1) → v5 arms | PENDING |
+Forward/reverse maxspan arms share ONE model → several members only as a weight soup. `soupbestof2` (m0b16 + m470c) built; backbones 1% apart, heads 40–70% apart → validate before any LB use. Eval job `e-dd366d455d` (v5 + soupbestof2 on our dev/holdout) queued after `m-6c83c7d7f7`.
 
 ## Money
 - Campaign: ~$34 of $300. RunPod balance **$10.06** (low). DeepSeek $47.94 (fine).

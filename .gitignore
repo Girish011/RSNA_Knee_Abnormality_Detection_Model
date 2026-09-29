@@ -66,3 +66,4 @@ agent/runs/dashboard.html
 
 outputs/runpod_bundle/
 agent/labels/cache/
+outputs/soups/

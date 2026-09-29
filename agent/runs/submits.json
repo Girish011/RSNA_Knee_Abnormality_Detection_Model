@@ -46,7 +46,7 @@
   "fingerprint": "0a18539b0906f827",
   "why": "swap: member m6edbb53fbab (v5 fine-tuned full data) replaces v5 in D4 maxspan arms",
   "ref": 56665556,
-  "public_lb": null,
+  "public_lb": 0.943,
   "ensemble": {
    "base": "rsna-knee-fast-2xt4-inference.ipynb",
    "members": [],
@@ -55,5 +55,22 @@
    "swap_v5": "m6edbb53fbab"
   },
   "ts": 1790663743.894454
+ },
+ {
+  "date": "2026-09-29T15:42:16.675870+00:00",
+  "kernel": "girishbose/swap-d4-m0b16",
+  "version": 1,
+  "fingerprint": "6a9e86096f7a6254",
+  "why": "swap: bestof_v1 member m0b16e9a09f1 (macro-58 0.932, holdout 0.942) replaces v5 in maxspan arms",
+  "ref": 56680743,
+  "public_lb": null,
+  "ensemble": {
+   "base": "rsna-knee-fast-2xt4-inference.ipynb",
+   "members": [],
+   "weights": [],
+   "w": 0.0,
+   "swap_v5": "m0b16e9a09f1"
+  },
+  "ts": 1790696536.6764228
  }
 ]

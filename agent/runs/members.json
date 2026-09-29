@@ -1,6 +1,163 @@
 {
- "queue": [],
- "active": null,
+ "queue": [
+  {
+   "job": "e-dd366d455d",
+   "arms": [
+    {
+     "tag": "ef3fb2a5a708",
+     "genome": {
+      "corpus": "dense80",
+      "labels": "dread",
+      "arch": "coatnet384",
+      "epochs": 16,
+      "k": 8,
+      "k_eval": 24,
+      "bb_lr": 3e-05,
+      "head_lr": 0.001,
+      "wd": 0.02,
+      "freeze_blocks": 0
+     },
+     "seed": 42,
+     "parent": "v5",
+     "eval_of": "v5",
+     "init_file": "raptor_ft_coatnet_v5_full_swa.pt"
+    },
+    {
+     "tag": "e821d2acca4b",
+     "genome": {
+      "corpus": "dense80",
+      "labels": "dread",
+      "arch": "coatnet384",
+      "epochs": 16,
+      "k": 8,
+      "k_eval": 24,
+      "bb_lr": 3e-05,
+      "head_lr": 0.001,
+      "wd": 0.02,
+      "freeze_blocks": 0
+     },
+     "seed": 42,
+     "parent": "soupbestof2",
+     "eval_of": "soupbestof2",
+     "init_file": "raptor_ft_soupbestof2.pt"
+    }
+   ],
+   "inits": [
+    [
+     "raptor_ft_coatnet_v5_full_swa.pt",
+     "dreaddevelopment/raptor-knee-maxspan",
+     "raptor_ft_coatnet_v5_full_swa.pt"
+    ],
+    [
+     "raptor_ft_soupbestof2.pt",
+     "girishbose/rsna-knee-soup-bestof2",
+     "raptor_ft_soupbestof2.pt"
+    ]
+   ],
+   "est_hours": 1.4,
+   "est_usd": 1.04,
+   "corpus": "dense80",
+   "approved": true,
+   "queued": 1790696811.816585
+  },
+  {
+   "job": "m-c15cb7b0ea",
+   "arms": [
+    {
+     "tag": "m181b1f216bf",
+     "genome": {
+      "corpus": "dense80",
+      "labels": "bestof_v1",
+      "arch": "coatnet384",
+      "epochs": 6,
+      "k": 8,
+      "k_eval": 24,
+      "bb_lr": 3e-05,
+      "head_lr": 0.001,
+      "wd": 0.02,
+      "freeze_blocks": 0
+     },
+     "seed": 5,
+     "parent": "6e0c83b59036",
+     "init": "v5"
+    },
+    {
+     "tag": "mc11fa8a2a62",
+     "genome": {
+      "corpus": "dense80",
+      "labels": "bestof_v1",
+      "arch": "coatnet384",
+      "epochs": 6,
+      "k": 8,
+      "k_eval": 24,
+      "bb_lr": 3e-05,
+      "head_lr": 0.001,
+      "wd": 0.02,
+      "freeze_blocks": 0
+     },
+     "seed": 21,
+     "parent": "6e0c83b59036",
+     "init": "v5"
+    }
+   ],
+   "est_hours": 4.9,
+   "est_usd": 3.63,
+   "corpus": "dense80",
+   "approved": true,
+   "queued": 1790696629.574614
+  }
+ ],
+ "active": {
+  "job": "m-6c83c7d7f7",
+  "arms": [
+   {
+    "tag": "m181b1f216bf",
+    "genome": {
+     "corpus": "dense80",
+     "labels": "bestof_v1",
+     "arch": "coatnet384",
+     "epochs": 6,
+     "k": 8,
+     "k_eval": 24,
+     "bb_lr": 3e-05,
+     "head_lr": 0.001,
+     "wd": 0.02,
+     "freeze_blocks": 0
+    },
+    "seed": 5,
+    "parent": "5bc0a0f45d75",
+    "init": "v5"
+   },
+   {
+    "tag": "md6cc9c05658",
+    "genome": {
+     "corpus": "dense80",
+     "labels": "bestof_v1",
+     "arch": "coatnet384",
+     "epochs": 6,
+     "k": 8,
+     "k_eval": 24,
+     "bb_lr": 3e-05,
+     "head_lr": 0.001,
+     "wd": 0.02,
+     "freeze_blocks": 0
+    },
+    "seed": 2024,
+    "parent": "5bc0a0f45d75",
+    "init": "v5"
+   }
+  ],
+  "est_hours": 4.9,
+  "est_usd": 3.63,
+  "corpus": "dense80",
+  "approved": true,
+  "queued": 1790687273.7462971,
+  "pod": "6xc11q3uqpdrdi",
+  "result": "girishbose/rsna-knee-rp-m-6c83c7d7f7-out",
+  "launched": 1790694153.8306718,
+  "price_hr": 0.22,
+  "proxy_misses": 0
+ },
  "done": {
   "m6edbb53fbab": {
    "tag": "m6edbb53fbab",
@@ -351,6 +508,32 @@
    "swa_gold_dev": 0.918067793825803,
    "holdout_auc": 0.9421228725408292,
    "finished": 1790682887.553469
+  },
+  "soupbestof2": {
+   "tag": "soupbestof2",
+   "dataset": "girishbose/rsna-knee-soup-bestof2",
+   "weights": "raptor_ft_soupbestof2.pt",
+   "soup_of": [
+    "m0b16e9a09f1",
+    "m470c713b9fe"
+   ],
+   "genome": {
+    "corpus": "dense80",
+    "labels": "bestof_v1",
+    "arch": "coatnet384",
+    "epochs": 6,
+    "k": 8,
+    "k_eval": 24,
+    "bb_lr": 3e-05,
+    "head_lr": 0.001,
+    "wd": 0.02,
+    "freeze_blocks": 0
+   },
+   "init": "v5",
+   "seed": null,
+   "gold_dev": null,
+   "holdout_auc": null,
+   "path": "raptor_ft_soupbestof2.pt"
   }
  }
 }
