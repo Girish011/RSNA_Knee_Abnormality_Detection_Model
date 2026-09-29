@@ -37,8 +37,13 @@ def test_research_rate_limit_and_daily_cap(ssandbox, monkeypatch):
     state = {}
     assert strategist.research(state, j, tmp, llm_tools=_scripted([]), now=1000.0) is True
     assert strategist.research(state, j, tmp, llm_tools=_scripted([]), now=1001.0) is False
-    monkeypatch.setattr(strategist, "llm_spent_today", lambda events=None: 99.0)
-    assert strategist.research({}, j, tmp, llm_tools=_scripted([]), now=5000.0) is False
+    # relabel budget exhausted: thinking turns still run
+    monkeypatch.setattr(strategist, "llm_spent_today", lambda events=None, kinds=strategist.RELABEL_KINDS:
+                        99.0 if kinds == strategist.RELABEL_KINDS else 0.1)
+    assert strategist.research({}, j, tmp, llm_tools=_scripted([]), now=5000.0) is True
+    # thinking budget exhausted: skip
+    monkeypatch.setattr(strategist, "llm_spent_today", lambda events=None, kinds=strategist.RELABEL_KINDS: 99.0)
+    assert strategist.research({}, j, tmp, llm_tools=_scripted([]), now=9000.0) is False
 
 
 def test_closed_axes_refused_label_change_queued(ssandbox):

@@ -39,11 +39,15 @@ from rsna_knee.constants import LABEL_COLS
 
 REPO = G.REPO
 RESEARCH_EVERY_S = 45 * 60
-DAILY_LLM_USD = 15.0           # DeepSeek spend per calendar day (planner + strategist + relabels)
+# Two budgets (2026-09-29): relabels ate 97% of a shared cap and silenced 3-cent thinking turns.
+DAILY_LLM_USD = 15.0           # relabel spend per calendar day
+DAILY_THINK_USD = 3.0          # strategist / planner turns per day (~$0.03 each → ~100 turns)
 RELABEL_MAX_USD = 12.0         # one relabel job (a full pro re-read of ~4 findings is ~$7-10)
 MAX_RELABELS = 12              # unique registered label sets (budget guard, not science)
 CLOSED_AXES = {"bb_lr", "head_lr", "wd", "epochs"}
 LLM_KINDS = {"plan", "research", "data", "code"}
+THINK_KINDS = {"plan", "research", "code"}
+RELABEL_KINDS = {"data"}
 SUBMITS = RUNS / "submits.json"
 V5_GOLD58 = {"ACL": 0.964, "MCL": 0.980, "Medial Meniscus": 0.957, "Lateral Meniscus": 0.877,
              "Medial OA": 0.977, "Lateral OA": 0.867, "PF OA": 0.847, "Effusion": 0.976,
@@ -78,10 +82,10 @@ Use coder tools only for real harness bugs. End with a short JSON summary of wha
 Never write secrets. You cannot push kernels or submit to the LB — the user approves those."""
 
 
-def llm_spent_today(events: list[dict] | None = None) -> float:
+def llm_spent_today(events: list[dict] | None = None, kinds: set[str] = RELABEL_KINDS) -> float:
     today = datetime.now().strftime("%Y-%m-%d")
     return float(sum(e.get("cost_usd") or 0.0 for e in (events if events is not None else read())
-                     if e.get("kind") in LLM_KINDS and str(e.get("ts", "")).startswith(today)))
+                     if e.get("kind") in kinds and str(e.get("ts", "")).startswith(today)))
 
 
 def _per_label(y: np.ndarray, p: np.ndarray, m: np.ndarray | None = None) -> dict[str, float]:
@@ -188,8 +192,10 @@ def handlers(state: dict, journal: Journal, results: Path, actions: list[str]) -
         return {"loop_active": state.get("active") and state["active"].get("job"),
                 "members_active": members.load()["active"] is not None,
                 "runpod_balance_usd": bal, "campaign_spent_usd": round(spent(read()), 2),
-                "campaign_cap_usd": BUDGET_USD, "llm_spent_today_usd": round(llm_spent_today(), 2),
-                "llm_daily_cap_usd": DAILY_LLM_USD}
+                "campaign_cap_usd": BUDGET_USD, "relabel_spent_today_usd": round(llm_spent_today(), 2),
+                "relabel_daily_cap_usd": DAILY_LLM_USD,
+                "think_spent_today_usd": round(llm_spent_today(kinds=THINK_KINDS), 2),
+                "think_daily_cap_usd": DAILY_THINK_USD}
 
     def request_relabel(labels: list | None = None, rule: str = "", base: str = "",
                         model: str = "flash", why: str = "", **_):
@@ -317,14 +323,15 @@ def research(state: dict, journal: Journal, results: Path, *, llm_tools=run_tool
     if now < float(state.get("next_research_after") or 0):
         return False
     state["next_research_after"] = now + RESEARCH_EVERY_S
-    today = llm_spent_today()
-    if today >= DAILY_LLM_USD:
-        log("note", f"strategist skipped: DeepSeek spend today ${today:.2f} >= cap ${DAILY_LLM_USD}")
+    think = llm_spent_today(kinds=THINK_KINDS)
+    if think >= DAILY_THINK_USD:
+        log("note", f"strategist skipped: thinking spend today ${think:.2f} >= cap ${DAILY_THINK_USD}")
         return False
+    today = llm_spent_today()
     actions: list[str] = []
     prompt = (f"STATE: {json.dumps(analyze(journal, results), default=str)[:30000]}\n"
               f"MENU: {json.dumps(G.MENU)}\nCLOSED AXES: {sorted(CLOSED_AXES)}\n"
-              f"DeepSeek spend today ${today:.2f} of ${DAILY_LLM_USD}.\n"
+              f"Relabel spend today ${today:.2f} of ${DAILY_LLM_USD} (thinking turns have their own budget).\n"
               "Decide and act with tools now, then reply with a short JSON summary.")
     final, cost, trace = llm_tools(SYSTEM, prompt, TOOLS, handlers(state, journal, results, actions),
                                    model=model, max_rounds=10)
