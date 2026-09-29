@@ -111,10 +111,11 @@ def launch(job: str, arms: list[Arm], hours: float, *, capacity_rounds: int = 8,
     }
     # Order = reliability first, then speed/capacity. Secure last (pip hangs on secure hosts).
     attempts = [
-        {"cloudType": "COMMUNITY", "gpuTypeIds": [runpod.GPU_3090]},
-        {"cloudType": "COMMUNITY", "gpuTypeIds": [runpod.GPU_3090, runpod.GPU_4090]},
+        # 2026-09-30 deadline mode: speed first. Community 3090 hosts measured ~37 min/epoch on a
+        # full-data member vs ~8 on a 4090 — a 5 h slot delay for $0.12/h savings.
         {"cloudType": "COMMUNITY", "gpuTypeIds": [runpod.GPU_4090]},
         {"cloudType": "COMMUNITY", "gpuTypeIds": [runpod.GPU_A6000, runpod.GPU_A40]},
+        {"cloudType": "COMMUNITY", "gpuTypeIds": [runpod.GPU_3090, runpod.GPU_4090]},
         {"cloudType": "SECURE", "gpuTypeIds": [runpod.GPU_4090]},
         {"cloudType": "SECURE", "gpuTypeIds": [runpod.GPU_A6000, runpod.GPU_A40]},
     ]
