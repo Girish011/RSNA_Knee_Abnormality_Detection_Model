@@ -123,3 +123,17 @@ def test_warm_start_member_args(msandbox):
     assert job["arms"][0]["tag"] != members.member_tag(job["arms"][0]["genome"], 42)
     with pytest.raises(SystemExit):
         members.queue("p1", [42], ["dread"], init="nope")
+
+
+def test_swap_v5_rewires_both_arms_and_roots(tmp_path):
+    arms = ('ARMS = [\n    {"name": "maxspan-v5", "file": "raptor_ft_coatnet_v5_full_swa.pt", "w": 0.6},\n'
+            '    {"name": "maxspan-v5-reverse", "file": "raptor_ft_coatnet_v5_full_swa.pt", "w": 0.1}]\n')
+    nb = {"cells": [{"cell_type": "code", "source": "ASSET_ROOTS = ['/kaggle/input/x']\n"},
+                    {"cell_type": "code", "source": "names=['raptor_ft_coatnet_v5_full_swa.pt']\n"},
+                    {"cell_type": "code", "source": arms}]}
+    out = BEK.swap_v5(nb, "raptor_ft_mabc.pt", "girishbose/rsna-knee-rp-m-1-out")
+    assert "'/kaggle/input/datasets/girishbose/rsna-knee-rp-m-1-out'" in out["cells"][0]["source"]
+    assert out["cells"][2]["source"].count("raptor_ft_mabc.pt") == 2
+    assert "coatnet_v5" in out["cells"][1]["source"]  # preflight keeps the public v5 requirement
+    with pytest.raises(SystemExit):
+        BEK.swap_v5({"cells": [{"cell_type": "code", "source": "x=1"}]}, "a.pt", "u/d")

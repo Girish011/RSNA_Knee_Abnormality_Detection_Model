@@ -1,31 +1,13 @@
 {
  "queue": [
   {
-   "job": "m-97b7c3b133",
+   "job": "m-4f1a723c63",
    "arms": [
     {
-     "tag": "mcef16e20c0c",
+     "tag": "m9e3f8e11e19",
      "genome": {
       "corpus": "dense80",
-      "labels": "blend_v2",
-      "arch": "coatnet384",
-      "epochs": 6,
-      "k": 8,
-      "k_eval": 24,
-      "bb_lr": 3e-05,
-      "head_lr": 0.001,
-      "wd": 0.02,
-      "freeze_blocks": 0
-     },
-     "seed": 2,
-     "parent": "5bc0a0f45d75",
-     "init": "v5"
-    },
-    {
-     "tag": "md767d1cc09d",
-     "genome": {
-      "corpus": "dense80",
-      "labels": "blend_v2",
+      "labels": "relabel_bd5c19da",
       "arch": "coatnet384",
       "epochs": 6,
       "k": 8,
@@ -38,23 +20,41 @@
      "seed": 3,
      "parent": "5bc0a0f45d75",
      "init": "v5"
+    },
+    {
+     "tag": "m27663be2f7c",
+     "genome": {
+      "corpus": "dense80",
+      "labels": "relabel_bd5c19da",
+      "arch": "coatnet384",
+      "epochs": 6,
+      "k": 8,
+      "k_eval": 24,
+      "bb_lr": 3e-05,
+      "head_lr": 0.001,
+      "wd": 0.02,
+      "freeze_blocks": 0
+     },
+     "seed": 11,
+     "parent": "5bc0a0f45d75",
+     "init": "v5"
     }
    ],
    "est_hours": 4.9,
    "est_usd": 3.63,
    "corpus": "dense80",
    "approved": true,
-   "queued": 1790647711.714752
+   "queued": 1790660231.812727
   }
  ],
  "active": {
-  "job": "m-ba432f8ff9",
+  "job": "m-97b7c3b133",
   "arms": [
    {
-    "tag": "m1017be7a34b",
+    "tag": "mcef16e20c0c",
     "genome": {
      "corpus": "dense80",
-     "labels": "relabel_8c56cdf0",
+     "labels": "blend_v2",
      "arch": "coatnet384",
      "epochs": 6,
      "k": 8,
@@ -64,15 +64,15 @@
      "wd": 0.02,
      "freeze_blocks": 0
     },
-    "seed": 7,
+    "seed": 2,
     "parent": "5bc0a0f45d75",
     "init": "v5"
    },
    {
-    "tag": "m5243dee1bf9",
+    "tag": "md767d1cc09d",
     "genome": {
      "corpus": "dense80",
-     "labels": "relabel_8c56cdf0",
+     "labels": "blend_v2",
      "arch": "coatnet384",
      "epochs": 6,
      "k": 8,
@@ -82,7 +82,7 @@
      "wd": 0.02,
      "freeze_blocks": 0
     },
-    "seed": 13,
+    "seed": 3,
     "parent": "5bc0a0f45d75",
     "init": "v5"
    }
@@ -91,11 +91,12 @@
   "est_usd": 3.63,
   "corpus": "dense80",
   "approved": true,
-  "queued": 1790644553.843733,
-  "pod": "gwv2vbmlsnl1xh",
-  "result": "girishbose/rsna-knee-rp-m-ba432f8ff9-out",
-  "launched": 1790652715.206017,
-  "price_hr": 0.74
+  "queued": 1790647711.714752,
+  "pod": "seod7y1ur0ppod",
+  "result": "girishbose/rsna-knee-rp-m-97b7c3b133-out",
+  "launched": 1790660186.735771,
+  "price_hr": 0.74,
+  "proxy_misses": 0
  },
  "done": {
   "m6edbb53fbab": {
@@ -247,6 +248,56 @@
    "swa_gold_dev": 0.9195461617372372,
    "holdout_auc": 0.9343002113125952,
    "finished": 1790652638.1757922
+  },
+  "m1017be7a34b": {
+   "tag": "m1017be7a34b",
+   "genome": {
+    "corpus": "dense80",
+    "labels": "relabel_8c56cdf0",
+    "arch": "coatnet384",
+    "epochs": 6,
+    "k": 8,
+    "k_eval": 24,
+    "bb_lr": 3e-05,
+    "head_lr": 0.001,
+    "wd": 0.02,
+    "freeze_blocks": 0
+   },
+   "seed": 7,
+   "parent": "5bc0a0f45d75",
+   "init": "v5",
+   "job": "m-ba432f8ff9",
+   "dataset": "girishbose/rsna-knee-rp-m-ba432f8ff9-out",
+   "weights": "raptor_ft_m1017be7a34b.pt",
+   "gold_dev": 0.9123655263251779,
+   "swa_gold_dev": 0.9108238619974723,
+   "holdout_auc": 0.9327348820769873,
+   "finished": 1790660107.3762538
+  },
+  "m5243dee1bf9": {
+   "tag": "m5243dee1bf9",
+   "genome": {
+    "corpus": "dense80",
+    "labels": "relabel_8c56cdf0",
+    "arch": "coatnet384",
+    "epochs": 6,
+    "k": 8,
+    "k_eval": 24,
+    "bb_lr": 3e-05,
+    "head_lr": 0.001,
+    "wd": 0.02,
+    "freeze_blocks": 0
+   },
+   "seed": 13,
+   "parent": "5bc0a0f45d75",
+   "init": "v5",
+   "job": "m-ba432f8ff9",
+   "dataset": "girishbose/rsna-knee-rp-m-ba432f8ff9-out",
+   "weights": "raptor_ft_m5243dee1bf9.pt",
+   "gold_dev": 0.9143844184462034,
+   "swa_gold_dev": 0.9112931992365633,
+   "holdout_auc": 0.9308138212549978,
+   "finished": 1790660107.382375
   }
  }
 }

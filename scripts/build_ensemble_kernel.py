@@ -113,13 +113,46 @@ def code_cell(src: str) -> dict:
             "source": src.splitlines(keepends=True)}
 
 
-def build(name: str, member_ids: list[str], w: float, out_root: Path | None = None) -> Path:
-    if not 0.0 < w < 1.0:
-        raise SystemExit("--w must be in (0, 1)")
+V5 = "raptor_ft_coatnet_v5_full_swa.pt"
+
+
+def _src(cell: dict) -> str:
+    return cell["source"] if isinstance(cell["source"], str) else "".join(cell["source"])
+
+
+def swap_v5(nb: dict, weight: str, dataset: str) -> dict:
+    """Point the stack's maxspan-v5 arms (normal + reverse, 70% of the Raptor family) at our
+    member and register our dataset with the asset finder. Everything else stays public."""
+    nb = copy.deepcopy(nb)
+    slug = dataset.split("/", 1)[1]
+    roots = f"'/kaggle/input/datasets/{dataset}', '/kaggle/input/{slug}', "
+    n_roots = n_arms = 0
+    for c in nb["cells"]:
+        t = _src(c)
+        if "ASSET_ROOTS = [" in t and n_roots == 0:
+            t = t.replace("ASSET_ROOTS = [", "ASSET_ROOTS = [" + roots, 1)
+            n_roots += 1
+        if '"name": "maxspan-v5"' in t:
+            n_arms += t.count(f'"file": "{V5}"')
+            t = t.replace(f'"file": "{V5}"', f'"file": "{weight}"')
+        c["source"] = t
+    if n_roots != 1 or n_arms != 2:
+        raise SystemExit(f"swap anchors drifted: roots {n_roots}, v5 arms {n_arms} (want 1, 2)")
+    return nb
+
+
+def build(name: str, member_ids: list[str], w: float, out_root: Path | None = None,
+          swap: str | None = None) -> Path:
+    if not 0.0 <= w < 1.0 or (w == 0.0 and not swap):
+        raise SystemExit("--w must be in (0, 1), or 0 with --swap-v5")
     nb_path = next(BASE.glob("*.ipynb"))
     nb = json.loads(nb_path.read_text())
     meta = json.loads((BASE / "kernel-metadata.json").read_text())
-    members = resolve_members(member_ids)
+    swap_ds = None
+    if swap:
+        (swap_ds, swap_w), = resolve_members([swap])
+        nb = swap_v5(nb, swap_w, swap_ds)
+    members = resolve_members(member_ids) if w > 0 else []
     files = [f for _, f in members]
     if len(set(files)) != len(files):
         raise SystemExit("duplicate member weight names")
@@ -128,14 +161,15 @@ def build(name: str, member_ids: list[str], w: float, out_root: Path | None = No
                .replace("__MEMBER_FILES__", repr(files)))
     nb2 = copy.deepcopy(nb)
     start = code_cell("import time as _ens_t\n_ENS_START = _ens_t.time()  # wall clock for our leg's deadline\n")
-    nb2["cells"] = [start] + nb["cells"] + [code_cell(STASH), code_cell(run_leg),
-                                  code_cell(BLEND.replace("__W__", repr(float(w))))]
+    tail = ([code_cell(STASH), code_cell(run_leg), code_cell(BLEND.replace("__W__", repr(float(w))))]
+            if members else [])
+    nb2["cells"] = [start] + nb["cells"] + tail
     d = (out_root or REPO / "outputs" / "kernels") / name
     d.mkdir(parents=True, exist_ok=True)
     code_file = f"{name}.ipynb"
     (d / code_file).write_text(json.dumps(nb2, indent=1))
     datasets = [s for s in meta.get("dataset_sources", []) if s]
-    for slug, _ in members:
+    for slug in [m[0] for m in members] + ([swap_ds] if swap_ds else []):
         if slug not in datasets:
             datasets.append(slug)
     meta2 = {**{k: v for k, v in meta.items() if k not in ("id_no",)},
@@ -144,17 +178,19 @@ def build(name: str, member_ids: list[str], w: float, out_root: Path | None = No
              "docker_image": meta.get("docker_image") or DOCKER}
     (d / "kernel-metadata.json").write_text(json.dumps(meta2, indent=1))
     (d / "ENSEMBLE.json").write_text(json.dumps(
-        {"base": nb_path.name, "members": member_ids, "weights": files, "w": w}, indent=1))
+        {"base": nb_path.name, "members": member_ids if members else [], "weights": files, "w": w,
+         "swap_v5": swap}, indent=1))
     return d
 
 
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--name", required=True)
-    ap.add_argument("--members", required=True, help="comma list of node ids / member tags")
-    ap.add_argument("--w", type=float, default=0.2, help="global rank weight of our leg")
+    ap.add_argument("--members", default="", help="comma list of node ids / member tags")
+    ap.add_argument("--w", type=float, default=0.2, help="global rank weight of our leg (0 = no leg)")
+    ap.add_argument("--swap-v5", default=None, help="member tag replacing v5 in the maxspan arms")
     a = ap.parse_args()
-    d = build(a.name, a.members.split(","), a.w)
+    d = build(a.name, [m for m in a.members.split(",") if m], a.w, swap=a.swap_v5)
     print(f"built {d}\npush (user-approved): kaggle kernels push -p {d}")
 
 

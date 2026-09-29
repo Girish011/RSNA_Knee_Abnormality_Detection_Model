@@ -534,3 +534,8 @@ Append one row (or block) per run. Never delete history.
 - Queued `m-f8709fd3f8`: v5 init, dense80, full data, 6 epochs, seed 42, arms `m6edbb53fbab` (relabel_8c56cdf0) + `mb40244a6b78` (dread); est 4.9 h / ≤$3.63 (auto-approved <$10). Launches after `ca830` finishes.
 - Built (not pushed): `outputs/kernels/ens-d4-5bc0-w20/` = D4 + 5bc0 fold-0 weights at w=0.2.
 - Live `ca830` (bb_lr 1e-5): ep11 gold 0.869 vs 5bc0 final 0.909 → expected miss.
+
+### 2026-09-29 — LB: D4 + 5bc0 tail (w=0.2) = 0.941 < base 0.943; members; swap mode
+- ref 56651119 `ens-d4-5bc0-w20` public **0.941**; base `jiweiliu/rsna-knee-fast-2xt4-inference` V11 public 0.943 (Kaggle page). Adding a 0.920 single model as a rank tail hurts ~0.002. Run fit inside the time limit.
+- Members (v5 init, full data, 6 ep): holdout-29 0.927–0.939 (5bc0 0.915); gold_dev 0.910–0.918. 8 finished incl. m1017be7a34b / m5243dee1bf9 (8c56 seeds 7/13: 0.933 / 0.931).
+- New `--swap-v5 <member>` build mode: the stack's maxspan-v5 arms (normal w0.60 + reverse w0.10 of the Raptor family; 140 mm / 336 px / 2–98% / 64 slots ≈ our dense80) load our member instead of v5. Public precedent: fine-tuned v5 swapped in ranked above the 0.943 control. Built `swap-d4-m6ed` (m6edbb53fbab).

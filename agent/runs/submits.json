@@ -26,7 +26,7 @@
   "fingerprint": "b312c38d829c94e8",
   "why": "D4 stack + 5bc0 w=0.2 first ensemble probe",
   "ref": 56651119,
-  "public_lb": null,
+  "public_lb": 0.941,
   "ensemble": {
    "base": "rsna-knee-fast-2xt4-inference.ipynb",
    "members": [
