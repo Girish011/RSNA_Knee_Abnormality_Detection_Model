@@ -67,6 +67,7 @@ Add a bullet only when a result is measured; never add opinions.
 - Submissions = public D4 stack + our members rank-blended (scripts/build_ensemble_kernel.py). Members are FULL-DATA retrains (no fold) trained by `python -m rsna_knee.agent.members queue ...`, several arms per pod (one dense80 download).
 - Public raptor_ft_coatnet_v5_full_swa.pt (dreaddevelopment/raptor-knee-maxspan, CC0, gold-58 0.921) loads 486/486 tensors into our RaptorClassifier. A public team fine-tuned it 4 epochs → standalone LB 0.932 (vs 0.924 parent). Warm starts are member-only: v5 saw every train study, so any fold-0 proxy of a v5-init model is leaky.
 - What a fold-0 GPU train should test now: things that change the ensemble, not the lr — unused/new label sets, label diversity for Synovitis / Lateral OA / PF OA (the weakest public findings: v5 gold 0.80 / 0.87 / 0.85), and geometry. Prefer proposing a relabel of those findings over another optimizer tweak.
+- LB 2026-09-29: D4 stack (public 0.943) + our 0.920 fold-0 model as a rank TAIL at w=0.2 scored 0.941 — a weak tail leg HURTS. Next test is a SWAP: our v5-fine-tuned member replaces v5 inside the stack's dominant maxspan arms (kernel swap-d4-m6ed). Do not build more tail-leg kernels until the swap result is known; members are only useful if individually stronger than v5 (holdout 0.927–0.939 so far).
 
 ## Constraints
 
