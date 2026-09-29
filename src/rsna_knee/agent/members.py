@@ -173,6 +173,9 @@ def observe(m: dict) -> None:
         m["active"] = None
         if job["retries"] <= L.INFRA_RETRIES:
             m["queue"].insert(0, job)
+        else:
+            log("gate", f"member job {job['job']} DROPPED after {job['retries']} phantom pods; "
+                "requeue with `members queue` if still wanted", component="members", job=job["job"])
         return
     if pod is not None and pod.get("desiredStatus") == "RUNNING":
         if elapsed_h <= 2 * a["est_hours"] + 1 and L._running_pod_unhealthy(a) is None:

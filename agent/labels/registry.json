@@ -61,5 +61,37 @@
   },
   "base": "relabel_8c56cdf0",
   "rule": "all"
+ },
+ "relabel_bd5c19da": {
+  "file": "labels_relabel_bd5c19da.parquet",
+  "audit": {
+   "Synovitis": {
+    "dev_auc": 0.756,
+    "pilk_dev_auc": 0.617,
+    "prec": 0.6,
+    "kept": true
+   }
+  },
+  "base": "relabel_c7ab23d1",
+  "rule": "all"
+ },
+ "relabel_d19bf15e": {
+  "file": "labels_relabel_d19bf15e.parquet",
+  "audit": {
+   "Lateral OA": {
+    "dev_auc": 0.834,
+    "pilk_dev_auc": 0.756,
+    "prec": 0.6,
+    "kept": true
+   },
+   "PF OA": {
+    "dev_auc": 0.9,
+    "pilk_dev_auc": 0.888,
+    "prec": 0.64,
+    "kept": true
+   }
+  },
+  "base": "relabel_bd5c19da",
+  "rule": "all"
  }
 }

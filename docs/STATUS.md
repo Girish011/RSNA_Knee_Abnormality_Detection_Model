@@ -20,13 +20,19 @@ Deadline **2026-10-22**.
 4. Every LB submit through `scripts/submit_gate.py` (approval flag, 5/day, duplicate refusal, ledger).
 5. **DeepSeek strategist** (V4.1-Flash) works every 45 min while pods run: relabels weak findings, keeps the member queue stocked, queues label/corpus fold-0 trains, builds (not pushes) kernels. ≤$15/day.
 
-## Live
-| Job | Pod | $/h | What |
-|---|---|---:|---|
-| `n-ca830ada7798` | done | 0.34 | bb_lr=1e-5 → proxy **0.9200**, gold_dev 0.8775 — miss; lr axis closed (~$1.02) |
-| `m-f8709fd3f8` | `n6b0pdsjxzuzwq` | 0.74 | **v5 warm-start**, full data, 6 ep, labels `relabel_8c56cdf0` + `dread` (2 arms, est ≤$3.6). Launched 01:50 IST; downloading dense80. Monitor https://n6b0pdsjxzuzwq-8000.proxy.runpod.net |
+## Live (2026-09-29 09:05 IST)
+Full-data members (all v5 warm start, 6 ep) — holdout-29 vs 5bc0's 0.915:
+| Member | Labels | seed | gold_dev | holdout |
+|---|---|---:|---:|---:|
+| m6edbb53fbab | relabel_8c56cdf0 | 42 | 0.910 | **0.939** |
+| mb40244a6b78 | dread | 42 | 0.918 | 0.934 |
+| m17d7af073bf | relabel_c7ab23d1 (DeepSeek Syn/PF/LatOA) | 0 | 0.917 | 0.934 |
+| m3e9aed3d0c9 | relabel_c7ab23d1 | 1 | 0.917 | 0.936 |
+| m1df0b4ac76d | relabel_c7ab23d1 | 7 | 0.914 | 0.927 |
+| mdbe175a745e | relabel_d19bf15e (DeepSeek LatOA/PF) | 7 | 0.916 | 0.934 |
 
-**Submitted** `ens-d4-5bc0-w20` v1 (D4 + 5bc0 w=0.2) → ref **56651119** PENDING. Record: `scripts/submit_gate.py record --ref 56651119 --score <lb>`.
+Running: `m-ba432f8ff9` on `gwv2vbmlsnl1xh`; queued `m-97b7c3b133` (blend_v2), fold-0 `b6e0905842b6` (label A/B, pending).
+LB: `ens-d4-5bc0-w20` ref 56651119 **still PENDING** (~7 h, hidden-set run). Built, not pushed: **`ens-d4-m6-w30`** (D4 + 6 members).
 
 ## Money
 - Campaign: ~$34 of $300. RunPod balance **$10.06** (low). DeepSeek $47.94 (fine).

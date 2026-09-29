@@ -1819,5 +1819,35 @@
   "visits": 1,
   "value_sum": 1.0,
   "created": 1790615733.872364
+ },
+ {
+  "id": "b6e0905842b6",
+  "parent": "5bc0a0f45d75",
+  "genome": {
+   "arch": "coatnet384",
+   "bb_lr": 3e-05,
+   "corpus": "dense80",
+   "epochs": 20,
+   "freeze_blocks": 0,
+   "head_lr": 0.001,
+   "k": 8,
+   "k_eval": 24,
+   "labels": "relabel_c7ab23d1",
+   "wd": 0.02
+  },
+  "plan": "[strategist] Pure label-set A/B at fold-0: same recipe as node 5bc0a0f45d75 (dense80 / coatnet384 / 20 epochs / bb_lr 3e-05 / head_lr 0.001 / wd 0.02 / freeze_blocks 0), only labels swapped relabel_8c56cdf0 -> relabel_c7ab23d1. Readout: per-finding proxy Synovitis / PF OA / Lateral OA vs 0.935 / 0.884 / 0.905, macro vs 0.9366.",
+  "kind": "online",
+  "refs": [],
+  "operator": "cross_branch",
+  "status": "pending",
+  "proxy_auc": null,
+  "gold_auc": null,
+  "public_lb": null,
+  "gpu_hours": 0.0,
+  "error": "",
+  "reward": 0.0,
+  "visits": 0,
+  "value_sum": 0.0,
+  "created": 1790633062.137013
  }
 ]

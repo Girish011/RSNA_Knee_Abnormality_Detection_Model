@@ -41,9 +41,29 @@
     "PF OA",
     "Lateral OA"
    ]
+  },
+  {
+   "name": "relabel_bd5c19da",
+   "registered": true,
+   "kept": [
+    "Synovitis"
+   ]
+  },
+  {
+   "name": "relabel_d19bf15e",
+   "registered": true,
+   "kept": [
+    "Lateral OA",
+    "PF OA"
+   ]
+  },
+  {
+   "name": "relabel_3f7c7c60",
+   "registered": false,
+   "kept": []
   }
  ],
- "heartbeat": 1790627929.523169,
+ "heartbeat": 1790652715.207262,
  "_orphan_retries": 4,
- "next_research_after": 1790629980.575912
+ "next_research_after": 1790653434.654542
 }

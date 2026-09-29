@@ -101,6 +101,8 @@ def resolve_members(ids: list[str]) -> list[tuple[str, str]]:
     for i in ids:
         if i in done:
             out.append((done[i]["dataset"], done[i]["weights"]))
+        elif i.startswith("m") and len(i) == 12:
+            raise SystemExit(f"member {i} not in {MEMBERS.name} done (still training or not collected yet)")
         else:
             out.append((f"{USER}/rsna-knee-rp-n-{i}-out", f"raptor_ft_{i}.pt"))
     return out

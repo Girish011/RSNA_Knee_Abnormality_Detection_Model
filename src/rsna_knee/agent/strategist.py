@@ -221,6 +221,17 @@ def handlers(state: dict, journal: Journal, results: Path, actions: list[str]) -
         import build_ensemble_kernel as bek
         if not name.startswith("ens-") or not members_list:
             return {"ok": False, "errors": ["name must start with 'ens-' and members_list non-empty"]}
+        submitted = {json.dumps(r.get("ensemble"), sort_keys=True)
+                     for r in (json.loads(SUBMITS.read_text()) if SUBMITS.exists() else []) if r.get("ensemble")}
+        built = [json.loads(f.read_text()) for f in (REPO / "outputs" / "kernels").glob("ens-*/ENSEMBLE.json")]
+        want = sorted(str(x) for x in members_list)
+        if any(sorted(b["members"]) == want for b in built):
+            return {"ok": False, "errors": ["a kernel with this exact member set already exists; "
+                                            "only w differs — the user tunes w, not you"]}
+        waiting = [b for b in built if json.dumps(b, sort_keys=True) not in submitted]
+        if len(waiting) >= 2:
+            return {"ok": False, "errors": [f"{len(waiting)} built kernels await the user; build no more "
+                                            "until one is submitted"]}
         try:
             d = bek.build(name, [str(x) for x in members_list], float(w))
         except SystemExit as e:
