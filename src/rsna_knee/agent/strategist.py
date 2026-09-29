@@ -155,7 +155,7 @@ def analyze(journal: Journal, results: Path) -> dict[str, Any]:
         "members_done": done,
         "members_queue": [(j["job"], [(a["genome"]["labels"], a["seed"], a.get("init")) for a in j["arms"]])
                           for j in mem["queue"]],
-        "members_active": mem["active"] and mem["active"]["job"],
+        "members_running": [r["job"] for r in mem.get("running") or []],
         "public_v5_gold58_per_finding": V5_GOLD58,
         "weakest_findings": weakest,
         "label_registry": {k: v.get("audit", {}) for k, v in G.label_registry().items()},
@@ -193,7 +193,7 @@ def handlers(state: dict, journal: Journal, results: Path, actions: list[str]) -
         except Exception:  # noqa: BLE001
             bal = None
         return {"loop_active": state.get("active") and state["active"].get("job"),
-                "members_active": members.load()["active"] is not None,
+                "members_running": [r["job"] for r in members.load().get("running") or []],
                 "runpod_balance_usd": bal, "campaign_spent_usd": round(spent(read()), 2),
                 "campaign_cap_usd": BUDGET_USD, "relabel_spent_today_usd": round(llm_spent_today(), 2),
                 "relabel_daily_cap_usd": DAILY_LLM_USD,

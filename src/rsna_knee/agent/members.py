@@ -39,15 +39,26 @@ APPROVAL_USD = 10.0
 # judged on gold_dev / holdout / LB.
 INITS = {"v5": "/workspace/input/init/raptor_ft_coatnet_v5_full_swa.pt"}
 DOWNLOAD_TRIES = 8
+# User 2026-09-30: up to 2 pods at once (counts every RUNNING pod on the account).
+MAX_PODS = 2
+
+
+def _running(m: dict) -> list[dict]:
+    """Running member jobs. ``m["active"]`` mirrors the first one for older readers."""
+    if "running" not in m or (m.get("active") and not m["running"]):
+        m["running"] = [m["active"]] if m.get("active") else []
+    return m["running"]
 
 
 def load() -> dict:
-    if MEMBERS.exists():
-        return json.loads(MEMBERS.read_text())
-    return {"queue": [], "active": None, "done": {}}
+    m = json.loads(MEMBERS.read_text()) if MEMBERS.exists() else {"queue": [], "active": None, "done": {}}
+    _running(m)
+    return m
 
 
 def save(m: dict) -> None:
+    run = _running(m)
+    m["active"] = run[0] if run else None
     MEMBERS.write_text(json.dumps(m, indent=1, default=str))
 
 
@@ -149,7 +160,7 @@ def queue_folds(node_id: str, labels: str, init: str | None = "v5", epochs: int 
         key = json.dumps({**g, "fold": k, "seed": seed, "init": init, "fit": "oof"}, sort_keys=True)
         arms.append({"tag": "f" + hashlib.sha1(key.encode()).hexdigest()[:11], "genome": g, "seed": seed,
                      "parent": node_id, "init": init, "fold": k})
-    pending = {x["tag"] for j in m["queue"] + ([m["active"]] if m["active"] else []) for x in j["arms"]}
+    pending = {x["tag"] for j in m["queue"] + _running(m) for x in j["arms"]}
     if all(a["tag"] in m["done"] or a["tag"] in pending for a in arms):
         raise SystemExit("this 5-fold OOF set already exists or is queued")
     per_arm = (G.est_hours(g) - 0.5)
@@ -182,7 +193,7 @@ def queue_eval(targets: list[str], m: dict | None = None) -> dict:
             raise SystemExit(f"unknown eval target {t}")
         inits.append((fname, ds, path))
         tag = "e" + hashlib.sha1(f"eval|{t}|{fname}".encode()).hexdigest()[:11]
-        pending = {x["tag"] for j in m["queue"] + ([m["active"]] if m["active"] else []) for x in j["arms"]}
+        pending = {x["tag"] for j in m["queue"] + _running(m) for x in j["arms"]}
         if tag in m["done"] or tag in pending:
             continue
         arms.append({"tag": tag, "genome": base, "seed": 42, "parent": t, "eval_of": t,
@@ -203,7 +214,7 @@ def queue_eval(targets: list[str], m: dict | None = None) -> dict:
 def busy(m: dict | None = None) -> bool:
     """True while a member job is active or queued-and-approved (the loop must not plan)."""
     m = m if m is not None else load()
-    return bool(m["active"]) or any(j.get("approved") for j in m["queue"])
+    return bool(_running(m)) or any(j.get("approved") for j in m["queue"])
 
 
 def _launch(m: dict, job: dict) -> None:
@@ -223,8 +234,9 @@ def _launch(m: dict, job: dict) -> None:
     out = launcher.launch(job["job"] + (f"-r{job['retries']}" if job.get("retries") else ""),
                           arms, job["est_hours"], corpus=job["corpus"],
                           inits=[tuple(x) for x in job.get("inits") or []])
-    m["active"] = {**job, "pod": out["pod"], "result": out["result"], "launched": time.time(),
-                   "price_hr": float(out.get("costPerHr") or launcher.PRICE_HR)}
+    _running(m).append({**job, "pod": out["pod"], "result": out["result"], "launched": time.time(),
+                        "price_hr": float(out.get("costPerHr") or launcher.PRICE_HR)})
+    m["active"] = _running(m)[0]
 
 
 def _collect(a: dict) -> dict[str, dict]:
@@ -256,9 +268,18 @@ def _collect(a: dict) -> dict[str, dict]:
 
 
 def observe(m: dict) -> None:
-    a = m["active"]
-    if not a:
-        return
+    for a in list(_running(m)):
+        _observe_one(m, a)
+    m["active"] = _running(m)[0] if _running(m) else None
+
+
+def _finish(m: dict, a: dict) -> None:
+    if a in _running(m):
+        _running(m).remove(a)
+    m["active"] = m["running"][0] if m["running"] else None   # never re-adopt a finished job
+
+
+def _observe_one(m: dict, a: dict) -> None:
     from rsna_knee.agent import loop as L
     try:
         pod = runpod.get_pod(a["pod"])
@@ -271,7 +292,7 @@ def observe(m: dict) -> None:
         job = {k: a[k] for k in ("job", "arms", "est_hours", "est_usd", "corpus", "approved", "queued")
                if k in a} | ({"inits": a["inits"]} if a.get("inits") else {})
         job["retries"] = a.get("retries", 0) + 1
-        m["active"] = None
+        _finish(m, a)
         if job["retries"] <= L.INFRA_RETRIES:
             m["queue"].insert(0, job)
         else:
@@ -307,7 +328,7 @@ def observe(m: dict) -> None:
             f"{r['gold_dev']} holdout {r['holdout_auc']}", member=tag, job=a["job"])
     if missing:
         log("error", f"member job {a['job']} missing arms {missing}", component="members")
-    m["active"] = None
+    _finish(m, a)
 
 
 def tick(loop_active: bool) -> bool:
@@ -315,11 +336,13 @@ def tick(loop_active: bool) -> bool:
     m = load()
     try:
         observe(m)
-        if not m["active"] and not loop_active and m["queue"]:
+        if len(_running(m)) < MAX_PODS and m["queue"]:
             job = next((j for j in m["queue"] if j.get("approved")), None)
             if job is not None:
                 try:
-                    if not any(p.get("desiredStatus") == "RUNNING" for p in runpod.list_pods()):
+                    live = sum(p.get("desiredStatus") == "RUNNING" for p in runpod.list_pods())
+                    live = max(live, len(_running(m)) + int(loop_active))
+                    if live < MAX_PODS:
                         m["queue"].remove(job)
                         _launch(m, job)
                 except Exception as e:  # noqa: BLE001 — capacity/budget: keep it queued
@@ -369,7 +392,7 @@ def main() -> None:
                 return
         raise SystemExit(f"{a.job} not queued")
     else:
-        print(json.dumps({"active": m["active"] and {k: m["active"][k] for k in ("job", "pod", "est_hours")},
+        print(json.dumps({"running": [{k: r[k] for k in ("job", "pod", "est_hours")} for r in _running(m)],
                           "queue": [(j["job"], len(j["arms"]), j["est_usd"], j.get("approved")) for j in m["queue"]]},
                          indent=1, default=str))
         for tag, r in m["done"].items():

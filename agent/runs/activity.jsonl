@@ -662,3 +662,7 @@
 {"ts": "2026-09-30T00:06:41", "kind": "plan", "msg": "5-fold OOF job queued f-7cdb6e8357 (bestof_v1, init=v5, 6 ep; ~$6.51)", "cost_usd": 0.0, "job": "f-7cdb6e8357"}
 {"ts": "2026-09-30T00:06:42", "kind": "note", "msg": "loop started (interval 600s)", "cost_usd": 0.0}
 {"ts": "2026-09-30T00:06:50", "kind": "gate", "msg": "user-session: fold OOF job f-7cdb6e8357 moved ahead of m-c15cb7b0ea (self-training is the priority bet)", "cost_usd": 0.0}
+{"ts": "2026-09-30T00:21:28", "kind": "note", "msg": "loop started (interval 600s)", "cost_usd": 0.0}
+{"ts": "2026-09-30T00:23:28", "kind": "gate", "msg": "user approved MAX_PODS=2; fold OOF job f-7cdb6e8357 first in queue", "cost_usd": 0.0}
+{"ts": "2026-09-30T00:23:29", "kind": "note", "msg": "loop started (interval 600s)", "cost_usd": 0.0}
+{"ts": "2026-09-30T00:24:55", "kind": "train", "msg": "RunPod job f-7cdb6e8357 launched: ['fed7b89dda00', 'fd1e82258115', 'fc7ec6e2dbdb', 'f04b6f06c47a', 'fbf529df0624']", "cost_usd": 0.0, "pod": "t5ibizzt71f4l5", "bundle": "girishbose/rsna-knee-rp-f-7cdb6e8357-bundle", "result": "girishbose/rsna-knee-rp-f-7cdb6e8357-out", "monitor": "https://t5ibizzt71f4l5-8000.proxy.runpod.net", "price_hr": 0.49, "est_hours": 8.8}

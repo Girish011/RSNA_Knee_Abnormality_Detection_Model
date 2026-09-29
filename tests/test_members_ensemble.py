@@ -46,12 +46,12 @@ def test_queue_dedupes_and_launches_one_pod_for_all_arms(msandbox, monkeypatch):
     m = members.load(); m["queue"][0]["approved"] = True; members.save(m)
     with pytest.raises(SystemExit):
         members.queue("p1", [42], ["dread"])  # already queued
-    monkeypatch.setattr(members.runpod, "list_pods", lambda: [{"desiredStatus": "RUNNING"}])
-    assert members.tick(loop_active=False) is True and not msandbox  # foreign pod: wait
+    two = [{"desiredStatus": "RUNNING"}, {"desiredStatus": "RUNNING"}]
+    monkeypatch.setattr(members.runpod, "list_pods", lambda: two)
+    assert members.tick(loop_active=False) is True and not msandbox  # MAX_PODS already running: wait
     monkeypatch.setattr(members.runpod, "list_pods", lambda: [])
-    assert members.tick(loop_active=True) is True and not msandbox   # loop pod active: wait
-    assert members.tick(loop_active=False) is True
-    assert len(msandbox) == 1 and len(msandbox[0][1]) == 4
+    assert members.tick(loop_active=True) is True and len(msandbox) == 1   # loop pod (1) + this = 2
+    assert len(msandbox[0][1]) == 4                                        # all 4 arms on one pod
     assert all("--fold " not in a[2] for a in msandbox[0][1])
     assert members.load()["active"]["pod"] == "podX"
 
@@ -204,3 +204,17 @@ def test_fold_job_five_arms_with_fold_hook(msandbox):
         assert "--holdout /workspace/bundle/expert_holdout.json" in args
     with pytest.raises(SystemExit):
         members.queue_folds("p1", "dread", init="v5", epochs=6)
+
+
+def test_two_member_jobs_run_in_parallel(msandbox, monkeypatch):
+    for seeds in ([1], [2], [3]):
+        members.queue("p1", seeds, ["dread"])
+    monkeypatch.setattr(members.runpod, "list_pods", lambda: [])
+    monkeypatch.setattr(members.runpod, "get_pod", lambda pid: {"desiredStatus": "RUNNING"})
+    monkeypatch.setattr(members, "_observe_one", lambda m, a: None)
+    members.tick(loop_active=False)
+    members.tick(loop_active=False)
+    members.tick(loop_active=False)   # third must wait: MAX_PODS=2
+    m = members.load()
+    assert len(msandbox) == 2 and len(m["running"]) == 2 and len(m["queue"]) == 1
+    assert m["active"]["job"] == m["running"][0]["job"]

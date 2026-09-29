@@ -32,7 +32,6 @@ Full-data members (all v5 warm start, 6 ep) — holdout-29 vs 5bc0's 0.915:
 | mdbe175a745e | relabel_d19bf15e (DeepSeek LatOA/PF) | 7 | 0.916 | 0.934 |
 
 **Best label set: `bestof_v1`** — members m470c713b9fe / m0b16e9a09f1 macro-58 **0.932** (gold_dev 0.926 / 0.922, holdout 0.938 / **0.942**). 15 members done.
-Running: fold-0 `n-6e0c83b59036` on `n6n5lchdmm4jiz` ($0.74/h; launched by the retired idle planner — user may terminate). Fold-0 trains now disabled.
 
 ## LB (2026-09-29 21:20 IST)
 | ref | kernel | public |
@@ -42,8 +41,14 @@ Running: fold-0 `n-6e0c83b59036` on `n6n5lchdmm4jiz` ($0.74/h; launched by the r
 | 56680743 | swap m0b16e9a09f1 (bestof_v1) → v5 arms | PENDING |
 Forward/reverse maxspan arms share ONE model → several members only as a weight soup. `soupbestof2` (m0b16 + m470c) built; backbones 1% apart, heads 40–70% apart → validate before any LB use. Eval job `e-dd366d455d` (v5 + soupbestof2 on our dev/holdout) queued after `m-6c83c7d7f7`.
 
+## Now (2026-09-30 00:30 IST) — self-training round 1
+- **2 pods allowed** (user). Running: `f-7cdb6e8357` 5-fold OOF (bestof_v1, v5, 6 ep) on `t5ibizzt71f4l5` (A40 $0.49/h); `m-6c83c7d7f7` (bestof seeds) on slow 3090 `6xc11q3uqpdrdi`.
+- Queue: `e-dd366d455d` (v5 + soupbestof2 eval) → `m-c15cb7b0ea`.
+- Next: `scripts/fuse_labels.py --oof-job f-7cdb6e8357 --write fused_v1` → members on fused_v1 → per-finding routing.
+- Launcher order (deadline mode): community 4090 → 48 GB A6000/A40 → 3090 → secure.
+
 ## Money
-- Campaign: ~$34 of $300. RunPod balance **$10.06** (low). DeepSeek $47.94 (fine).
+- Campaign: ~$34 of $300. RunPod ~$31 after $25 top-up. DeepSeek $47.94 (fine).
 
 ## Next 3 actions
 1. When `m-f8709fd3f8` lands: compare member gold_dev/holdout vs v5 parent (0.921 gold-58) and 5bc0.

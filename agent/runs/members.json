@@ -61,112 +61,6 @@
    "queued": 1790696811.816585
   },
   {
-   "job": "f-7cdb6e8357",
-   "arms": [
-    {
-     "tag": "fed7b89dda00",
-     "genome": {
-      "corpus": "dense80",
-      "labels": "bestof_v1",
-      "arch": "coatnet384",
-      "epochs": 6,
-      "k": 8,
-      "k_eval": 24,
-      "bb_lr": 3e-05,
-      "head_lr": 0.001,
-      "wd": 0.02,
-      "freeze_blocks": 0
-     },
-     "seed": 42,
-     "parent": "5bc0a0f45d75",
-     "init": "v5",
-     "fold": 0
-    },
-    {
-     "tag": "fd1e82258115",
-     "genome": {
-      "corpus": "dense80",
-      "labels": "bestof_v1",
-      "arch": "coatnet384",
-      "epochs": 6,
-      "k": 8,
-      "k_eval": 24,
-      "bb_lr": 3e-05,
-      "head_lr": 0.001,
-      "wd": 0.02,
-      "freeze_blocks": 0
-     },
-     "seed": 42,
-     "parent": "5bc0a0f45d75",
-     "init": "v5",
-     "fold": 1
-    },
-    {
-     "tag": "fc7ec6e2dbdb",
-     "genome": {
-      "corpus": "dense80",
-      "labels": "bestof_v1",
-      "arch": "coatnet384",
-      "epochs": 6,
-      "k": 8,
-      "k_eval": 24,
-      "bb_lr": 3e-05,
-      "head_lr": 0.001,
-      "wd": 0.02,
-      "freeze_blocks": 0
-     },
-     "seed": 42,
-     "parent": "5bc0a0f45d75",
-     "init": "v5",
-     "fold": 2
-    },
-    {
-     "tag": "f04b6f06c47a",
-     "genome": {
-      "corpus": "dense80",
-      "labels": "bestof_v1",
-      "arch": "coatnet384",
-      "epochs": 6,
-      "k": 8,
-      "k_eval": 24,
-      "bb_lr": 3e-05,
-      "head_lr": 0.001,
-      "wd": 0.02,
-      "freeze_blocks": 0
-     },
-     "seed": 42,
-     "parent": "5bc0a0f45d75",
-     "init": "v5",
-     "fold": 3
-    },
-    {
-     "tag": "fbf529df0624",
-     "genome": {
-      "corpus": "dense80",
-      "labels": "bestof_v1",
-      "arch": "coatnet384",
-      "epochs": 6,
-      "k": 8,
-      "k_eval": 24,
-      "bb_lr": 3e-05,
-      "head_lr": 0.001,
-      "wd": 0.02,
-      "freeze_blocks": 0
-     },
-     "seed": 42,
-     "parent": "5bc0a0f45d75",
-     "init": "v5",
-     "fold": 4
-    }
-   ],
-   "est_hours": 8.8,
-   "est_usd": 6.51,
-   "corpus": "dense80",
-   "approved": true,
-   "queued": 1790707001.988596,
-   "kind": "oof"
-  },
-  {
    "job": "m-c15cb7b0ea",
    "arms": [
     {
@@ -641,5 +535,168 @@
    "holdout_auc": null,
    "path": "raptor_ft_soupbestof2.pt"
   }
- }
+ },
+ "running": [
+  {
+   "job": "m-6c83c7d7f7",
+   "arms": [
+    {
+     "tag": "m181b1f216bf",
+     "genome": {
+      "corpus": "dense80",
+      "labels": "bestof_v1",
+      "arch": "coatnet384",
+      "epochs": 6,
+      "k": 8,
+      "k_eval": 24,
+      "bb_lr": 3e-05,
+      "head_lr": 0.001,
+      "wd": 0.02,
+      "freeze_blocks": 0
+     },
+     "seed": 5,
+     "parent": "5bc0a0f45d75",
+     "init": "v5"
+    },
+    {
+     "tag": "md6cc9c05658",
+     "genome": {
+      "corpus": "dense80",
+      "labels": "bestof_v1",
+      "arch": "coatnet384",
+      "epochs": 6,
+      "k": 8,
+      "k_eval": 24,
+      "bb_lr": 3e-05,
+      "head_lr": 0.001,
+      "wd": 0.02,
+      "freeze_blocks": 0
+     },
+     "seed": 2024,
+     "parent": "5bc0a0f45d75",
+     "init": "v5"
+    }
+   ],
+   "est_hours": 4.9,
+   "est_usd": 3.63,
+   "corpus": "dense80",
+   "approved": true,
+   "queued": 1790687273.7462971,
+   "pod": "6xc11q3uqpdrdi",
+   "result": "girishbose/rsna-knee-rp-m-6c83c7d7f7-out",
+   "launched": 1790694153.8306718,
+   "price_hr": 0.22,
+   "proxy_misses": 0
+  },
+  {
+   "job": "f-7cdb6e8357",
+   "arms": [
+    {
+     "tag": "fed7b89dda00",
+     "genome": {
+      "corpus": "dense80",
+      "labels": "bestof_v1",
+      "arch": "coatnet384",
+      "epochs": 6,
+      "k": 8,
+      "k_eval": 24,
+      "bb_lr": 3e-05,
+      "head_lr": 0.001,
+      "wd": 0.02,
+      "freeze_blocks": 0
+     },
+     "seed": 42,
+     "parent": "5bc0a0f45d75",
+     "init": "v5",
+     "fold": 0
+    },
+    {
+     "tag": "fd1e82258115",
+     "genome": {
+      "corpus": "dense80",
+      "labels": "bestof_v1",
+      "arch": "coatnet384",
+      "epochs": 6,
+      "k": 8,
+      "k_eval": 24,
+      "bb_lr": 3e-05,
+      "head_lr": 0.001,
+      "wd": 0.02,
+      "freeze_blocks": 0
+     },
+     "seed": 42,
+     "parent": "5bc0a0f45d75",
+     "init": "v5",
+     "fold": 1
+    },
+    {
+     "tag": "fc7ec6e2dbdb",
+     "genome": {
+      "corpus": "dense80",
+      "labels": "bestof_v1",
+      "arch": "coatnet384",
+      "epochs": 6,
+      "k": 8,
+      "k_eval": 24,
+      "bb_lr": 3e-05,
+      "head_lr": 0.001,
+      "wd": 0.02,
+      "freeze_blocks": 0
+     },
+     "seed": 42,
+     "parent": "5bc0a0f45d75",
+     "init": "v5",
+     "fold": 2
+    },
+    {
+     "tag": "f04b6f06c47a",
+     "genome": {
+      "corpus": "dense80",
+      "labels": "bestof_v1",
+      "arch": "coatnet384",
+      "epochs": 6,
+      "k": 8,
+      "k_eval": 24,
+      "bb_lr": 3e-05,
+      "head_lr": 0.001,
+      "wd": 0.02,
+      "freeze_blocks": 0
+     },
+     "seed": 42,
+     "parent": "5bc0a0f45d75",
+     "init": "v5",
+     "fold": 3
+    },
+    {
+     "tag": "fbf529df0624",
+     "genome": {
+      "corpus": "dense80",
+      "labels": "bestof_v1",
+      "arch": "coatnet384",
+      "epochs": 6,
+      "k": 8,
+      "k_eval": 24,
+      "bb_lr": 3e-05,
+      "head_lr": 0.001,
+      "wd": 0.02,
+      "freeze_blocks": 0
+     },
+     "seed": 42,
+     "parent": "5bc0a0f45d75",
+     "init": "v5",
+     "fold": 4
+    }
+   ],
+   "est_hours": 8.8,
+   "est_usd": 6.51,
+   "corpus": "dense80",
+   "approved": true,
+   "queued": 1790707001.988596,
+   "kind": "oof",
+   "pod": "t5ibizzt71f4l5",
+   "result": "girishbose/rsna-knee-rp-f-7cdb6e8357-out",
+   "launched": 1790708095.962938,
+   "price_hr": 0.49
+  }
+ ]
 }
