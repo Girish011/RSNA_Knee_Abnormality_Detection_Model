@@ -1,13 +1,13 @@
 {
  "queue": [
   {
-   "job": "m-4f1a723c63",
+   "job": "m-235f86f1af",
    "arms": [
     {
-     "tag": "m9e3f8e11e19",
+     "tag": "m470c713b9fe",
      "genome": {
       "corpus": "dense80",
-      "labels": "relabel_bd5c19da",
+      "labels": "bestof_v1",
       "arch": "coatnet384",
       "epochs": 6,
       "k": 8,
@@ -17,15 +17,15 @@
       "wd": 0.02,
       "freeze_blocks": 0
      },
-     "seed": 3,
+     "seed": 42,
      "parent": "5bc0a0f45d75",
      "init": "v5"
     },
     {
-     "tag": "m27663be2f7c",
+     "tag": "m0b16e9a09f1",
      "genome": {
       "corpus": "dense80",
-      "labels": "relabel_bd5c19da",
+      "labels": "bestof_v1",
       "arch": "coatnet384",
       "epochs": 6,
       "k": 8,
@@ -35,7 +35,7 @@
       "wd": 0.02,
       "freeze_blocks": 0
      },
-     "seed": 11,
+     "seed": 1337,
      "parent": "5bc0a0f45d75",
      "init": "v5"
     }
@@ -44,35 +44,17 @@
    "est_usd": 3.63,
    "corpus": "dense80",
    "approved": true,
-   "queued": 1790660231.812727
+   "queued": 1790669745.800844
   }
  ],
  "active": {
-  "job": "m-97b7c3b133",
+  "job": "m-4f1a723c63",
   "arms": [
    {
-    "tag": "mcef16e20c0c",
+    "tag": "m9e3f8e11e19",
     "genome": {
      "corpus": "dense80",
-     "labels": "blend_v2",
-     "arch": "coatnet384",
-     "epochs": 6,
-     "k": 8,
-     "k_eval": 24,
-     "bb_lr": 3e-05,
-     "head_lr": 0.001,
-     "wd": 0.02,
-     "freeze_blocks": 0
-    },
-    "seed": 2,
-    "parent": "5bc0a0f45d75",
-    "init": "v5"
-   },
-   {
-    "tag": "md767d1cc09d",
-    "genome": {
-     "corpus": "dense80",
-     "labels": "blend_v2",
+     "labels": "relabel_bd5c19da",
      "arch": "coatnet384",
      "epochs": 6,
      "k": 8,
@@ -85,16 +67,34 @@
     "seed": 3,
     "parent": "5bc0a0f45d75",
     "init": "v5"
+   },
+   {
+    "tag": "m27663be2f7c",
+    "genome": {
+     "corpus": "dense80",
+     "labels": "relabel_bd5c19da",
+     "arch": "coatnet384",
+     "epochs": 6,
+     "k": 8,
+     "k_eval": 24,
+     "bb_lr": 3e-05,
+     "head_lr": 0.001,
+     "wd": 0.02,
+     "freeze_blocks": 0
+    },
+    "seed": 11,
+    "parent": "5bc0a0f45d75",
+    "init": "v5"
    }
   ],
   "est_hours": 4.9,
   "est_usd": 3.63,
   "corpus": "dense80",
   "approved": true,
-  "queued": 1790647711.714752,
-  "pod": "seod7y1ur0ppod",
-  "result": "girishbose/rsna-knee-rp-m-97b7c3b133-out",
-  "launched": 1790660186.735771,
+  "queued": 1790660231.812727,
+  "pod": "o231yhvdzpfh86",
+  "result": "girishbose/rsna-knee-rp-m-4f1a723c63-out",
+  "launched": 1790666985.3356931,
   "price_hr": 0.74,
   "proxy_misses": 0
  },
@@ -298,6 +298,56 @@
    "swa_gold_dev": 0.9112931992365633,
    "holdout_auc": 0.9308138212549978,
    "finished": 1790660107.382375
+  },
+  "mcef16e20c0c": {
+   "tag": "mcef16e20c0c",
+   "genome": {
+    "corpus": "dense80",
+    "labels": "blend_v2",
+    "arch": "coatnet384",
+    "epochs": 6,
+    "k": 8,
+    "k_eval": 24,
+    "bb_lr": 3e-05,
+    "head_lr": 0.001,
+    "wd": 0.02,
+    "freeze_blocks": 0
+   },
+   "seed": 2,
+   "parent": "5bc0a0f45d75",
+   "init": "v5",
+   "job": "m-97b7c3b133",
+   "dataset": "girishbose/rsna-knee-rp-m-97b7c3b133-out",
+   "weights": "raptor_ft_mcef16e20c0c.pt",
+   "gold_dev": 0.9148739164782711,
+   "swa_gold_dev": 0.9100208513125797,
+   "holdout_auc": 0.9354363472784525,
+   "finished": 1790666909.339883
+  },
+  "md767d1cc09d": {
+   "tag": "md767d1cc09d",
+   "genome": {
+    "corpus": "dense80",
+    "labels": "blend_v2",
+    "arch": "coatnet384",
+    "epochs": 6,
+    "k": 8,
+    "k_eval": 24,
+    "bb_lr": 3e-05,
+    "head_lr": 0.001,
+    "wd": 0.02,
+    "freeze_blocks": 0
+   },
+   "seed": 3,
+   "parent": "5bc0a0f45d75",
+   "init": "v5",
+   "job": "m-97b7c3b133",
+   "dataset": "girishbose/rsna-knee-rp-m-97b7c3b133-out",
+   "weights": "raptor_ft_md767d1cc09d.pt",
+   "gold_dev": 0.9156896579101791,
+   "swa_gold_dev": 0.9219862141629876,
+   "holdout_auc": 0.9299401958264187,
+   "finished": 1790666909.3457868
   }
  }
 }

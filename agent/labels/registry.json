@@ -93,5 +93,18 @@
   },
   "base": "relabel_bd5c19da",
   "rule": "all"
+ },
+ "bestof_v1": {
+  "file": "labels_bestof_v1.parquet",
+  "base": "relabel_8c56cdf0",
+  "rule": "per-finding best source",
+  "audit": {
+   "Synovitis": {
+    "source": "relabel_c7ab23d1",
+    "member_auc_58": "0.80 -> 0.87 (4/4 models)",
+    "kept": true
+   }
+  },
+  "note": "8c56 (dread + Lat Men/Fracture fills) with only the Synovitis column from c7ab. PF OA/Lat OA relabels NOT taken: PF OA fell 0.86 -> 0.80-0.84 in trained members."
  }
 }

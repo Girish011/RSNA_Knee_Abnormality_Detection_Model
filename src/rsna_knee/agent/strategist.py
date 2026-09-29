@@ -58,8 +58,12 @@ What is measured (do not relitigate):
   rank-blended (build_ensemble_kernel). The gap is ensemble strength + label quality.
 - lr / wd / head_lr / epochs one-field diffs landed within +-0.003 proxy: CLOSED. Never queue them.
 - Members = full-data retrains; public v5 warm start (init=v5, 4-8 epochs) is allowed on members only.
-- Weakest findings everywhere: Synovitis, PF OA, Lateral OA, Lateral Meniscus. Labels come from
-  LLM reads of radiology reports; better/extra reads of those findings are the cheapest lever.
+- Weakest findings everywhere: Lateral OA, PF OA, Synovitis, Lateral Meniscus, Contusion. Labels come
+  from LLM reads of radiology reports; better reads of those findings are the cheapest lever.
+- JUDGE A RELABEL BY TRAINED MEMBERS, per finding (members_per_finding_by_label_set), not by its
+  29-study label audit: c7ab Synovitis lifted members 0.80 -> 0.87, but its PF OA column (audit
+  0.888 -> 0.922) dropped members 0.86 -> 0.80-0.84. Build per-finding "best-of" label sets
+  (bestof_v1 = 8c56 + c7ab Synovitis only) instead of stacking relabels on top of each other.
 - The fold-0 proxy is a compass with a known optimism (~-0.017 vs LB). gold_dev/holdout are 29 experts each.
 
 You run WHILE the GPU trains. Each turn, do the highest-value actions, typically 1-3 of:
@@ -90,6 +94,32 @@ def _per_label(y: np.ndarray, p: np.ndarray, m: np.ndarray | None = None) -> dic
     return out
 
 
+def member_findings(results: Path) -> dict[str, dict]:
+    """Per-finding AUC of each finished member on all 58 experts: mean of its gold-dev AUC
+    (29, used for checkpoint choice) and holdout AUC (29, untouched). This — not the label
+    audit — is how a relabel is judged: PF OA labels that audited better made models worse."""
+    out = {}
+    for tag, r in members.load()["done"].items():
+        js = list(results.glob(f"*/{tag}/raptor_ft_{tag}.json"))
+        ho = list(results.glob(f"*/{tag}/raptor_holdout_{tag}.npz"))
+        if not js or not ho:
+            continue
+        dev = json.loads(js[0].read_text()).get("aucs") or {}
+        z = np.load(ho[0], allow_pickle=True)
+        hold = _per_label(z["truth"].astype(int), z["pred"])
+        out[tag] = {"labels": r["genome"]["labels"], "seed": r["seed"],
+                    "auc58": {l: round((dev[l] + hold[l]) / 2, 3) for l in LABEL_COLS if l in dev and l in hold}}
+    return out
+
+
+def by_label_set(mf: dict[str, dict]) -> dict[str, dict]:
+    groups: dict[str, list] = {}
+    for r in mf.values():
+        groups.setdefault(r["labels"], []).append(r["auc58"])
+    return {k: {"n_models": len(v), **{l: round(float(np.mean([a[l] for a in v if l in a])), 3)
+                                       for l in LABEL_COLS}} for k, v in groups.items()}
+
+
 def analyze(journal: Journal, results: Path) -> dict[str, Any]:
     """Per-finding evidence for the best online nodes, finished members and the public v5."""
     from rsna_knee.agent import loop as L
@@ -111,7 +141,9 @@ def analyze(journal: Journal, results: Path) -> dict[str, Any]:
             | {"labels": r["genome"]["labels"], "epochs": r["genome"]["epochs"]}
             for t, r in mem["done"].items()}
     weakest = sorted(V5_GOLD58, key=V5_GOLD58.get)[:4]
+    mf = member_findings(results)
     return {
+        "members_per_finding_by_label_set": by_label_set(mf),
         "online_top": rows,
         "members_done": done,
         "members_queue": [(j["job"], [(a["genome"]["labels"], a["seed"], a.get("init")) for a in j["arms"]])
