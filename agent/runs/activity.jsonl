@@ -781,3 +781,4 @@
 {"ts": "2026-09-30T19:01:18", "kind": "gate", "msg": "member mb27b3189840 (fused_83969a7f, seed 1337): gold_dev 0.9267344801106073 holdout 0.9389909855080134", "cost_usd": 0.0, "member": "mb27b3189840", "job": "m-df19aac205"}
 {"ts": "2026-09-30T19:02:31", "kind": "train", "msg": "RunPod job m-061e00a2ed launched: ['mf4cc33fd043', 'mb2ab2f4bd3f']", "cost_usd": 0.0, "pod": "2o1dwrpkb73hun", "bundle": "girishbose/rsna-knee-rp-m-061e00a2ed-bundle", "result": "girishbose/rsna-knee-rp-m-061e00a2ed-out", "monitor": "https://2o1dwrpkb73hun-8000.proxy.runpod.net", "price_hr": 0.34, "est_hours": 4.9}
 {"ts": "2026-09-30T19:03:35", "kind": "gate", "msg": "user-session: HOLD ['f-e0c8d254ca', 'f-8899e22042', 'f-6f8e1d8e63'] pending m-061e00a2ed result (fused members = bestof, no gain yet)", "cost_usd": 0.0}
+{"ts": "2026-09-30T19:06:32", "kind": "plan", "msg": "eval job queued e-4fa035340c: ['soupmix8'] (~$0.89)", "cost_usd": 0.0, "job": "e-4fa035340c"}

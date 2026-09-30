@@ -1,6 +1,42 @@
 {
  "queue": [
   {
+   "job": "e-4fa035340c",
+   "arms": [
+    {
+     "tag": "e007dd0d8252",
+     "genome": {
+      "corpus": "dense80",
+      "labels": "dread",
+      "arch": "coatnet384",
+      "epochs": 16,
+      "k": 8,
+      "k_eval": 24,
+      "bb_lr": 3e-05,
+      "head_lr": 0.001,
+      "wd": 0.02,
+      "freeze_blocks": 0
+     },
+     "seed": 42,
+     "parent": "soupmix8",
+     "eval_of": "soupmix8",
+     "init_file": "raptor_ft_soupmix8.pt"
+    }
+   ],
+   "inits": [
+    [
+     "raptor_ft_soupmix8.pt",
+     "girishbose/rsna-knee-soup-mix8",
+     "raptor_ft_soupmix8.pt"
+    ]
+   ],
+   "est_hours": 1.2,
+   "est_usd": 0.89,
+   "corpus": "dense80",
+   "approved": true,
+   "queued": 1790775392.950457
+  },
+  {
    "job": "f-e0c8d254ca",
    "arms": [
     {
@@ -1264,6 +1300,38 @@
    "swa_gold_dev": 0.9240943570757475,
    "holdout_auc": 0.9389909855080134,
    "finished": 1790775078.482516
+  },
+  "soupmix8": {
+   "tag": "soupmix8",
+   "dataset": "girishbose/rsna-knee-soup-mix8",
+   "weights": "raptor_ft_soupmix8.pt",
+   "path": "raptor_ft_soupmix8.pt",
+   "soup_of": [
+    "m0b16e9a09f1",
+    "m470c713b9fe",
+    "m181b1f216bf",
+    "md6cc9c05658",
+    "m38d6fed0aef",
+    "m9f0c48dc93d",
+    "m7d7fe5de640",
+    "mb27b3189840"
+   ],
+   "genome": {
+    "corpus": "dense80",
+    "labels": "bestof_v1",
+    "arch": "coatnet384",
+    "epochs": 6,
+    "k": 8,
+    "k_eval": 24,
+    "bb_lr": 3e-05,
+    "head_lr": 0.001,
+    "wd": 0.02,
+    "freeze_blocks": 0
+   },
+   "init": "v5",
+   "seed": null,
+   "gold_dev": null,
+   "holdout_auc": null
   }
  },
  "running": [
