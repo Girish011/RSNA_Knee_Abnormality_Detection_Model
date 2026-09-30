@@ -73,6 +73,8 @@ Add a bullet only when a result is measured; never add opinions.
 
 - 2026-09-30 19:10 RESULT: self-training labels agree with experts much better (fused 0.946–0.949 vs report 0.883) BUT members trained on them score the same as bestof_v1 (0.9315–0.9327 vs 0.9330 macro-58; 5-fold 0.9309 vs 0.9303). Fusion mostly re-injects the model's own predictions (self-distillation) → little new information. Do NOT queue more 5-fold rounds until the full-fused members (m-061e00a2ed) show a gain. What worked: genuinely new label information (Synovitis re-read +0.07) and weight soups (+0.011 over v5). Next levers: model input/capacity (k=16 windows on 48 GB, PF OA view specialist), not more label rounds.
 
+- 2026-09-30 22:30 CLOSED: self-training. fused_7cdb6e83_full members = 0.9330 macro-58, identical to bestof_v1 (0.9330); all fused variants 0.9315–0.9330. Mixed soup (bestof+fused, 8) 0.9358 ≈ bestof4 soup 0.9365. Do not queue more fold/fusion rounds. Current test: k=16 windows per study on 48 GB (members queue --k 16) vs bestof_v1 at k=8.
+
 ## Constraints
 
 - Reports and any text model are train-only; test.csv has no Report field.

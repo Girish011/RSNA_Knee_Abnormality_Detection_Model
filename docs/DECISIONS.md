@@ -288,3 +288,7 @@ Format: date | decision | why | rejected
 ## 2026-09-30 — Self-training step is a gated host action; DeepSeek drives later rounds
 - **Decision:** when a 5-fold OOF member job completes, `members.auto_self_train` runs `fuse_labels.run_fusion` (fit on expert-dev, score on expert-holdout), and only if fused macro ≥ report + 0.02 writes/registers `fused_<job>` (merged onto the job's base labels) and queues 2 v5 members on it at the front of the queue. Deterministic; no LLM judgement in the loop's critical step. Strategist gains `queue_fold_job` to start round 2+ when fused members beat bestof_v1 per finding. Unchanged: LB push/submit and final blend weights are user-approved.
 - **Why:** user asked whether the pipeline pauses for analysis or hands decisions to DeepSeek; overnight idle between OOF landing and retraining would cost ~8–12 h of a 16-day window.
+
+## 2026-09-30 — Close self-training; next lever = input density (k=16 on 48 GB)
+- **Evidence (macro AUC on 58 experts):** bestof_v1 members 0.9330 (n=4); fused_7cdb6e83 (60% fused) 0.9315; fused_83969a7f (round 2) 0.9327; **fused_7cdb6e83_full 0.9330**; 5-fold bestof vs fused 0.9303 vs 0.9309. Fused labels agree with experts far better (0.946–0.949 vs report 0.883) but add little new information to the model (self-distillation). Soups: bestof4 0.9365, mix8 0.9358; public v5 0.9256.
+- **Decision:** self-training closed; held rounds dropped. Next: `members queue --k 16` (bestof_v1, v5 init, 6 ep, seeds 42/1337) pinned to 48 GB A6000/A40 (`launcher gpu_class="48"`), compared 1:1 with bestof_v1 at k=8.
