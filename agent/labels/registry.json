@@ -106,5 +106,143 @@
    }
   },
   "note": "8c56 (dread + Lat Men/Fracture fills) with only the Synovitis column from c7ab. PF OA/Lat OA relabels NOT taken: PF OA fell 0.86 -> 0.80-0.84 in trained members."
+ },
+ "relabel_12187f79": {
+  "file": "labels_relabel_12187f79.parquet",
+  "audit": {
+   "PF OA": {
+    "dev_auc": 0.912,
+    "pilk_dev_auc": 0.888,
+    "prec": 0.64,
+    "kept": true
+   },
+   "Lateral Meniscus": {
+    "dev_auc": 0.965,
+    "pilk_dev_auc": 0.886,
+    "prec": 0.75,
+    "kept": true
+   }
+  },
+  "base": "bestof_v1",
+  "rule": "disagree"
+ },
+ "relabel_0ed2240f": {
+  "file": "labels_relabel_0ed2240f.parquet",
+  "audit": {
+   "Synovitis": {
+    "dev_auc": 0.792,
+    "pilk_dev_auc": 0.764,
+    "prec": 0.67,
+    "kept": true
+   }
+  },
+  "base": "bestof_v1",
+  "rule": "disagree"
+ },
+ "relabel_daa71ab8": {
+  "file": "labels_relabel_daa71ab8.parquet",
+  "audit": {
+   "PF OA": {
+    "dev_auc": 0.912,
+    "pilk_dev_auc": 0.888,
+    "prec": 0.64,
+    "kept": true
+   },
+   "Lateral Meniscus": {
+    "dev_auc": 0.965,
+    "pilk_dev_auc": 0.886,
+    "prec": 0.75,
+    "kept": true
+   }
+  },
+  "base": "relabel_0ed2240f",
+  "rule": "disagree"
+ },
+ "fused_7cdb6e83": {
+  "file": "labels_fused_7cdb6e83.parquet",
+  "base": "bestof_v1",
+  "rule": "expert-anchored fusion (report + OOF image)",
+  "source": "f-7cdb6e8357",
+  "n_fused": 2609,
+  "holdout_macro": {
+   "report": 0.8833,
+   "image": 0.9448,
+   "fused": 0.9461
+  },
+  "audit": {
+   "ACL": {
+    "holdout_fused": 1.0,
+    "holdout_report": 1.0,
+    "kept": true
+   },
+   "MCL": {
+    "holdout_fused": 1.0,
+    "holdout_report": 0.987,
+    "kept": true
+   },
+   "Medial Meniscus": {
+    "holdout_fused": 0.929,
+    "holdout_report": 0.898,
+    "kept": true
+   },
+   "Lateral Meniscus": {
+    "holdout_fused": 0.867,
+    "holdout_report": 0.819,
+    "kept": true
+   },
+   "Medial OA": {
+    "holdout_fused": 0.978,
+    "holdout_report": 0.936,
+    "kept": true
+   },
+   "Lateral OA": {
+    "holdout_fused": 0.987,
+    "holdout_report": 0.929,
+    "kept": true
+   },
+   "PF OA": {
+    "holdout_fused": 0.941,
+    "holdout_report": 0.88,
+    "kept": true
+   },
+   "Effusion": {
+    "holdout_fused": 0.952,
+    "holdout_report": 0.774,
+    "kept": true
+   },
+   "Synovitis": {
+    "holdout_fused": 0.819,
+    "holdout_report": 0.713,
+    "kept": true
+   },
+   "Baker's": {
+    "holdout_fused": 0.983,
+    "holdout_report": 0.967,
+    "kept": true
+   },
+   "Contusion": {
+    "holdout_fused": 0.961,
+    "holdout_report": 0.833,
+    "kept": true
+   },
+   "Fracture": {
+    "holdout_fused": 0.937,
+    "holdout_report": 0.863,
+    "kept": true
+   }
+  }
+ },
+ "relabel_823fff2e": {
+  "file": "labels_relabel_823fff2e.parquet",
+  "audit": {
+   "Synovitis": {
+    "dev_auc": 0.756,
+    "pilk_dev_auc": 0.617,
+    "prec": 0.6,
+    "kept": true
+   }
+  },
+  "base": "bestof_v1",
+  "rule": "pilk_unk"
  }
 }

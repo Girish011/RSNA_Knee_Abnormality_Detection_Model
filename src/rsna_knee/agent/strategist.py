@@ -224,7 +224,7 @@ def handlers(state: dict, journal: Journal, results: Path, actions: list[str]) -
             return {"ok": False, "errors": [f"est ${est:.2f} > per-job cap ${RELABEL_MAX_USD}; fewer findings or flash"]}
         if llm_spent_today() + est > DAILY_LLM_USD:
             return {"ok": False, "errors": [f"daily DeepSeek cap ${DAILY_LLM_USD} would be exceeded (est ${est:.2f})"]}
-        res = labeler.run(labels, rule, base, model=labeler.MODELS[model], workers=32)
+        res = labeler.run(labels, rule, base, model=labeler.MODELS[model], workers=8)  # 32 parallel calls coincided with the 2026-09-30 configd panic
         state.setdefault("relabels", []).append(
             {"name": res["name"], "registered": res["registered"], "kept": res["kept"]})
         log("data", f"relabel {res['name']} ({rule}, {model}, {labels}) by strategist: kept {res['kept']}, "
