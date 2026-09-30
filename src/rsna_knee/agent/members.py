@@ -30,6 +30,7 @@ from rsna_knee.agent import launcher, runpod
 from rsna_knee.agent.activity import RUNS, log
 
 MEMBERS = RUNS / "members.json"
+POLICY = RUNS / "policy.json"   # user switches the agent cannot override (e.g. fold_jobs_closed)
 RESULTS = G.REPO / "outputs" / "runpod_results"
 JOURNAL_FILE = RUNS / "journal.json"
 FULL_DATA_FACTOR = 1.25   # 4349 vs 3479 training studies
@@ -159,6 +160,10 @@ def queue_folds(node_id: str, labels: str, init: str | None = "v5", epochs: int 
     """5-fold OOF job: every non-expert train study gets an out-of-fold image prediction.
     Feeds expert-anchored label fusion (scripts/fuse_labels.py), i.e. self-training."""
     m = m if m is not None else load()
+    pol = POLICY
+    if pol.exists() and json.loads(pol.read_text()).get("fold_jobs_closed"):
+        raise SystemExit("5-fold / self-training rounds are CLOSED by user policy (agent/runs/policy.json): "
+                         + json.loads(pol.read_text()).get("why", ""))
     info = G.label_registry().get(labels, {})
     if "n_fused" in info and info["n_fused"] < 0.95 * 4349:
         raise SystemExit(f"{labels} fused only {info['n_fused']} of 4349 studies (partial fold set); "

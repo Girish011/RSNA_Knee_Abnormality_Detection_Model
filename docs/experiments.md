@@ -551,3 +551,8 @@ Append one row (or block) per run. Never delete history.
 - `scripts/make_soup.py`: uniform weight soup of same-init members → one checkpoint. soupbestof2 (m0b16 + m470c): backbone rel. dist 0.011 (each ~0.009 from v5), attention head 0.69, clsW 0.40 → head averaging is the risk; do not submit unvalidated.
 - `--eval_only` trainer flag + `members eval --targets v5,<tag>`: score any checkpoint on the member protocol (dense80, gold-dev 29, holdout 29); pods fetch checkpoints from `inits.txt`. Queued e-dd366d455d (v5, soupbestof2). First apples-to-apples v5 baseline.
 - Fold-0 `6e0c83b59036` (c7ab labels, ImageNet) finished: proxy 0.9362, gold_dev 0.913.
+
+### 2026-09-30 — LB 0.944 (soup swap); self-training closed; k=16 running
+- ref 56704765 swap-d4-soup4 = **0.944** (rank 258/4660, from 488). Soups on our protocol: bestof4 0.9365, bestof2 0.9364, mix8 0.9358; public v5 0.9256.
+- Self-training: fused_full members 0.9330 = bestof_v1 0.9330 → closed. DeepSeek re-queued round 3 (f-e0c8d254ca, running) despite the memory note → hard block via `agent/runs/policy.json` {"fold_jobs_closed": true} enforced in `members.queue_folds`.
+- Running: m-98092c689a (bestof_v1, **k=16**, v5, 6 ep, seeds 42/1337) on 48 GB.

@@ -10,6 +10,7 @@ from rsna_knee.agent.journal import ROOT_ID, Journal
 def ssandbox(tmp_path, monkeypatch):
     monkeypatch.setattr(activity, "ACTIVITY", tmp_path / "activity.jsonl")
     monkeypatch.setattr(members, "MEMBERS", tmp_path / "members.json")
+    monkeypatch.setattr(members, "POLICY", tmp_path / "policy.json")
     monkeypatch.setattr(strategist, "SUBMITS", tmp_path / "submits.json")
     monkeypatch.setattr(strategist, "analyze", lambda j, r: {"stub": True})
     j = Journal()

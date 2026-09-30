@@ -33,12 +33,13 @@ Full-data members (all v5 warm start, 6 ep) — holdout-29 vs 5bc0's 0.915:
 
 **Best label set: `bestof_v1`** — members m470c713b9fe / m0b16e9a09f1 macro-58 **0.932** (gold_dev 0.926 / 0.922, holdout 0.938 / **0.942**). 15 members done.
 
-## LB (2026-09-29 21:20 IST)
+## LB (2026-09-30 23:30 IST)
 | ref | kernel | public |
 |---|---|---:|
 | 56651119 | D4 + 5bc0 tail w=0.2 | 0.941 |
 | 56665556 | swap m6edbb53fbab → v5 arms | **0.943** (= base; tail penalty gone) |
-| 56680743 | swap m0b16e9a09f1 (bestof_v1) → v5 arms | PENDING |
+| 56680743 | swap m0b16e9a09f1 (bestof_v1) → v5 arms | 0.943 |
+| **56704765** | **swap 4-seed bestof soup → v5 arms** | **0.944** (rank 258/4660; first gain over public) |
 Forward/reverse maxspan arms share ONE model → several members only as a weight soup. `soupbestof2` (m0b16 + m470c) built; backbones 1% apart, heads 40–70% apart → validate before any LB use. Eval job `e-dd366d455d` (v5 + soupbestof2 on our dev/holdout) queued after `m-6c83c7d7f7`.
 
 ## Now (2026-09-30 00:30 IST) — self-training round 1

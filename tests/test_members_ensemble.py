@@ -19,6 +19,7 @@ import submit_gate as SG  # noqa: E402
 def msandbox(tmp_path, monkeypatch):
     monkeypatch.setattr(activity, "ACTIVITY", tmp_path / "activity.jsonl")
     monkeypatch.setattr(members, "MEMBERS", tmp_path / "members.json")
+    monkeypatch.setattr(members, "POLICY", tmp_path / "policy.json")
     journal = [{"id": "p1", "genome": dict(G.BASE, labels="dread", epochs=20)}]
     (tmp_path / "journal.json").write_text(json.dumps(journal))
     monkeypatch.setattr(members, "JOURNAL_FILE", tmp_path / "journal.json")
@@ -275,3 +276,9 @@ def test_k16_members_pin_48gb(msandbox, monkeypatch):
     assert seen["gpu_class"] == "48" and "--k 16 " in seen["args"]
     with pytest.raises(SystemExit):
         members.queue("p1", [42], ["dread"], k=32)
+
+
+def test_policy_blocks_fold_jobs(msandbox, tmp_path):
+    (tmp_path / "policy.json").write_text('{"fold_jobs_closed": true, "why": "closed"}')
+    with pytest.raises(SystemExit, match="CLOSED"):
+        members.queue_folds("p1", "dread")
