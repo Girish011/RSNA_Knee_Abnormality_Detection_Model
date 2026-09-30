@@ -41,6 +41,9 @@ INITS = {"v5": "/workspace/input/init/raptor_ft_coatnet_v5_full_swa.pt"}
 DOWNLOAD_TRIES = 8
 # User 2026-09-30: up to 2 pods at once (counts every RUNNING pod on the account).
 MAX_PODS = 2
+# Phantom pods (created, then gone before billing) cost $0 but 10 min each; community capacity
+# produced 3 in a row several times on 2026-09-30 and dropped the key fused-label job.
+MEMBER_INFRA_RETRIES = 6
 
 
 def _running(m: dict) -> list[dict]:
@@ -319,7 +322,7 @@ def _observe_one(m: dict, a: dict) -> None:
                if k in a} | ({"inits": a["inits"]} if a.get("inits") else {})
         job["retries"] = a.get("retries", 0) + 1
         _finish(m, a)
-        if job["retries"] <= L.INFRA_RETRIES:
+        if job["retries"] <= MEMBER_INFRA_RETRIES:
             m["queue"].insert(0, job)
         else:
             log("gate", f"member job {job['job']} DROPPED after {job['retries']} phantom pods; "

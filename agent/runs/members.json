@@ -1,49 +1,13 @@
 {
  "queue": [
   {
-   "job": "e-86b3242bd9",
+   "job": "m-061e00a2ed",
    "arms": [
     {
-     "tag": "e199a7b8f4b0",
+     "tag": "mf4cc33fd043",
      "genome": {
       "corpus": "dense80",
-      "labels": "dread",
-      "arch": "coatnet384",
-      "epochs": 16,
-      "k": 8,
-      "k_eval": 24,
-      "bb_lr": 3e-05,
-      "head_lr": 0.001,
-      "wd": 0.02,
-      "freeze_blocks": 0
-     },
-     "seed": 42,
-     "parent": "soupbestof4",
-     "eval_of": "soupbestof4",
-     "init_file": "raptor_ft_soupbestof4.pt"
-    }
-   ],
-   "inits": [
-    [
-     "raptor_ft_soupbestof4.pt",
-     "girishbose/rsna-knee-soup-bestof4",
-     "raptor_ft_soupbestof4.pt"
-    ]
-   ],
-   "est_hours": 1.2,
-   "est_usd": 0.89,
-   "corpus": "dense80",
-   "approved": true,
-   "queued": 1790753828.650704
-  },
-  {
-   "job": "m-4f778dea64",
-   "arms": [
-    {
-     "tag": "m38d6fed0aef",
-     "genome": {
-      "corpus": "dense80",
-      "labels": "fused_7cdb6e83",
+      "labels": "fused_7cdb6e83_full",
       "arch": "coatnet384",
       "epochs": 6,
       "k": 8,
@@ -54,14 +18,14 @@
       "freeze_blocks": 0
      },
      "seed": 42,
-     "parent": "6e0c83b59036",
+     "parent": "5bc0a0f45d75",
      "init": "v5"
     },
     {
-     "tag": "m9f0c48dc93d",
+     "tag": "mb2ab2f4bd3f",
      "genome": {
       "corpus": "dense80",
-      "labels": "fused_7cdb6e83",
+      "labels": "fused_7cdb6e83_full",
       "arch": "coatnet384",
       "epochs": 6,
       "k": 8,
@@ -72,7 +36,7 @@
       "freeze_blocks": 0
      },
      "seed": 1337,
-     "parent": "6e0c83b59036",
+     "parent": "5bc0a0f45d75",
      "init": "v5"
     }
    ],
@@ -80,17 +44,123 @@
    "est_usd": 3.63,
    "corpus": "dense80",
    "approved": true,
-   "queued": 1790749619.331711
+   "queued": 1790763543.323919
+  },
+  {
+   "job": "f-e0c8d254ca",
+   "arms": [
+    {
+     "tag": "fc9fd8f77b1b",
+     "genome": {
+      "corpus": "dense80",
+      "labels": "fused_7cdb6e83_full",
+      "arch": "coatnet384",
+      "epochs": 6,
+      "k": 8,
+      "k_eval": 24,
+      "bb_lr": 3e-05,
+      "head_lr": 0.001,
+      "wd": 0.02,
+      "freeze_blocks": 0
+     },
+     "seed": 42,
+     "parent": "6e0c83b59036",
+     "init": "v5",
+     "fold": 0
+    },
+    {
+     "tag": "f687c08d7625",
+     "genome": {
+      "corpus": "dense80",
+      "labels": "fused_7cdb6e83_full",
+      "arch": "coatnet384",
+      "epochs": 6,
+      "k": 8,
+      "k_eval": 24,
+      "bb_lr": 3e-05,
+      "head_lr": 0.001,
+      "wd": 0.02,
+      "freeze_blocks": 0
+     },
+     "seed": 42,
+     "parent": "6e0c83b59036",
+     "init": "v5",
+     "fold": 1
+    },
+    {
+     "tag": "f745a276a9f5",
+     "genome": {
+      "corpus": "dense80",
+      "labels": "fused_7cdb6e83_full",
+      "arch": "coatnet384",
+      "epochs": 6,
+      "k": 8,
+      "k_eval": 24,
+      "bb_lr": 3e-05,
+      "head_lr": 0.001,
+      "wd": 0.02,
+      "freeze_blocks": 0
+     },
+     "seed": 42,
+     "parent": "6e0c83b59036",
+     "init": "v5",
+     "fold": 2
+    },
+    {
+     "tag": "ff53453f5e4a",
+     "genome": {
+      "corpus": "dense80",
+      "labels": "fused_7cdb6e83_full",
+      "arch": "coatnet384",
+      "epochs": 6,
+      "k": 8,
+      "k_eval": 24,
+      "bb_lr": 3e-05,
+      "head_lr": 0.001,
+      "wd": 0.02,
+      "freeze_blocks": 0
+     },
+     "seed": 42,
+     "parent": "6e0c83b59036",
+     "init": "v5",
+     "fold": 3
+    },
+    {
+     "tag": "f8a5c7a4cd10",
+     "genome": {
+      "corpus": "dense80",
+      "labels": "fused_7cdb6e83_full",
+      "arch": "coatnet384",
+      "epochs": 6,
+      "k": 8,
+      "k_eval": 24,
+      "bb_lr": 3e-05,
+      "head_lr": 0.001,
+      "wd": 0.02,
+      "freeze_blocks": 0
+     },
+     "seed": 42,
+     "parent": "6e0c83b59036",
+     "init": "v5",
+     "fold": 4
+    }
+   ],
+   "est_hours": 8.8,
+   "est_usd": 6.51,
+   "corpus": "dense80",
+   "approved": true,
+   "queued": 1790761706.821049,
+   "kind": "oof"
   }
  ],
  "active": {
-  "job": "f-7cdb6e8357-fix",
+  "job": "f-83969a7fa1",
   "arms": [
    {
-    "tag": "fed7b89dda00",
+    "tag": "f3a0f032dd6b",
     "genome": {
      "corpus": "dense80",
-     "labels": "bestof_v1",
+     "labels": "fused_7cdb6e83",
      "arch": "coatnet384",
      "epochs": 6,
      "k": 8,
@@ -106,10 +176,10 @@
     "fold": 0
    },
    {
-    "tag": "fd1e82258115",
+    "tag": "fa203292bb65",
     "genome": {
      "corpus": "dense80",
-     "labels": "bestof_v1",
+     "labels": "fused_7cdb6e83",
      "arch": "coatnet384",
      "epochs": 6,
      "k": 8,
@@ -123,19 +193,75 @@
     "parent": "5bc0a0f45d75",
     "init": "v5",
     "fold": 1
+   },
+   {
+    "tag": "fd9704e92a19",
+    "genome": {
+     "corpus": "dense80",
+     "labels": "fused_7cdb6e83",
+     "arch": "coatnet384",
+     "epochs": 6,
+     "k": 8,
+     "k_eval": 24,
+     "bb_lr": 3e-05,
+     "head_lr": 0.001,
+     "wd": 0.02,
+     "freeze_blocks": 0
+    },
+    "seed": 42,
+    "parent": "5bc0a0f45d75",
+    "init": "v5",
+    "fold": 2
+   },
+   {
+    "tag": "f46219cb8bcc",
+    "genome": {
+     "corpus": "dense80",
+     "labels": "fused_7cdb6e83",
+     "arch": "coatnet384",
+     "epochs": 6,
+     "k": 8,
+     "k_eval": 24,
+     "bb_lr": 3e-05,
+     "head_lr": 0.001,
+     "wd": 0.02,
+     "freeze_blocks": 0
+    },
+    "seed": 42,
+    "parent": "5bc0a0f45d75",
+    "init": "v5",
+    "fold": 3
+   },
+   {
+    "tag": "faedec2c2ec2",
+    "genome": {
+     "corpus": "dense80",
+     "labels": "fused_7cdb6e83",
+     "arch": "coatnet384",
+     "epochs": 6,
+     "k": 8,
+     "k_eval": 24,
+     "bb_lr": 3e-05,
+     "head_lr": 0.001,
+     "wd": 0.02,
+     "freeze_blocks": 0
+    },
+    "seed": 42,
+    "parent": "5bc0a0f45d75",
+    "init": "v5",
+    "fold": 4
    }
   ],
-  "est_hours": 4.12,
-  "est_usd": 3.05,
+  "est_hours": 8.8,
+  "est_usd": 6.51,
   "corpus": "dense80",
   "approved": true,
-  "queued": 1790740814.0250828,
+  "queued": 1790744283.6791492,
   "kind": "oof",
-  "oof_base": "f-7cdb6e8357",
-  "pod": "zxxunluwiw6znb",
-  "result": "girishbose/rsna-knee-rp-f-7cdb6e8357-fix-out",
-  "launched": 1790742252.9761071,
-  "price_hr": 0.34,
+  "pod": "ku8mixn6157nyc",
+  "result": "girishbose/rsna-knee-rp-f-83969a7fa1-out",
+  "launched": 1790747133.1426299,
+  "price_hr": 0.74,
   "proxy_misses": 0
  },
  "done": {
@@ -722,64 +848,87 @@
    "seed": null,
    "gold_dev": null,
    "holdout_auc": null
+  },
+  "fed7b89dda00": {
+   "tag": "fed7b89dda00",
+   "genome": {
+    "corpus": "dense80",
+    "labels": "bestof_v1",
+    "arch": "coatnet384",
+    "epochs": 6,
+    "k": 8,
+    "k_eval": 24,
+    "bb_lr": 3e-05,
+    "head_lr": 0.001,
+    "wd": 0.02,
+    "freeze_blocks": 0
+   },
+   "seed": 42,
+   "parent": "5bc0a0f45d75",
+   "init": "v5",
+   "fold": 0,
+   "job": "f-7cdb6e8357-fix",
+   "dataset": "girishbose/rsna-knee-rp-f-7cdb6e8357-fix-out",
+   "weights": "raptor_ft_fed7b89dda00.pt",
+   "gold_dev": 0.9228482330338235,
+   "swa_gold_dev": 0.9205073112850067,
+   "holdout_auc": 0.9405228758169933,
+   "finished": 1790756982.4874828
+  },
+  "fd1e82258115": {
+   "tag": "fd1e82258115",
+   "genome": {
+    "corpus": "dense80",
+    "labels": "bestof_v1",
+    "arch": "coatnet384",
+    "epochs": 6,
+    "k": 8,
+    "k_eval": 24,
+    "bb_lr": 3e-05,
+    "head_lr": 0.001,
+    "wd": 0.02,
+    "freeze_blocks": 0
+   },
+   "seed": 42,
+   "parent": "5bc0a0f45d75",
+   "init": "v5",
+   "fold": 1,
+   "job": "f-7cdb6e8357-fix",
+   "dataset": "girishbose/rsna-knee-rp-f-7cdb6e8357-fix-out",
+   "weights": "raptor_ft_fd1e82258115.pt",
+   "gold_dev": 0.9254688710655193,
+   "swa_gold_dev": 0.9263493867486666,
+   "holdout_auc": 0.936045690205907,
+   "finished": 1790756982.493516
+  },
+  "e199a7b8f4b0": {
+   "tag": "e199a7b8f4b0",
+   "genome": {
+    "corpus": "dense80",
+    "labels": "dread",
+    "arch": "coatnet384",
+    "epochs": 16,
+    "k": 8,
+    "k_eval": 24,
+    "bb_lr": 3e-05,
+    "head_lr": 0.001,
+    "wd": 0.02,
+    "freeze_blocks": 0
+   },
+   "seed": 42,
+   "parent": "soupbestof4",
+   "eval_of": "soupbestof4",
+   "init_file": "raptor_ft_soupbestof4.pt",
+   "job": "e-86b3242bd9",
+   "dataset": "girishbose/rsna-knee-rp-e-86b3242bd9-out",
+   "weights": "raptor_ft_e199a7b8f4b0.pt",
+   "gold_dev": 0.9263550840209881,
+   "swa_gold_dev": null,
+   "holdout_auc": 0.9463194342064312,
+   "finished": 1790762945.3883688
   }
  },
  "running": [
-  {
-   "job": "f-7cdb6e8357-fix",
-   "arms": [
-    {
-     "tag": "fed7b89dda00",
-     "genome": {
-      "corpus": "dense80",
-      "labels": "bestof_v1",
-      "arch": "coatnet384",
-      "epochs": 6,
-      "k": 8,
-      "k_eval": 24,
-      "bb_lr": 3e-05,
-      "head_lr": 0.001,
-      "wd": 0.02,
-      "freeze_blocks": 0
-     },
-     "seed": 42,
-     "parent": "5bc0a0f45d75",
-     "init": "v5",
-     "fold": 0
-    },
-    {
-     "tag": "fd1e82258115",
-     "genome": {
-      "corpus": "dense80",
-      "labels": "bestof_v1",
-      "arch": "coatnet384",
-      "epochs": 6,
-      "k": 8,
-      "k_eval": 24,
-      "bb_lr": 3e-05,
-      "head_lr": 0.001,
-      "wd": 0.02,
-      "freeze_blocks": 0
-     },
-     "seed": 42,
-     "parent": "5bc0a0f45d75",
-     "init": "v5",
-     "fold": 1
-    }
-   ],
-   "est_hours": 4.12,
-   "est_usd": 3.05,
-   "corpus": "dense80",
-   "approved": true,
-   "queued": 1790740814.0250828,
-   "kind": "oof",
-   "oof_base": "f-7cdb6e8357",
-   "pod": "zxxunluwiw6znb",
-   "result": "girishbose/rsna-knee-rp-f-7cdb6e8357-fix-out",
-   "launched": 1790742252.9761071,
-   "price_hr": 0.34,
-   "proxy_misses": 0
-  },
   {
    "job": "f-83969a7fa1",
    "arms": [
@@ -890,6 +1039,56 @@
    "launched": 1790747133.1426299,
    "price_hr": 0.74,
    "proxy_misses": 0
+  },
+  {
+   "job": "m-4f778dea64",
+   "arms": [
+    {
+     "tag": "m38d6fed0aef",
+     "genome": {
+      "corpus": "dense80",
+      "labels": "fused_7cdb6e83",
+      "arch": "coatnet384",
+      "epochs": 6,
+      "k": 8,
+      "k_eval": 24,
+      "bb_lr": 3e-05,
+      "head_lr": 0.001,
+      "wd": 0.02,
+      "freeze_blocks": 0
+     },
+     "seed": 42,
+     "parent": "6e0c83b59036",
+     "init": "v5"
+    },
+    {
+     "tag": "m9f0c48dc93d",
+     "genome": {
+      "corpus": "dense80",
+      "labels": "fused_7cdb6e83",
+      "arch": "coatnet384",
+      "epochs": 6,
+      "k": 8,
+      "k_eval": 24,
+      "bb_lr": 3e-05,
+      "head_lr": 0.001,
+      "wd": 0.02,
+      "freeze_blocks": 0
+     },
+     "seed": 1337,
+     "parent": "6e0c83b59036",
+     "init": "v5"
+    }
+   ],
+   "est_hours": 4.9,
+   "est_usd": 3.63,
+   "corpus": "dense80",
+   "approved": true,
+   "queued": 1790749619.331711,
+   "pod": "7k922l0lyqwjai",
+   "result": "girishbose/rsna-knee-rp-m-4f778dea64-out",
+   "launched": 1790763020.417409,
+   "price_hr": 0.22
   }
  ]
 }

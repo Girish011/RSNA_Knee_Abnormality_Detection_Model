@@ -72,5 +72,22 @@
    "swap_v5": "m0b16e9a09f1"
   },
   "ts": 1790696536.6764228
+ },
+ {
+  "date": "2026-09-30T10:27:19.293684+00:00",
+  "kernel": "girishbose/swap-d4-soup4",
+  "version": 1,
+  "fingerprint": "96fd0ade1fa725e0",
+  "why": "swap: 4-seed bestof soup (macro-58 0.9365 vs v5 0.9256 on our protocol) replaces v5",
+  "ref": 56704765,
+  "public_lb": null,
+  "ensemble": {
+   "base": "rsna-knee-fast-2xt4-inference.ipynb",
+   "members": [],
+   "weights": [],
+   "w": 0.0,
+   "swap_v5": "soupbestof4"
+  },
+  "ts": 1790764039.2942138
  }
 ]
