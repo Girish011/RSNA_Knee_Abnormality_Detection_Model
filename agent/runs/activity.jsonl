@@ -818,3 +818,14 @@
 {"ts": "2026-10-01T00:00:38", "kind": "plan", "msg": "members queued m-98092c689a: 2 full-data arms from 5bc0a0f45d75 (~9.8 h, ~$7.25)", "cost_usd": 0.0, "job": "m-98092c689a", "arms": ["m5b5942352cf", "m440e7701125"]}
 {"ts": "2026-10-01T00:00:38", "kind": "gate", "msg": "user-session: k=16 job m-98092c689a failed instantly (bs8 x k16 = 128 imgs overflowed 32-bit indexing); requeued with bs=4; dropped redundant fused seeds m-3d11b7aaa1", "cost_usd": 0.0}
 {"ts": "2026-10-01T00:00:38", "kind": "note", "msg": "loop started (interval 600s)", "cost_usd": 0.0}
+{"ts": "2026-10-01T00:00:59", "kind": "note", "msg": "loop started (interval 600s)", "cost_usd": 0.0}
+{"ts": "2026-10-01T00:01:48", "kind": "note", "msg": "member job m-98092c689a: 0/2 arms visible, STATUS not final; retry 2/8", "cost_usd": 0.0, "job": "m-98092c689a"}
+{"ts": "2026-10-01T00:03:10", "kind": "train", "msg": "RunPod job m-98092c689a-r1 launched: ['m5b5942352cf', 'm440e7701125']", "cost_usd": 0.0, "pod": "minychygkg5dd1", "bundle": "girishbose/rsna-knee-rp-m-98092c689a-r1-bundle", "result": "girishbose/rsna-knee-rp-m-98092c689a-r1-out", "monitor": "https://minychygkg5dd1-8000.proxy.runpod.net", "price_hr": 0.34, "est_hours": 9.8}
+{"ts": "2026-10-01T00:13:51", "kind": "note", "msg": "member job m-98092c689a: 0/2 arms visible, STATUS not final; retry 3/8", "cost_usd": 0.0, "job": "m-98092c689a"}
+{"ts": "2026-10-01T00:13:52", "kind": "error", "msg": "member pod minychygkg5dd1 vanished before billing; requeueing m-98092c689a", "cost_usd": 0.0, "component": "members", "pod": "minychygkg5dd1"}
+{"ts": "2026-10-01T00:15:13", "kind": "train", "msg": "RunPod job m-98092c689a-r2 launched: ['m5b5942352cf', 'm440e7701125']", "cost_usd": 0.0, "pod": "jcngk5sjn90ewm", "bundle": "girishbose/rsna-knee-rp-m-98092c689a-r2-bundle", "result": "girishbose/rsna-knee-rp-m-98092c689a-r2-out", "monitor": "https://jcngk5sjn90ewm-8000.proxy.runpod.net", "price_hr": 0.34, "est_hours": 9.8}
+{"ts": "2026-10-01T00:26:06", "kind": "note", "msg": "member job m-98092c689a: 0/2 arms visible, STATUS not final; retry 4/8", "cost_usd": 0.0, "job": "m-98092c689a"}
+{"ts": "2026-10-01T00:52:53", "kind": "note", "msg": "loop started (interval 600s)", "cost_usd": 0.0}
+{"ts": "2026-10-01T00:52:53", "kind": "gate", "msg": "op drop_running m-98092c689a : removed 2", "cost_usd": 0.0}
+{"ts": "2026-10-01T00:52:53", "kind": "gate", "msg": "op requeue m-98092c689a (retries=3)", "cost_usd": 0.0}
+{"ts": "2026-10-01T00:54:15", "kind": "train", "msg": "RunPod job m-98092c689a-r3 launched: ['m5b5942352cf', 'm440e7701125']", "cost_usd": 0.0, "pod": "klu2mjve9xku7s", "bundle": "girishbose/rsna-knee-rp-m-98092c689a-r3-bundle", "result": "girishbose/rsna-knee-rp-m-98092c689a-r3-out", "monitor": "https://klu2mjve9xku7s-8000.proxy.runpod.net", "price_hr": 0.34, "est_hours": 9.8}

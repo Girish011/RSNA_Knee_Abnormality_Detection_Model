@@ -49,7 +49,7 @@ MEMBER_INFRA_RETRIES = 6
 
 def _running(m: dict) -> list[dict]:
     """Running member jobs. ``m["active"]`` mirrors the first one for older readers."""
-    if "running" not in m or (m.get("active") and not m["running"]):
+    if "running" not in m:   # one-time migration from the single-slot format
         m["running"] = [m["active"]] if m.get("active") else []
     return m["running"]
 
@@ -295,9 +295,12 @@ def _collect(a: dict) -> dict[str, dict]:
             for name in (f"{t}/raptor_oof_{t}_fold{k}.npz", f"{t}/raptor_oof_{t}_swa_fold{k}.npz",
                          f"{t}/raptor_gold_{t}.npz"):
                 (dest / name).parent.mkdir(parents=True, exist_ok=True)
-                subprocess.run(["kaggle", "datasets", "download",
-                                a["result"], "-f", name, "-p", str((dest / name).parent)],
-                               capture_output=True, text=True)
+                try:
+                    subprocess.run(["kaggle", "datasets", "download",
+                                    a["result"], "-f", name, "-p", str((dest / name).parent)],
+                                   capture_output=True, text=True, timeout=L.KAGGLE_TIMEOUT_S)
+                except subprocess.TimeoutExpired:
+                    log("note", f"kaggle download timed out: {a['result']} {name}")
     out = {}
     for x in a["arms"]:
         meta = dest / x["tag"] / f"raptor_ft_{x['tag']}.json"
@@ -437,10 +440,42 @@ def auto_self_train(m: dict, a: dict, run_fusion=None) -> dict | None:
     return r
 
 
+OPS = RUNS / "members_ops.jsonl"
+
+
+def request_op(op: dict) -> None:
+    """Queue a state edit for the loop to apply at its next tick (never races a running tick)."""
+    with OPS.open("a") as f:
+        f.write(json.dumps(op) + "\n")
+
+
+def apply_ops(m: dict) -> None:
+    if not OPS.exists():
+        return
+    lines = OPS.read_text().splitlines()
+    OPS.unlink()
+    for line in lines:
+        op = json.loads(line)
+        if op.get("op") == "drop_running":
+            before = len(_running(m))
+            m["running"] = [r for r in _running(m)
+                            if not (r["job"] == op["job"] and (not op.get("pod") or r["pod"] == op["pod"]))]
+            log("gate", f"op drop_running {op['job']} {op.get('pod', '')}: removed {before - len(m['running'])}")
+        elif op.get("op") == "drop_queued":
+            m["queue"] = [j for j in m["queue"] if j["job"] != op["job"]]
+            log("gate", f"op drop_queued {op['job']}")
+        elif op.get("op") == "requeue":
+            job = dict(op["job_spec"])
+            m["queue"].insert(0, job)
+            log("gate", f"op requeue {job['job']} (retries={job.get('retries')})")
+    m["active"] = _running(m)[0] if _running(m) else None
+
+
 def tick(loop_active: bool) -> bool:
     """Observe/launch member jobs. Returns True when the loop must not plan this tick."""
     m = load()
     try:
+        apply_ops(m)
         observe(m)
         if len(_running(m)) < MAX_PODS and m["queue"]:
             waiting = {j["job"] for j in m["queue"]} | {r["job"] for r in _running(m)}

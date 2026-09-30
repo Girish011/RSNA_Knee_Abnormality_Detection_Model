@@ -30,10 +30,16 @@ BOOT = """set -u; mkdir -p /workspace/out ~/.kaggle
 cd /workspace/out && nohup python -m http.server 8000 >/dev/null 2>&1 &
 printf %s "$KAGGLE_API_TOKEN" > ~/.kaggle/access_token && chmod 600 ~/.kaggle/access_token
 pip install -q kaggle
-for i in $(seq 1 20); do
+for i in $(seq 1 60); do
   kaggle datasets download {bundle} -p /workspace/bundle --unzip -q && break
   echo "bundle not ready, retry $i" >> /workspace/out/job.log; sleep 30
 done
+if [ ! -f /workspace/bundle/run_job.sh ]; then
+  # Never idle-bill: a pod that cannot fetch its bundle deletes itself (2026-10-01).
+  echo "BUNDLE UNAVAILABLE after 30 min; deleting pod" > /workspace/out/STATUS
+  sleep 60
+  curl -s -X DELETE -H "Authorization: Bearer $RUNPOD_API_KEY" "https://rest.runpod.io/v1/pods/$RUNPOD_POD_ID"
+fi
 bash /workspace/bundle/run_job.sh
 sleep infinity"""
 
@@ -74,7 +80,7 @@ def build_bundle(job: str, arms: list[Arm], inits: list[tuple[str, str, str]] | 
 
 def upload_bundle(d: Path) -> str:
     slug = json.loads((d / "dataset-metadata.json").read_text())["id"]
-    exists = subprocess.run(["kaggle", "datasets", "status", slug], capture_output=True, text=True)
+    exists = subprocess.run(["kaggle", "datasets", "status", slug], capture_output=True, text=True, timeout=120)
     cmd = (["kaggle", "datasets", "version", "-p", str(d), "-m", "update", "-q"]
            if exists.returncode == 0 and "ready" in exists.stdout.lower()
            else ["kaggle", "datasets", "create", "-p", str(d), "-q"])

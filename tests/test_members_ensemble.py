@@ -143,9 +143,9 @@ def test_swap_v5_rewires_both_arms_and_roots(tmp_path):
 def test_observe_waits_for_final_snapshot(msandbox, monkeypatch, tmp_path):
     monkeypatch.setattr(members, "RESULTS", tmp_path / "res")
     m = members.load()
-    m["active"] = {"job": "m-x", "pod": "p", "result": "u/m-x-out", "launched": 0, "est_hours": 1,
+    m["running"] = [{"job": "m-x", "pod": "p", "result": "u/m-x-out", "launched": 0, "est_hours": 1,
                    "price_hr": 0.34, "cost_logged": True,
-                   "arms": [{"tag": "a1", "genome": G.BASE, "seed": 1}, {"tag": "a2", "genome": G.BASE, "seed": 2}]}
+                   "arms": [{"tag": "a1", "genome": G.BASE, "seed": 1}, {"tag": "a2", "genome": G.BASE, "seed": 2}]}]
     monkeypatch.setattr(members.runpod, "get_pod", lambda pid: None)
     status = {"text": "uploading partial after a1"}
 
@@ -157,10 +157,10 @@ def test_observe_waits_for_final_snapshot(msandbox, monkeypatch, tmp_path):
 
     monkeypatch.setattr(members, "_collect", fake_collect)
     members.observe(m)
-    assert m["active"] is not None and not m["done"]          # partial snapshot: keep waiting
+    assert m["running"] and not m["done"]                     # partial snapshot: keep waiting
     status["text"] = "uploading (all arms finished)"
     members.observe(m)
-    assert m["active"] is None and set(m["done"]) == {"a1", "a2"}
+    assert not m["running"] and set(m["done"]) == {"a1", "a2"}
 
 
 def test_swap_v5_refuses_two_different_members():
@@ -300,3 +300,18 @@ def test_user_terminated_pod_is_not_relaunched(msandbox, monkeypatch):
     monkeypatch.setattr(members, "_collect", lambda a: {})
     members.observe(m)
     assert not any(j["job"] == job["job"] for j in m["queue"])      # not requeued as a phantom
+
+
+def test_ops_file_edits_apply_at_tick(msandbox, monkeypatch, tmp_path):
+    monkeypatch.setattr(members, "OPS", tmp_path / "ops.jsonl")
+    job = members.queue("p1", [42], ["dread"])
+    m = members.load(); m["queue"] = []
+    m["running"] = [{**job, "pod": "old", "launched": 0}, {**job, "pod": "new", "launched": 0}]
+    members.save(m)
+    members.request_op({"op": "drop_running", "job": job["job"]})
+    members.request_op({"op": "requeue", "job_spec": {**job, "retries": 3}})
+    monkeypatch.setattr(members.runpod, "list_pods", lambda: [{"desiredStatus": "RUNNING"}] * 2)
+    monkeypatch.setattr(members, "_observe_one", lambda m, a: None)
+    members.tick(loop_active=False)
+    m = members.load()
+    assert m["running"] == [] and m["queue"][0]["retries"] == 3 and not (tmp_path / "ops.jsonl").exists()

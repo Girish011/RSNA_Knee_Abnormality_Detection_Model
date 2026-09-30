@@ -58,6 +58,7 @@ STOP_COOLDOWN_S = 15 * 60  # only when the menu is fully exhausted
 # Local search bar only. True goal = Kaggle submit/LB macro AUC ≥ 0.958 (DECISIONS 2026-09-25).
 PROXY_TARGET = 0.958
 DOWNLOAD_TRIES = 8
+KAGGLE_TIMEOUT_S = 180
 INFRA_RETRIES = 2
 # Kill hung/dead pods early instead of billing until the API notices.
 PROXY_MISS_LIMIT = 2          # consecutive observe ticks with unreachable proxy
@@ -144,8 +145,12 @@ def download_results(slug: str, dest: Path, tags: list[str]) -> bool:
     dest.mkdir(parents=True, exist_ok=True)
     for name in ["STATUS", "job.log"] + [f for t in tags for f in result_files(t)]:
         (dest / name).parent.mkdir(parents=True, exist_ok=True)
-        subprocess.run(["kaggle", "datasets", "download", slug, "-f", name, "-p", str((dest / name).parent)],
-                       capture_output=True, text=True)
+        try:
+            # A download of a file that never appears hung the loop for 15+ min on 2026-10-01.
+            subprocess.run(["kaggle", "datasets", "download", slug, "-f", name, "-p", str((dest / name).parent)],
+                           capture_output=True, text=True, timeout=KAGGLE_TIMEOUT_S)
+        except subprocess.TimeoutExpired:
+            log("note", f"kaggle download timed out: {slug} {name}")
     return (dest / "STATUS").exists()
 
 
