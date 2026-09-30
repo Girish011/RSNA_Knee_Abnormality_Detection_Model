@@ -98,9 +98,35 @@
    "kept": [
     "Synovitis"
    ]
+  },
+  {
+   "name": "relabel_bade30d3",
+   "registered": true,
+   "kept": [
+    "Synovitis",
+    "PF OA",
+    "Lateral OA",
+    "Lateral Meniscus"
+   ]
+  },
+  {
+   "name": "relabel_fd048059",
+   "registered": true,
+   "kept": [
+    "Synovitis",
+    "PF OA",
+    "Lateral OA"
+   ]
+  },
+  {
+   "name": "relabel_65ceaaf2",
+   "registered": true,
+   "kept": [
+    "Synovitis"
+   ]
   }
  ],
- "heartbeat": 1790742252.977984,
+ "heartbeat": 1790753309.3887098,
  "_orphan_retries": 5,
- "next_research_after": 1790743371.692228
+ "next_research_after": 1790755348.8597279
 }

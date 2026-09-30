@@ -150,6 +150,10 @@ def queue_folds(node_id: str, labels: str, init: str | None = "v5", epochs: int 
     """5-fold OOF job: every non-expert train study gets an out-of-fold image prediction.
     Feeds expert-anchored label fusion (scripts/fuse_labels.py), i.e. self-training."""
     m = m if m is not None else load()
+    info = G.label_registry().get(labels, {})
+    if "n_fused" in info and info["n_fused"] < 0.95 * 4349:
+        raise SystemExit(f"{labels} fused only {info['n_fused']} of 4349 studies (partial fold set); "
+                         "wait for the *_full fusion before another self-training round")
     g = dict(G.clamp(_node_genome(node_id)), labels=labels)
     if epochs:
         g["epochs"] = int(epochs)
