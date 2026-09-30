@@ -45,6 +45,7 @@ MAX_PODS = 2
 # Phantom pods (created, then gone before billing) cost $0 but 10 min each; community capacity
 # produced 3 in a row several times on 2026-09-30 and dropped the key fused-label job.
 MEMBER_INFRA_RETRIES = 6
+SEEDS_PER_RECIPE = 4
 
 
 def _running(m: dict) -> list[dict]:
@@ -125,6 +126,15 @@ def queue(node_id: str, seeds: list[int], labels: list[str] | None = None,
         if errs := [e for e in G.validate(g) if not (epochs and e.startswith("epochs="))
                     and not (k and e.startswith("k="))]:
             raise SystemExit(f"illegal genome for labels={lab}: {errs}")
+        same = sum(1 for r in m["done"].values()
+                   if r.get("fold") is None and not r.get("eval_of") and not r.get("soup_of")
+                   and (r.get("genome") or {}).get("labels") == lab
+                   and (r.get("genome") or {}).get("k", 8) == g["k"] and r.get("init") == init)
+        if same >= SEEDS_PER_RECIPE:
+            # 4-seed and 2-seed soups scored the same (0.9365 / 0.9364): more seeds of one recipe
+            # do not move the ensemble. DeepSeek re-queued seed jobs repeatedly on 2026-09-30.
+            raise SystemExit(f"{lab} (k={g['k']}, init={init}) already has {same} members; "
+                             f"cap {SEEDS_PER_RECIPE} — change the recipe instead of adding seeds")
         for s in seeds:
             tag = member_tag(g, s, init)
             if tag in seen:

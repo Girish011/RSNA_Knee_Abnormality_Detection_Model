@@ -45,11 +45,11 @@
   "corpus": "dense80",
   "approved": true,
   "queued": 1790787227.2952042,
-  "retries": 3,
-  "pod": "klu2mjve9xku7s",
-  "result": "girishbose/rsna-knee-rp-m-98092c689a-r3-out",
-  "launched": 1790796255.744549,
-  "price_hr": 0.34
+  "retries": 4,
+  "pod": "qfemyz2xehr39w",
+  "result": "girishbose/rsna-knee-rp-m-98092c689a-r4-out",
+  "launched": 1790796479.8843431,
+  "price_hr": 0.74
  },
  "done": {
   "m6edbb53fbab": {
@@ -1099,11 +1099,11 @@
    "corpus": "dense80",
    "approved": true,
    "queued": 1790787227.2952042,
-   "retries": 3,
-   "pod": "klu2mjve9xku7s",
-   "result": "girishbose/rsna-knee-rp-m-98092c689a-r3-out",
-   "launched": 1790796255.744549,
-   "price_hr": 0.34
+   "retries": 4,
+   "pod": "qfemyz2xehr39w",
+   "result": "girishbose/rsna-knee-rp-m-98092c689a-r4-out",
+   "launched": 1790796479.8843431,
+   "price_hr": 0.74
   }
  ]
 }
