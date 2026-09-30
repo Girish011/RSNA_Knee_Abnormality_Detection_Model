@@ -83,7 +83,8 @@ def upload_bundle(d: Path) -> str:
 
 
 def launch(job: str, arms: list[Arm], hours: float, *, capacity_rounds: int = 8,
-           corpus: str = "raptor44", inits: list[tuple[str, str, str]] | None = None) -> dict:
+           corpus: str = "raptor44", inits: list[tuple[str, str, str]] | None = None,
+           gpu_class: str | None = None) -> dict:
     """Upload the bundle and start a pod. Returns {pod, costPerHr, monitor, bundle, result}.
 
     Retries across community 3090 (preferred) → 4090 → secure 4090, with backoff, until a
@@ -119,6 +120,12 @@ def launch(job: str, arms: list[Arm], hours: float, *, capacity_rounds: int = 8,
         {"cloudType": "SECURE", "gpuTypeIds": [runpod.GPU_4090]},
         {"cloudType": "SECURE", "gpuTypeIds": [runpod.GPU_A6000, runpod.GPU_A40]},
     ]
+    if gpu_class == "48":
+        # k>8 windows OOM on 24 GB (measured 2026-09-27); these arms may only run on 48 GB cards.
+        attempts = [
+            {"cloudType": "COMMUNITY", "gpuTypeIds": [runpod.GPU_A6000, runpod.GPU_A40]},
+            {"cloudType": "SECURE", "gpuTypeIds": [runpod.GPU_A6000, runpod.GPU_A40]},
+        ]
     pod = None
     last_err = ""
     for round_i in range(capacity_rounds):

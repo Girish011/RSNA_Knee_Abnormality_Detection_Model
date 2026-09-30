@@ -101,7 +101,8 @@ def _node_genome(node_id: str) -> dict:
 
 
 def queue(node_id: str, seeds: list[int], labels: list[str] | None = None,
-          m: dict | None = None, init: str | None = None, epochs: int | None = None) -> dict:
+          m: dict | None = None, init: str | None = None, epochs: int | None = None,
+          k: int | None = None) -> dict:
     """Queue one pod job whose arms are (seed × label set) full-data retrains of ``node_id``."""
     m = m if m is not None else load()
     if init and init not in INITS:
@@ -109,10 +110,15 @@ def queue(node_id: str, seeds: list[int], labels: list[str] | None = None,
     base = G.clamp(_node_genome(node_id))
     if epochs:
         base["epochs"] = int(epochs)
+    if k:
+        if int(k) not in (8, 12, 16):
+            raise SystemExit("k must be 8, 12 or 16")
+        base["k"] = int(k)
     arms, seen = [], {t for j in m["queue"] for t in (a["tag"] for a in j["arms"])} | set(m["done"])
     for lab in labels or [base["labels"]]:
         g = dict(base, labels=lab)
-        if errs := [e for e in G.validate(g) if not (epochs and e.startswith("epochs="))]:
+        if errs := [e for e in G.validate(g) if not (epochs and e.startswith("epochs="))
+                    and not (k and e.startswith("k="))]:
             raise SystemExit(f"illegal genome for labels={lab}: {errs}")
         for s in seeds:
             tag = member_tag(g, s, init)
@@ -122,11 +128,11 @@ def queue(node_id: str, seeds: list[int], labels: list[str] | None = None,
             arms.append({"tag": tag, "genome": g, "seed": int(s), "parent": node_id, "init": init})
     if not arms:
         raise SystemExit("every requested member already exists or is queued")
-    hours = est_hours(base, len(arms))
+    hours = est_hours(base, len(arms)) * (base["k"] / 8 if base["k"] > 8 else 1)
     job = {"job": "m-" + hashlib.sha1("".join(a["tag"] for a in arms).encode()).hexdigest()[:10],
            "arms": arms, "est_hours": round(hours, 2), "est_usd": round(hours * launcher.PRICE_HR, 2),
            "corpus": base["corpus"], "approved": hours * launcher.PRICE_HR <= APPROVAL_USD,
-           "queued": time.time()}
+           "queued": time.time(), **({"gpu_class": "48"} if base["k"] > 8 else {})}
     m["queue"].append(job)
     save(m)
     log("plan", f"members queued {job['job']}: {len(arms)} full-data arms from {node_id} "
@@ -261,7 +267,8 @@ def _launch(m: dict, job: dict) -> None:
                                              epochs=a["genome"]["epochs"])))
     out = launcher.launch(job["job"] + (f"-r{job['retries']}" if job.get("retries") else ""),
                           arms, job["est_hours"], corpus=job["corpus"],
-                          inits=[tuple(x) for x in job.get("inits") or []])
+                          inits=[tuple(x) for x in job.get("inits") or []],
+                          gpu_class=job.get("gpu_class"))
     _running(m).append({**job, "pod": out["pod"], "result": out["result"], "launched": time.time(),
                         "price_hr": float(out.get("costPerHr") or launcher.PRICE_HR)})
     m["active"] = _running(m)[0]
@@ -448,6 +455,7 @@ def main() -> None:
     ap.add_argument("--job")
     ap.add_argument("--init", default=None, help="warm start: v5 (public full-SWA CoAtNet)")
     ap.add_argument("--epochs", type=int, default=None, help="override epochs (warm starts: 4-8)")
+    ap.add_argument("--k", type=int, default=None, help="train windows per study; >8 pins to 48 GB GPUs")
     a = ap.parse_args()
     m = load()
     if a.cmd == "refold":
@@ -464,7 +472,7 @@ def main() -> None:
         if not a.node:
             raise SystemExit("--node required")
         j = queue(a.node, [int(s) for s in a.seeds.split(",")],
-                  a.labels.split(",") if a.labels else None, m, init=a.init, epochs=a.epochs)
+                  a.labels.split(",") if a.labels else None, m, init=a.init, epochs=a.epochs, k=a.k)
         print(json.dumps(j, indent=1, default=str))
     elif a.cmd in ("approve", "drop"):
         for j in list(m["queue"]):
