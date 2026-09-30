@@ -327,14 +327,23 @@ def _observe_one(m: dict, a: dict) -> None:
     except Exception:
         pod = None
     elapsed_h = (time.time() - a["launched"]) / 3600
-    if pod is None and elapsed_h < 0.5 and not a.get("cost_logged"):
+    if pod is not None and pod.get("desiredStatus") == "RUNNING" and not a.get("seen_alive"):
+        # A pod whose own HTTP proxy answered once was real: if it later 404s it ended or was
+        # terminated by hand — never a phantom to relaunch (2026-09-30: user-terminated pod was
+        # relaunched as "-r2").
+        if L._probe_pod_progress(a["pod"]).get("reachable"):
+            a["seen_alive"] = True
+    if pod is None and elapsed_h < 0.5 and not a.get("cost_logged") and not a.get("seen_alive"):
         log("error", f"member pod {a['pod']} vanished before billing; requeueing {a['job']}",
             component="members", pod=a["pod"])
         job = {k: a[k] for k in ("job", "arms", "est_hours", "est_usd", "corpus", "approved", "queued")
                if k in a} | ({"inits": a["inits"]} if a.get("inits") else {})
         job["retries"] = a.get("retries", 0) + 1
         _finish(m, a)
-        if job["retries"] <= MEMBER_INFRA_RETRIES:
+        closed = POLICY.exists() and json.loads(POLICY.read_text()).get("fold_jobs_closed")
+        if a.get("kind") == "oof" and closed:
+            log("gate", f"not relaunching {job['job']}: 5-fold rounds closed by policy", job=job["job"])
+        elif job["retries"] <= MEMBER_INFRA_RETRIES:
             m["queue"].insert(0, job)
         else:
             log("gate", f"member job {job['job']} DROPPED after {job['retries']} phantom pods; "

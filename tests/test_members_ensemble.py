@@ -282,3 +282,20 @@ def test_policy_blocks_fold_jobs(msandbox, tmp_path):
     (tmp_path / "policy.json").write_text('{"fold_jobs_closed": true, "why": "closed"}')
     with pytest.raises(SystemExit, match="CLOSED"):
         members.queue_folds("p1", "dread")
+
+
+def test_user_terminated_pod_is_not_relaunched(msandbox, monkeypatch):
+    from rsna_knee.agent import loop as L
+    job = members.queue("p1", [42], ["dread"])
+    m = members.load(); m["queue"] = []
+    a = {**job, "pod": "px", "result": "u/r", "launched": __import__("time").time(), "price_hr": 0.3}
+    m["running"] = [a]; members.save(m)
+    monkeypatch.setattr(members.runpod, "get_pod", lambda pid: {"desiredStatus": "RUNNING"})
+    monkeypatch.setattr(L, "_probe_pod_progress", lambda pid: {"reachable": True})
+    monkeypatch.setattr(L, "_running_pod_unhealthy", lambda a: None)
+    m = members.load(); members.observe(m)
+    assert m["running"][0]["seen_alive"] is True
+    monkeypatch.setattr(members.runpod, "get_pod", lambda pid: None)   # user terminated it
+    monkeypatch.setattr(members, "_collect", lambda a: {})
+    members.observe(m)
+    assert not any(j["job"] == job["job"] for j in m["queue"])      # not requeued as a phantom
