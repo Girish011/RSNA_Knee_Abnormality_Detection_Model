@@ -267,13 +267,14 @@ def test_refold_and_after_dependency(msandbox, monkeypatch):
 
 def test_k16_members_pin_48gb(msandbox, monkeypatch):
     job = members.queue("p1", [42], ["dread"], init="v5", epochs=6, k=16)
-    assert job["gpu_class"] == "48" and job["arms"][0]["genome"]["k"] == 16
+    assert "gpu_class" not in job and job["arms"][0]["genome"]["k"] == 16
+    job["gpu_class"] = "48"   # still honoured when set
     seen = {}
     monkeypatch.setattr(members.launcher, "launch",
                         lambda j, arms, h, **kw: seen.update(kw, args=arms[0][2]) or
                         {"pod": "p", "costPerHr": 0.33, "result": "u/x"})
     members._launch(members.load(), job)
-    assert seen["gpu_class"] == "48" and "--k 16 " in seen["args"]
+    assert seen["gpu_class"] == "48" and "--k 16 " in seen["args"] and "--bs 4 " in seen["args"]
     with pytest.raises(SystemExit):
         members.queue("p1", [42], ["dread"], k=32)
 

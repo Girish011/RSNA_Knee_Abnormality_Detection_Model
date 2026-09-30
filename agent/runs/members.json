@@ -1,5 +1,52 @@
 {
- "queue": [],
+ "queue": [
+  {
+   "job": "m-98092c689a",
+   "arms": [
+    {
+     "tag": "m5b5942352cf",
+     "genome": {
+      "corpus": "dense80",
+      "labels": "bestof_v1",
+      "arch": "coatnet384",
+      "epochs": 6,
+      "k": 16,
+      "k_eval": 24,
+      "bb_lr": 3e-05,
+      "head_lr": 0.001,
+      "wd": 0.02,
+      "freeze_blocks": 0
+     },
+     "seed": 42,
+     "parent": "5bc0a0f45d75",
+     "init": "v5"
+    },
+    {
+     "tag": "m440e7701125",
+     "genome": {
+      "corpus": "dense80",
+      "labels": "bestof_v1",
+      "arch": "coatnet384",
+      "epochs": 6,
+      "k": 16,
+      "k_eval": 24,
+      "bb_lr": 3e-05,
+      "head_lr": 0.001,
+      "wd": 0.02,
+      "freeze_blocks": 0
+     },
+     "seed": 1337,
+     "parent": "5bc0a0f45d75",
+     "init": "v5"
+    }
+   ],
+   "est_hours": 9.8,
+   "est_usd": 7.25,
+   "corpus": "dense80",
+   "approved": true,
+   "queued": 1790793038.1208398
+  }
+ ],
  "active": {
   "job": "m-98092c689a",
   "arms": [
@@ -50,7 +97,10 @@
   "result": "girishbose/rsna-knee-rp-m-98092c689a-out",
   "launched": 1790787308.529692,
   "price_hr": 0.49,
-  "proxy_misses": 0
+  "proxy_misses": 0,
+  "seen_alive": true,
+  "cost_logged": true,
+  "tries": 1
  },
  "done": {
   "m6edbb53fbab": {
@@ -1105,7 +1155,10 @@
    "result": "girishbose/rsna-knee-rp-m-98092c689a-out",
    "launched": 1790787308.529692,
    "price_hr": 0.49,
-   "proxy_misses": 0
+   "proxy_misses": 0,
+   "seen_alive": true,
+   "cost_logged": true,
+   "tries": 1
   }
  ]
 }

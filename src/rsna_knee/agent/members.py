@@ -80,6 +80,10 @@ def full_cli(genome: dict, seed: int, bundle_dir: str = "/workspace/bundle",
         args = re.sub(r"--epochs \d+", f"--epochs {int(epochs)}", args)
     if init:
         args += f" --init_model {INITS[init]}"
+    if genome.get("k", 8) > 8:
+        # Keep images per forward = bs*k = 64 (as at k=8, bs=8). bs=8 x k=16 = 128 images of 384^2
+        # overflowed PyTorch 32-bit indexing ("canUse32BitIndexMath") on 2026-09-30.
+        args = re.sub(r"--bs \d+", f"--bs {max(1, 64 // int(genome['k']))}", args)
     assert "--fold " not in args and "--folds" not in args, args
     return labels_file, args
 
@@ -133,7 +137,7 @@ def queue(node_id: str, seeds: list[int], labels: list[str] | None = None,
     job = {"job": "m-" + hashlib.sha1("".join(a["tag"] for a in arms).encode()).hexdigest()[:10],
            "arms": arms, "est_hours": round(hours, 2), "est_usd": round(hours * launcher.PRICE_HR, 2),
            "corpus": base["corpus"], "approved": hours * launcher.PRICE_HR <= APPROVAL_USD,
-           "queued": time.time(), **({"gpu_class": "48"} if base["k"] > 8 else {})}
+           "queued": time.time(), **({"gpu_class": "48"} if base["k"] > 16 else {})}
     m["queue"].append(job)
     save(m)
     log("plan", f"members queued {job['job']}: {len(arms)} full-data arms from {node_id} "
