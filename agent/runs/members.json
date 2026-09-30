@@ -44,7 +44,8 @@
    "est_usd": 7.25,
    "corpus": "dense80",
    "approved": true,
-   "queued": 1790793038.1208398
+   "queued": 1790793038.1208398,
+   "retries": 1
   }
  ],
  "active": {

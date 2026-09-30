@@ -35,7 +35,8 @@ push_results() {
 {"title": "${RESULT_TITLE}", "id": "${RESULT_DATASET}", "licenses": [{"name": "CC0-1.0"}]}
 EOF
   if [ "$PUSHED" = 0 ]; then
-    kaggle datasets create -p "$U" --dir-mode zip -q && PUSHED=1
+    # A rerun under an existing job name must version the dataset, not fail on create.
+    { kaggle datasets create -p "$U" --dir-mode zip -q || kaggle datasets version -p "$U" --dir-mode zip -m "$1" -q; } && PUSHED=1
   else
     kaggle datasets version -p "$U" --dir-mode zip -m "$1" -q
   fi
