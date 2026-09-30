@@ -240,3 +240,25 @@ def test_auto_self_train_gate(msandbox):
     first = m["queue"][0]
     assert {a["genome"]["labels"] for a in first["arms"]} == {"fused_x"} and len(first["arms"]) == 2
     assert all(a["init"] == "v5" for a in first["arms"])
+
+
+def test_refold_and_after_dependency(msandbox, monkeypatch):
+    job = members.queue_folds("p1", "dread", init="v5", epochs=6)
+    m = members.load()
+    m["queue"] = []
+    for a in job["arms"]:
+        m["done"][a["tag"]] = {**a, "job": job["job"]}
+    members.save(m)
+    fix = members.refold(job["job"], [0, 1])
+    assert fix["job"] == job["job"] + "-fix" and [a["fold"] for a in fix["arms"]] == [0, 1]
+    assert fix["oof_base"] == job["job"] and len(members.load()["done"]) == 3
+    m = members.load()
+    m["queue"].append({"job": "m-dep", "arms": [], "approved": True, "after": fix["job"]})
+    members.save(m)
+    monkeypatch.setattr(members.runpod, "list_pods", lambda: [])
+    monkeypatch.setattr(members, "_observe_one", lambda m, a: None)
+    members.tick(loop_active=False)          # launches the fix job
+    members.tick(loop_active=False)          # m-dep must wait: its dependency is running
+    assert [r["job"] for r in members.load()["running"]] == [fix["job"]]
+    with pytest.raises(SystemExit):
+        members.refold(job["job"], [0, 1])   # arms no longer in done

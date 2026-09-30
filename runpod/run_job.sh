@@ -116,8 +116,16 @@ while IFS='|' read -r tag labels extra; do
   status "training $tag"
   mkdir -p "$OUT/$tag" && cp "$B/train_knee.py" "$OUT/$tag/"
   # shellcheck disable=SC2086
-  python "$OUT/$tag/train_knee.py" --labels "$B/$labels" --tag "$tag" $extra \
-    > "$OUT/$tag/train.log" 2>&1 || echo "arm $tag FAILED (continuing)"
+  if ! python "$OUT/$tag/train_knee.py" --labels "$B/$labels" --tag "$tag" $extra \
+    > "$OUT/$tag/train.log" 2>&1; then
+    # Host limits (small /dev/shm → DataLoader "Bus error"; mmap faults) killed arms on A40 hosts.
+    echo "arm $tag FAILED; retrying once with --workers 2"
+    mv "$OUT/$tag/train.log" "$OUT/$tag/train_try1.log"
+    extra2=$(echo "$extra" | sed -E 's/--workers [0-9]+/--workers 2/')
+    # shellcheck disable=SC2086
+    python "$OUT/$tag/train_knee.py" --labels "$B/$labels" --tag "$tag" $extra2 \
+      > "$OUT/$tag/train.log" 2>&1 || echo "arm $tag FAILED twice (continuing)"
+  fi
   tail -20 "$OUT/$tag/train.log"
   # Multi-arm jobs: checkpoint finished arms to Kaggle before starting the next one.
   if [ "$(grep -c . "$B/arms.txt")" -gt 1 ]; then

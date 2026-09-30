@@ -176,6 +176,27 @@ def queue_folds(node_id: str, labels: str, init: str | None = "v5", epochs: int 
     return job
 
 
+def refold(job_id: str, folds: list[int], m: dict | None = None) -> dict:
+    """Re-run failed folds of a finished OOF job. The new job is named ``<job>-fix`` so the fusion
+    glob ``<job>*`` sees all five folds; its completion re-runs self-training on the full set."""
+    m = m if m is not None else load()
+    arms = [dict(r, tag=t) for t, r in m["done"].items() if r.get("job") == job_id and r.get("fold") in folds]
+    if len(arms) != len(folds):
+        raise SystemExit(f"{job_id}: found folds {[a['fold'] for a in arms]} in done, wanted {folds}")
+    for a in arms:
+        m["done"].pop(a["tag"])
+    keep = ("tag", "genome", "seed", "parent", "init", "fold")
+    arms = [{k: a.get(k) for k in keep} for a in arms]
+    hours = (G.est_hours(arms[0]["genome"]) - 0.5) * len(arms) + 1.0
+    job = {"job": f"{job_id}-fix", "arms": arms, "est_hours": round(hours, 2),
+           "est_usd": round(hours * launcher.PRICE_HR, 2), "corpus": arms[0]["genome"]["corpus"],
+           "approved": True, "queued": time.time(), "kind": "oof", "oof_base": job_id}
+    m["queue"].insert(0, job)
+    save(m)
+    log("plan", f"refold {job['job']}: re-running folds {folds} of {job_id} (~${job['est_usd']})", job=job["job"])
+    return job
+
+
 def queue_eval(targets: list[str], m: dict | None = None) -> dict:
     """Queue an eval-only job: score checkpoints ("v5" or finished member / soup tags) with the
     member protocol (dense80 windows, gold-dev 29, holdout 29) so they compare 1:1 with members."""
@@ -331,7 +352,17 @@ def _observe_one(m: dict, a: dict) -> None:
         log("error", f"member job {a['job']} missing arms {missing}", component="members")
     _finish(m, a)
     if a.get("kind") == "oof" and not missing:
-        auto_self_train(m, a)
+        base = a.get("oof_base") or a["job"]
+        have = {r.get("fold") for r in m["done"].values()
+                if (r.get("job") or "").startswith(base) and r.get("fold") is not None}
+        oof_ok = all(list((RESULTS).glob(f"{base}*/{t}/raptor_oof_{t}_fold{r['fold']}.npz"))
+                     for t, r in m["done"].items()
+                     if (r.get("job") or "").startswith(base) and r.get("fold") is not None)
+        if have == set(range(G.PROTOCOL["folds"])) and oof_ok:
+            auto_self_train(m, a)
+        else:
+            log("error", f"self-training skipped for {base}: folds {sorted(have)} / OOF files complete={oof_ok}; "
+                f"use `members refold --job {base} --folds ...`", component="members")
 
 
 FUSED_SEEDS = [42, 1337]
@@ -351,8 +382,9 @@ def auto_self_train(m: dict, a: dict, run_fusion=None) -> dict | None:
     No LLM judgement: the gate is a measured number. Failures are logged, never raised."""
     try:
         base = a["arms"][0]["genome"]["labels"]
-        name = "fused_" + a["job"].split("-", 1)[1][:8]
-        r = (run_fusion or _load_fusion())(oof_job=a["job"], write=name, base=base)
+        oof_job = a.get("oof_base") or a["job"]
+        name = "fused_" + oof_job.split("-", 1)[1][:8] + ("_full" if a.get("oof_base") else "")
+        r = (run_fusion or _load_fusion())(oof_job=oof_job, write=name, base=base)
     except Exception as e:  # noqa: BLE001
         log("error", f"self-training fusion for {a['job']} failed: {type(e).__name__}: {str(e)[:200]}",
             component="members")
@@ -379,7 +411,8 @@ def tick(loop_active: bool) -> bool:
     try:
         observe(m)
         if len(_running(m)) < MAX_PODS and m["queue"]:
-            job = next((j for j in m["queue"] if j.get("approved")), None)
+            waiting = {j["job"] for j in m["queue"]} | {r["job"] for r in _running(m)}
+            job = next((j for j in m["queue"] if j.get("approved") and j.get("after") not in waiting), None)
             if job is not None:
                 try:
                     live = sum(p.get("desiredStatus") == "RUNNING" for p in runpod.list_pods())
@@ -399,7 +432,8 @@ def tick(loop_active: bool) -> bool:
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("cmd", choices=["queue", "eval", "folds", "status", "approve", "drop"])
+    ap.add_argument("cmd", choices=["queue", "eval", "folds", "refold", "status", "approve", "drop"])
+    ap.add_argument("--folds", default="", help="refold: comma list of fold indices")
     ap.add_argument("--targets", default="", help="eval: comma list of 'v5' / member or soup tags")
     ap.add_argument("--node")
     ap.add_argument("--seeds", default="42")
@@ -409,6 +443,9 @@ def main() -> None:
     ap.add_argument("--epochs", type=int, default=None, help="override epochs (warm starts: 4-8)")
     a = ap.parse_args()
     m = load()
+    if a.cmd == "refold":
+        print(json.dumps(refold(a.job, [int(x) for x in a.folds.split(",")], m), indent=1, default=str)[:800])
+        return
     if a.cmd == "folds":
         print(json.dumps(queue_folds(a.node, a.labels, init=a.init or None, epochs=a.epochs, m=m),
                          indent=1, default=str)[:1500])
