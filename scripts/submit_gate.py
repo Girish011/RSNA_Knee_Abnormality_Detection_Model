@@ -68,6 +68,19 @@ def today_count_kaggle() -> int | None:
     return sum(1 for row in rows if str(row.get("date", "")).startswith(today))
 
 
+def latest_ref(msg: str) -> int | None:
+    """Ref of the submission just made (newest row whose description matches), so scores can be recorded."""
+    try:
+        r = subprocess.run([KAGGLE, "competitions", "submissions", COMP, "--csv"],
+                           capture_output=True, text=True, timeout=120)
+        for row in csv.DictReader(io.StringIO(r.stdout)):
+            if row.get("description", "").strip() == msg.strip():
+                return int(row["ref"])
+    except (OSError, subprocess.TimeoutExpired, ValueError, KeyError):
+        pass
+    return None
+
+
 def check(kernel_dir: Path, rows: list[dict], kaggle_today: int | None) -> list[str]:
     errs = []
     fp = fingerprint(kernel_dir)
@@ -128,7 +141,7 @@ def main() -> None:
     if r.returncode != 0:
         raise SystemExit("submit failed")
     rows.append({"date": datetime.now(timezone.utc).isoformat(), "kernel": meta["id"], "version": a.version,
-                 "fingerprint": fingerprint(a.kernel), "why": a.why, "ref": None, "public_lb": None,
+                 "fingerprint": fingerprint(a.kernel), "why": a.why, "ref": latest_ref(msg), "public_lb": None,
                  "ensemble": json.loads((a.kernel / "ENSEMBLE.json").read_text())
                  if (a.kernel / "ENSEMBLE.json").exists() else None, "ts": time.time()})
     save(rows)

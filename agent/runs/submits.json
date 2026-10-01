@@ -153,5 +153,48 @@
    }
   },
   "ts": 1790832543.807629
+ },
+ {
+  "date": "2026-10-01T16:06:20.380350+00:00",
+  "kernel": "girishbose/raptor-all-b4",
+  "version": 1,
+  "fingerprint": "137ce2124829361e",
+  "why": "LEARNING: soupbestof4 in all Raptor arms (v5,v8,v10) - does more of our CoAt pay?",
+  "ref": 56754652,
+  "public_lb": null,
+  "ensemble": {
+   "base": "rsna-knee-fast-2xt4-inference.ipynb",
+   "members": [],
+   "weights": [],
+   "w": 0.0,
+   "swap_v5": "soupbestof4",
+   "swap_arms": {
+    "v8": "soupbestof4",
+    "v10": "soupbestof4"
+   },
+   "coat_shift": 0.0,
+   "tails": {}
+  },
+  "ts": 1790870780.3808582
+ },
+ {
+  "date": "2026-10-01T16:06:27.939741+00:00",
+  "kernel": "girishbose/coat-up15-b4",
+  "version": 1,
+  "fingerprint": "d6c1cdc62c6797bf",
+  "why": "LEARNING: soup4 swap + CoAt branch weight +0.15 all findings",
+  "ref": 56754655,
+  "public_lb": null,
+  "ensemble": {
+   "base": "rsna-knee-fast-2xt4-inference.ipynb",
+   "members": [],
+   "weights": [],
+   "w": 0.0,
+   "swap_v5": "soupbestof4",
+   "swap_arms": {},
+   "coat_shift": 0.15,
+   "tails": {}
+  },
+  "ts": 1790870787.940258
  }
 ]
