@@ -315,3 +315,19 @@ Format: date | decision | why | rejected
   (−0.022); macro 0.932 vs 0.933. The weights reshuffle per-finding AUC rather than add signal → use as Synovitis soup.
 - **Seed cap bug:** done-only counting let the strategist train 6 seeds of relabel_d19bf15e (~$3). The cap now counts
   queued + running arms and truncates multi-seed requests.
+
+## 2026-10-01 (night) — Architecture: label transplant across the public stack; strategist propose-only (user: Claude decides)
+- **Stack anatomy (base_d4 cell 27):** final = (1−w_f)·transformer branch (20 DINO + 5 A5 folds + RadImageNet main/E13
+  heads) + w_f·CoAt branch, w_f = 0.60 (ACL/LatOA/Fracture 0.75, MedMen 0.80, LatMen 1.00). CoAt branch = 0.6 public Raptor
+  (v5 0.7 / v8 0.2 / v10 0.1) + 0.4 private CoAt family (resgated, D4 SWA3, global96, repairv1 at 0.25 each).
+  Effective weight of the v5 slot ≈ 0.25; our +0.011 expert gain there showed as +0.001 LB (damping ≈ 0.35).
+- **Decision:** the lever is our label set, not more CoAt seeds. Every public component trains on public report-label
+  teachers; ours lifted v5 0.926 → 0.937 on experts. Re-train public components on bestof_v1 (gold still wins) with their
+  own public trainers on free Kaggle GPU (`scripts/fork_public_trainer.py`), judge each by its trainer's honest gold OOF
+  AUC vs the upstream audit, then swap the winners into the stack. Order: RadImageNet E13 heads (upstream gold OOF 0.8576),
+  main V52 heads (0.8543); then A5/DINO; CoAt readers last (trainers depend on authors' local caches).
+  The DINO base is weakest on our weak five (gold OOF LatMen 0.64, LatOA 0.71, Syn 0.74, PF 0.80).
+- **No LB submits expected to read 0.944** (user). Learning probes allowed: raptor-all-b4 (our soup in v5+v8+v10),
+  coat-up15-b4 (CoAt weight +0.15).
+- **Harness:** strategist GPU jobs are proposals (`policy.json strategist_gpu=propose`); `members.queue` seed cap counts
+  queued/running arms; `submit_gate` records the Kaggle ref at submit time.
