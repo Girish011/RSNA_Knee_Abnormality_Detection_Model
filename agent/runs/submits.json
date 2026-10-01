@@ -97,7 +97,7 @@
   "fingerprint": "069845b1d9e0cc00",
   "why": "per-finding tail: swap soupbestof4 + PF OA <- soupk16 (k16 PF OA 0.882 vs 0.857) w0.4",
   "ref": 56744344,
-  "public_lb": null,
+  "public_lb": 0.944,
   "ensemble": {
    "base": "rsna-knee-fast-2xt4-inference.ipynb",
    "members": [
@@ -126,7 +126,7 @@
   "fingerprint": "b16af7ab62cccbb4",
   "why": "A/B: swap soupbestof4 + PF OA,Synovitis <- soupk16 w0.35",
   "ref": 56744346,
-  "public_lb": null,
+  "public_lb": 0.944,
   "ensemble": {
    "base": "rsna-knee-fast-2xt4-inference.ipynb",
    "members": [

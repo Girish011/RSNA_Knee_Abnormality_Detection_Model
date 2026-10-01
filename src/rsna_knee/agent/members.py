@@ -132,17 +132,23 @@ def queue(node_id: str, seeds: list[int], labels: list[str] | None = None,
         if errs := [e for e in G.validate(g) if not (epochs and e.startswith("epochs="))
                     and not (k and e.startswith("k="))]:
             raise SystemExit(f"illegal genome for labels={lab}: {errs}")
-        same = sum(1 for r in m["done"].values()
-                   if r.get("fold") is None and not r.get("eval_of") and not r.get("soup_of")
-                   and (r.get("genome") or {}).get("labels") == lab
-                   and (r.get("genome") or {}).get("k", 8) == g["k"] and r.get("init") == init
-                   and (r.get("genome") or {}).get("label_weights") == g.get("label_weights"))
-        if same >= SEEDS_PER_RECIPE:
+        def _same(r: dict) -> bool:
+            gg = r.get("genome") or {}
+            return (r.get("fold") is None and not r.get("eval_of") and not r.get("soup_of")
+                    and gg.get("labels") == lab and gg.get("k", 8) == g["k"] and r.get("init") == init
+                    and gg.get("label_weights") == g.get("label_weights"))
+        # Count finished, queued and running arms (2026-10-01: done-only counting let the strategist
+        # train 6 seeds of relabel_d19bf15e through a 3-arm job plus a second job queued mid-run).
+        pending = [a for j in m["queue"] + _running(m) for a in j["arms"]]
+        same = sum(map(_same, m["done"].values())) + sum(map(_same, pending))
+        room = SEEDS_PER_RECIPE - same
+        if room <= 0:
             # 4-seed and 2-seed soups scored the same (0.9365 / 0.9364): more seeds of one recipe
             # do not move the ensemble. DeepSeek re-queued seed jobs repeatedly on 2026-09-30.
-            raise SystemExit(f"{lab} (k={g['k']}, init={init}, lw={g.get('label_weights')}) already has {same} members; "
-                             f"cap {SEEDS_PER_RECIPE} — change the recipe instead of adding seeds")
-        for s in seeds:
+            raise SystemExit(f"{lab} (k={g['k']}, init={init}, lw={g.get('label_weights')}) already has "
+                             f"{same} members done/queued/running; cap {SEEDS_PER_RECIPE} — change the "
+                             f"recipe instead of adding seeds")
+        for s in seeds[:room]:
             tag = member_tag(g, s, init)
             if tag in seen:
                 continue

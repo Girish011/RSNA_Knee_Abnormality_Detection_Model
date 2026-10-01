@@ -259,8 +259,8 @@ def test_fold_job_five_arms_with_fold_hook(msandbox):
 
 
 def test_two_member_jobs_run_in_parallel(msandbox, monkeypatch):
-    for seeds in ([1], [2], [3]):
-        members.queue("p1", seeds, ["dread"])
+    for seed, lw in ((1, None), (2, "weak5x2.5"), (3, "weak5x4")):   # 3 recipes (seed cap is per recipe)
+        members.queue("p1", [seed], ["dread"], label_weights=lw)
     monkeypatch.setattr(members.runpod, "list_pods", lambda: [])
     monkeypatch.setattr(members.runpod, "get_pod", lambda pid: {"desiredStatus": "RUNNING"})
     monkeypatch.setattr(members, "_observe_one", lambda m, a: None)
@@ -366,3 +366,15 @@ def test_ops_file_edits_apply_at_tick(msandbox, monkeypatch, tmp_path):
     members.tick(loop_active=False)
     m = members.load()
     assert m["running"] == [] and m["queue"][0]["retries"] == 3 and not (tmp_path / "ops.jsonl").exists()
+
+
+def test_seed_cap_counts_queued_and_running_arms(msandbox):
+    m = members.load()
+    g = dict(G.clamp(G.BASE), labels="dread")
+    m["done"]["mdone"] = {"tag": "mdone", "genome": g, "seed": 7, "init": None}
+    members.save(m)
+    job = members.queue("p1", [1, 2, 3], ["dread"])   # 1 done -> room for 1 more
+    assert len(job["arms"]) == 1
+    with pytest.raises(SystemExit, match="cap"):
+        members.queue("p1", [4], ["dread"])           # 1 done + 1 queued = cap
+    members.queue("p1", [4], ["dread"], label_weights="weak5x2.5")  # other recipe: allowed
