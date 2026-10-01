@@ -196,5 +196,35 @@
    "tails": {}
   },
   "ts": 1790870787.940258
+ },
+ {
+  "date": "2026-10-01T22:57:13.557834+00:00",
+  "kernel": "girishbose/coat15-radfused",
+  "version": 1,
+  "fingerprint": "632d526ba55250ba",
+  "why": "best 0.945 (coat +0.15) + fused-label RadImageNet heads (E13 gold OOF 0.8745 vs 0.8576, main 0.8594 vs 0.8543)",
+  "ref": 56760305,
+  "public_lb": null,
+  "ensemble": {
+   "base": "rsna-knee-fast-2xt4-inference.ipynb",
+   "members": [],
+   "weights": [],
+   "w": 0.0,
+   "swap_v5": "soupbestof4",
+   "swap_arms": {},
+   "coat_shift": 0.15,
+   "rad_heads": {
+    "e13": [
+     "girishbose/rsna-knee-rad-heads-fused",
+     "d87c6e590853f1301d50d85894f3f2f7d8b7c33d779808ceae85a600f8198046"
+    ],
+    "ref": [
+     "girishbose/rsna-knee-rad-heads-fused",
+     "829bc30a423eeb850470c6ee5cd48ab87078e1d262af121131e25c900a13b8cc"
+    ]
+   },
+   "tails": {}
+  },
+  "ts": 1790895436.283479
  }
 ]

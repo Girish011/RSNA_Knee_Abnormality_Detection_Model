@@ -55,3 +55,20 @@ The public stack gives ~40% of its weight to the two weakest families, and every
   0.8543 (+0.005; LatOA +0.05, Syn +0.035, MedMen +0.036, Fracture +0.06; LatMen −0.06, PF −0.04 — LatMen is CoAt-only
   in the stack). Cross-architecture distillation confirmed → A5 / DINO next on fused labels.
   Heads: `girishbose/rsna-knee-rad-heads-fused`. Candidate `coat15-radfused` (coat +0.15 + both fused heads) pushed.
+- 2026-10-02 04:55 — `coat15-radfused` verified (ref heads 829bc…, E13 d87c…, coat +0.15) → **submitted ref 56760305**.
+  `coat30-radfused` (coat +0.30, same heads) auto-submits after the 05:30 IST quota reset as a direction probe.
+
+## Next build: DINO warm-start fine-tune on fused labels (design, ready to implement)
+- Members: `pilkwang/rsna-knee-weights` (20 × `m_*.pt` + `manifest.json`), all ONE pixel group: 336 px, 12 slices,
+  group 3, crop 130 mm, slots SAG/COR/AX_FLUID_FS + SAG_FLUID_NOFS + COR_T1 + SAG_T1, dinov2-small, unfreeze_last 6;
+  4 seeds (base-s336x12, -seed2, -seed3, -seed4) × folds 0–4. Public OOF: `oof.npz` (pred/ids/gold_mask, 4407).
+- Fold rule (public trainer): `grp = int(md5(Report)[:8], 16) % 5`; member fold k = holdout grp k; gold studies stay in
+  training at weight 3 unless in the holdout fold.
+- Kernel = fork of `pilkwang/rsna-knee-baseline-v1` (has build_cache / build_model / fingerprint / predict). New main:
+  decode train once → for each member: load + check_fingerprint → fine-tune 2–3 epochs at ~1/5 public LR on
+  tr = {grp != fold} with targets = fused labels (`labels_fused_full.csv`, w = .25+.75·certainty; gold w=3) → predict
+  its holdout fold (OOF) → recompute fingerprint → save `m_<newid>.pt` + manifest v2.
+- Gate: rank-mean OOF of the 20 new members on the 58 gold > public `oof.npz` (gold macro 0.8425).
+- Wire: stack cell 15 (`SHARED_DINO_PREFIX_SHA256`, 20/20 fingerprint gate, manifest/dataset path) — frozen prefix
+  (first 6 blocks) is unchanged by fine-tuning, so the prefix SHA should still match.
+- Then the same recipe for A5 (`mattiaangeli/knee-mri-fold-weights` m_f0..4; trainer not yet located).
