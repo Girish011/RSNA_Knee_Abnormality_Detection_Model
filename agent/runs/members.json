@@ -1,55 +1,59 @@
 {
  "queue": [],
  "active": {
-  "job": "m-98092c689a",
+  "job": "m-7ee65c9063",
   "arms": [
    {
-    "tag": "m5b5942352cf",
+    "tag": "m336a081dcd4",
     "genome": {
      "corpus": "dense80",
-     "labels": "bestof_v1",
+     "labels": "fused_83969a7f",
      "arch": "coatnet384",
      "epochs": 6,
-     "k": 16,
+     "k": 8,
      "k_eval": 24,
      "bb_lr": 3e-05,
      "head_lr": 0.001,
      "wd": 0.02,
      "freeze_blocks": 0
     },
-    "seed": 42,
-    "parent": "5bc0a0f45d75",
+    "seed": 3,
+    "parent": "6e0c83b59036",
     "init": "v5"
    },
    {
-    "tag": "m440e7701125",
+    "tag": "m6ec079c55fa",
     "genome": {
      "corpus": "dense80",
-     "labels": "bestof_v1",
+     "labels": "fused_83969a7f",
      "arch": "coatnet384",
      "epochs": 6,
-     "k": 16,
+     "k": 8,
      "k_eval": 24,
      "bb_lr": 3e-05,
      "head_lr": 0.001,
      "wd": 0.02,
      "freeze_blocks": 0
     },
-    "seed": 1337,
-    "parent": "5bc0a0f45d75",
+    "seed": 11,
+    "parent": "6e0c83b59036",
     "init": "v5"
    }
   ],
-  "est_hours": 9.8,
-  "est_usd": 7.25,
+  "est_hours": 4.9,
+  "est_usd": 3.63,
   "corpus": "dense80",
   "approved": true,
-  "queued": 1790787227.2952042,
-  "retries": 4,
-  "pod": "qfemyz2xehr39w",
-  "result": "girishbose/rsna-knee-rp-m-98092c689a-r4-out",
-  "launched": 1790796479.8843431,
-  "price_hr": 0.74
+  "queued": 1790809065.397952,
+  "retries": 2,
+  "pod": "9qkbcl7vq15sbd",
+  "result": "girishbose/rsna-knee-rp-m-7ee65c9063-r2-out",
+  "launched": 1790816866.170364,
+  "price_hr": 0.34,
+  "seen_alive": true,
+  "proxy_misses": 0,
+  "cost_logged": true,
+  "tries": 1
  },
  "done": {
   "m6edbb53fbab": {
@@ -1051,59 +1055,188 @@
    "swa_gold_dev": 0.9254946008521525,
    "holdout_auc": 0.9432515977601117,
    "finished": 1790787187.4829109
+  },
+  "m5b5942352cf": {
+   "tag": "m5b5942352cf",
+   "genome": {
+    "corpus": "dense80",
+    "labels": "bestof_v1",
+    "arch": "coatnet384",
+    "epochs": 6,
+    "k": 16,
+    "k_eval": 24,
+    "bb_lr": 3e-05,
+    "head_lr": 0.001,
+    "wd": 0.02,
+    "freeze_blocks": 0
+   },
+   "seed": 42,
+   "parent": "5bc0a0f45d75",
+   "init": "v5",
+   "job": "m-98092c689a",
+   "dataset": "girishbose/rsna-knee-rp-m-98092c689a-r4-out",
+   "weights": "raptor_ft_m5b5942352cf.pt",
+   "gold_dev": 0.9165635597557795,
+   "swa_gold_dev": 0.9141701145705722,
+   "holdout_auc": 0.9436603150031942,
+   "finished": 1790810378.873802
+  },
+  "m440e7701125": {
+   "tag": "m440e7701125",
+   "genome": {
+    "corpus": "dense80",
+    "labels": "bestof_v1",
+    "arch": "coatnet384",
+    "epochs": 6,
+    "k": 16,
+    "k_eval": 24,
+    "bb_lr": 3e-05,
+    "head_lr": 0.001,
+    "wd": 0.02,
+    "freeze_blocks": 0
+   },
+   "seed": 1337,
+   "parent": "5bc0a0f45d75",
+   "init": "v5",
+   "job": "m-98092c689a",
+   "dataset": "girishbose/rsna-knee-rp-m-98092c689a-r4-out",
+   "weights": "raptor_ft_m440e7701125.pt",
+   "gold_dev": 0.9114329950596608,
+   "swa_gold_dev": 0.9113511176608498,
+   "holdout_auc": 0.9342821530321531,
+   "finished": 1790810378.8801558
+  },
+  "m4448b8d8c6e": {
+   "tag": "m4448b8d8c6e",
+   "genome": {
+    "corpus": "dense80",
+    "labels": "fused_7cdb6e83_full",
+    "arch": "coatnet384",
+    "epochs": 6,
+    "k": 8,
+    "k_eval": 24,
+    "bb_lr": 3e-05,
+    "head_lr": 0.001,
+    "wd": 0.02,
+    "freeze_blocks": 0
+   },
+   "seed": 7,
+   "parent": "6e0c83b59036",
+   "init": "v5",
+   "job": "m-3d11b7aaa1",
+   "dataset": "girishbose/rsna-knee-rp-m-3d11b7aaa1-r1-out",
+   "weights": "raptor_ft_m4448b8d8c6e.pt",
+   "gold_dev": 0.9235950204342652,
+   "swa_gold_dev": 0.9215241552206487,
+   "holdout_auc": 0.9376268489852082,
+   "finished": 1790813958.177889
+  },
+  "m6e56d930495": {
+   "tag": "m6e56d930495",
+   "genome": {
+    "corpus": "dense80",
+    "labels": "fused_7cdb6e83_full",
+    "arch": "coatnet384",
+    "epochs": 6,
+    "k": 8,
+    "k_eval": 24,
+    "bb_lr": 3e-05,
+    "head_lr": 0.001,
+    "wd": 0.02,
+    "freeze_blocks": 0
+   },
+   "seed": 2024,
+   "parent": "6e0c83b59036",
+   "init": "v5",
+   "job": "m-3d11b7aaa1",
+   "dataset": "girishbose/rsna-knee-rp-m-3d11b7aaa1-r1-out",
+   "weights": "raptor_ft_m6e56d930495.pt",
+   "gold_dev": 0.9230842945087797,
+   "swa_gold_dev": 0.9288275860930324,
+   "holdout_auc": 0.9451317065287653,
+   "finished": 1790813958.184022
+  },
+  "m75b9cbfc273": {
+   "tag": "m75b9cbfc273",
+   "genome": {
+    "corpus": "dense80",
+    "labels": "fused_83969a7f",
+    "arch": "coatnet384",
+    "epochs": 6,
+    "k": 8,
+    "k_eval": 24,
+    "bb_lr": 3e-05,
+    "head_lr": 0.001,
+    "wd": 0.02,
+    "freeze_blocks": 0
+   },
+   "seed": 2025,
+   "parent": "6e0c83b59036",
+   "init": "v5",
+   "job": "m-25d97e6815",
+   "dataset": "girishbose/rsna-knee-rp-m-25d97e6815-out",
+   "weights": "raptor_ft_m75b9cbfc273.pt",
+   "gold_dev": 0.9239665437748962,
+   "swa_gold_dev": 0.9247915297686465,
+   "holdout_auc": 0.933563814639666,
+   "finished": 1790825050.217547
   }
  },
  "running": [
   {
-   "job": "m-98092c689a",
+   "job": "m-7ee65c9063",
    "arms": [
     {
-     "tag": "m5b5942352cf",
+     "tag": "m336a081dcd4",
      "genome": {
       "corpus": "dense80",
-      "labels": "bestof_v1",
+      "labels": "fused_83969a7f",
       "arch": "coatnet384",
       "epochs": 6,
-      "k": 16,
+      "k": 8,
       "k_eval": 24,
       "bb_lr": 3e-05,
       "head_lr": 0.001,
       "wd": 0.02,
       "freeze_blocks": 0
      },
-     "seed": 42,
-     "parent": "5bc0a0f45d75",
+     "seed": 3,
+     "parent": "6e0c83b59036",
      "init": "v5"
     },
     {
-     "tag": "m440e7701125",
+     "tag": "m6ec079c55fa",
      "genome": {
       "corpus": "dense80",
-      "labels": "bestof_v1",
+      "labels": "fused_83969a7f",
       "arch": "coatnet384",
       "epochs": 6,
-      "k": 16,
+      "k": 8,
       "k_eval": 24,
       "bb_lr": 3e-05,
       "head_lr": 0.001,
       "wd": 0.02,
       "freeze_blocks": 0
      },
-     "seed": 1337,
-     "parent": "5bc0a0f45d75",
+     "seed": 11,
+     "parent": "6e0c83b59036",
      "init": "v5"
     }
    ],
-   "est_hours": 9.8,
-   "est_usd": 7.25,
+   "est_hours": 4.9,
+   "est_usd": 3.63,
    "corpus": "dense80",
    "approved": true,
-   "queued": 1790787227.2952042,
-   "retries": 4,
-   "pod": "qfemyz2xehr39w",
-   "result": "girishbose/rsna-knee-rp-m-98092c689a-r4-out",
-   "launched": 1790796479.8843431,
-   "price_hr": 0.74
+   "queued": 1790809065.397952,
+   "retries": 2,
+   "pod": "9qkbcl7vq15sbd",
+   "result": "girishbose/rsna-knee-rp-m-7ee65c9063-r2-out",
+   "launched": 1790816866.170364,
+   "price_hr": 0.34,
+   "seen_alive": true,
+   "proxy_misses": 0,
+   "cost_logged": true,
+   "tries": 1
   }
  ]
 }

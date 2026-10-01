@@ -45,7 +45,7 @@ MAX_PODS = 2
 # Phantom pods (created, then gone before billing) cost $0 but 10 min each; community capacity
 # produced 3 in a row several times on 2026-09-30 and dropped the key fused-label job.
 MEMBER_INFRA_RETRIES = 6
-SEEDS_PER_RECIPE = 4
+SEEDS_PER_RECIPE = 2   # 2- and 4-seed soups scored the same (0.9364 / 0.9365)
 
 
 def _running(m: dict) -> list[dict]:
