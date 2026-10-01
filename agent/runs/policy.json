@@ -1,4 +1,6 @@
 {
  "fold_jobs_closed": true,
- "why": "2026-09-30: self-training closed; fused_full members 0.9330 = bestof_v1 0.9330. Reopen only by user decision."
+ "why": "2026-09-30: self-training closed; fused_full members 0.9330 = bestof_v1 0.9330. Reopen only by user decision.",
+ "strategist_gpu": "propose",
+ "strategist_gpu_why": "2026-10-01: strategist queued off-plan seed jobs (~$5 of $9.5, 6 seeds of d19bf15e, a $12 fold-0 node retrain). GPU jobs are proposals; host approves against the plan."
 }

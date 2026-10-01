@@ -108,7 +108,7 @@ def _node_genome(node_id: str) -> dict:
 
 def queue(node_id: str, seeds: list[int], labels: list[str] | None = None,
           m: dict | None = None, init: str | None = None, epochs: int | None = None,
-          k: int | None = None, label_weights: str | None = None) -> dict:
+          k: int | None = None, label_weights: str | None = None, auto_approve: bool = True) -> dict:
     """Queue one pod job whose arms are (seed × label set) full-data retrains of ``node_id``."""
     m = m if m is not None else load()
     if init and init not in INITS:
@@ -159,12 +159,13 @@ def queue(node_id: str, seeds: list[int], labels: list[str] | None = None,
     hours = est_hours(base, len(arms)) * (base["k"] / 8 if base["k"] > 8 else 1)
     job = {"job": "m-" + hashlib.sha1("".join(a["tag"] for a in arms).encode()).hexdigest()[:10],
            "arms": arms, "est_hours": round(hours, 2), "est_usd": round(hours * launcher.PRICE_HR, 2),
-           "corpus": base["corpus"], "approved": hours * launcher.PRICE_HR <= APPROVAL_USD,
+           "corpus": base["corpus"], "approved": auto_approve and hours * launcher.PRICE_HR <= APPROVAL_USD,
            "queued": time.time(), **({"gpu_class": "48"} if base["k"] > 16 else {})}
     m["queue"].append(job)
     save(m)
     log("plan", f"members queued {job['job']}: {len(arms)} full-data arms from {node_id} "
-        f"(~{hours:.1f} h, ~${job['est_usd']})" + ("" if job["approved"] else " — needs approve"),
+        f"(~{hours:.1f} h, ~${job['est_usd']})" + ("" if job["approved"] else " — needs approve"
+                                                   + ("" if auto_approve else " (proposal)")),
         job=job["job"], arms=[a["tag"] for a in arms])
     return job
 

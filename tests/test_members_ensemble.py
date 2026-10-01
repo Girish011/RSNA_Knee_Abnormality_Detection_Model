@@ -378,3 +378,14 @@ def test_seed_cap_counts_queued_and_running_arms(msandbox):
     with pytest.raises(SystemExit, match="cap"):
         members.queue("p1", [4], ["dread"])           # 1 done + 1 queued = cap
     members.queue("p1", [4], ["dread"], label_weights="weak5x2.5")  # other recipe: allowed
+
+
+def test_strategist_gpu_jobs_are_proposals_under_policy(msandbox, tmp_path):
+    from rsna_knee.agent import strategist
+    assert not strategist.gpu_propose_only()
+    members.POLICY.write_text(json.dumps({"strategist_gpu": "propose"}))
+    assert strategist.gpu_propose_only()
+    job = members.queue("p1", [1], ["dread"], auto_approve=False)
+    assert job["approved"] is False
+    members.tick(loop_active=False)
+    assert members.load()["running"] == []   # unapproved proposal never launches

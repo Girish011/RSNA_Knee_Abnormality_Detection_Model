@@ -239,7 +239,8 @@ def handlers(state: dict, journal: Journal, results: Path, actions: list[str]) -
             return {"ok": False, "errors": ["2 member jobs already queued; wait"]}
         try:
             job = members.queue(node, [int(s) for s in (seeds or [42])], list(labels) if labels else None,
-                                m, init=init or None, epochs=int(epochs) if epochs else None)
+                                m, init=init or None, epochs=int(epochs) if epochs else None,
+                                auto_approve=not gpu_propose_only())
         except SystemExit as e:
             return {"ok": False, "errors": [str(e)]}
         actions.append(f"member job {job['job']} ({len(job['arms'])} arms, ${job['est_usd']}, "
@@ -247,7 +248,9 @@ def handlers(state: dict, journal: Journal, results: Path, actions: list[str]) -
         log("research", f"strategist queued member job {job['job']}: {why[:160]}", job=job["job"])
         return {"ok": True, "job": job["job"], "arms": [a["tag"] for a in job["arms"]],
                 "est_usd": job["est_usd"], "approved": job["approved"],
-                "note": "" if job["approved"] else "needs user approval (> $10)"}
+                "note": "" if job["approved"] else ("PROPOSAL ONLY: GPU spend is approved by the host "
+                                                    "against the campaign plan (policy strategist_gpu=propose)"
+                                                    if gpu_propose_only() else "needs user approval (> $10)")}
 
     def queue_fold_job(node: str = "", labels: str = "", why: str = "", **_):
         """Next self-training round: 5-fold OOF on a label set (usually the newest fused_*)."""
@@ -335,6 +338,13 @@ TOOLS = [
         {"name": {"type": "string"}, "members_list": {"type": "array", "items": {"type": "string"}},
          "w": {"type": "number"}, "why": {"type": "string"}}, ["name", "members_list", "w", "why"]),
 ] + coder.CODER_TOOLS
+
+
+def gpu_propose_only() -> bool:
+    """2026-10-01: the strategist spent ~$5 of a $9.5 balance on off-plan seed jobs in one afternoon.
+    With policy ``strategist_gpu: "propose"`` its member jobs are queued unapproved (proposals)."""
+    pol = members.POLICY
+    return pol.exists() and json.loads(pol.read_text()).get("strategist_gpu") == "propose"
 
 
 def research(state: dict, journal: Journal, results: Path, *, llm_tools=run_tools,
