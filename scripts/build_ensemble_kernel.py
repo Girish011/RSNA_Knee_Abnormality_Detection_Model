@@ -189,8 +189,55 @@ def parse_tail(spec: str) -> tuple[list[str], list[str], float]:
     return findings, members, float(w)
 
 
+# Other single-file Raptor arms (each loads its own model): v8 native384 w0.20, v10 native384dense w0.10.
+ARM_FILES = {"v8": "raptor_ft_coatnet_v8_full_swa.pt", "v10": "raptor_ft_coatnet_v10_full.pt"}
+COAT_ANCHOR = "_blend_output = _blend_transformer.copy()"
+
+
+def swap_arms(nb: dict, arms: dict[str, str]) -> tuple[dict, list[str]]:
+    """{'v8': member, 'v10': member} -> point those Raptor arms at our checkpoints; returns datasets."""
+    nb = copy.deepcopy(nb)
+    pairs = {k: resolve_members([m])[0] for k, m in arms.items()}
+    roots = "".join(f"'/kaggle/input/datasets/{d}', '/kaggle/input/{d.split('/', 1)[1]}', "
+                    for d in dict.fromkeys(d for d, _ in pairs.values()))
+    done = {k: False for k in pairs}
+    n_roots = 0
+    for c in nb["cells"]:
+        t = _src(c)
+        if "ASSET_ROOTS = [" in t and n_roots == 0:
+            t = t.replace("ASSET_ROOTS = [", "ASSET_ROOTS = [" + roots, 1)
+            n_roots += 1
+        if '"name": "native384-v8"' in t:
+            for k, (_, wfile) in pairs.items():
+                old = f'"file": "{ARM_FILES[k]}"'
+                if t.count(old) == 1:
+                    t = t.replace(old, f'"file": "{wfile}"')
+                    done[k] = True
+        c["source"] = t
+    if n_roots != 1 or not all(done.values()):
+        raise SystemExit(f"arm swap anchors drifted: roots {n_roots}, arms {done}")
+    return nb, [d for d, _ in pairs.values()]
+
+
+def shift_coat_weight(nb: dict, shift: float) -> dict:
+    """Raise (or lower) the stack's per-finding CoAtNet-branch weight vs the transformer branch."""
+    nb = copy.deepcopy(nb)
+    line = (f"_coatnet_weight = {{_k: min(1.0, max(0.0, _v + {shift!r})) for _k, _v in _coatnet_weight.items()}}"
+            f"  # ours: coat shift {shift:+}\nprint('[ours] coatnet weight', _coatnet_weight, flush=True)\n")
+    n = 0
+    for c in nb["cells"]:
+        t = _src(c)
+        if t.count(COAT_ANCHOR) == 1 and "_coatnet_weight.update(" in t:
+            c["source"] = t.replace(COAT_ANCHOR, line + COAT_ANCHOR)
+            n += 1
+    if n != 1:
+        raise SystemExit(f"coat weight anchor drifted ({n})")
+    return nb
+
+
 def build(name: str, member_ids: list[str], w: float, out_root: Path | None = None,
-          swap: str | None = None, tails: list[tuple[list[str], list[str], float]] | None = None) -> Path:
+          swap: str | None = None, tails: list[tuple[list[str], list[str], float]] | None = None,
+          arms: dict[str, str] | None = None, coat_shift: float = 0.0) -> Path:
     """Global mode: every finding blends all ``member_ids`` at ``w``. Tail mode: each finding gets
     its own member subset and weight; findings with no tail keep the public stack's values."""
     if tails:
@@ -200,8 +247,8 @@ def build(name: str, member_ids: list[str], w: float, out_root: Path | None = No
         w = max(t[2] for t in tails)
     elif member_ids and w > 0:
         tails = [(TARGETS, member_ids, w)]
-    if not 0.0 <= w < 1.0 or (w == 0.0 and not swap):
-        raise SystemExit("--w must be in (0, 1), or 0 with --swap-v5")
+    if not 0.0 <= w < 1.0 or (w == 0.0 and not (swap or arms or coat_shift)):
+        raise SystemExit("--w must be in (0, 1), or 0 with --swap-v5/--swap-arm/--coat-shift")
     nb_path = next(BASE.glob("*.ipynb"))
     nb = json.loads(nb_path.read_text())
     meta = json.loads((BASE / "kernel-metadata.json").read_text())
@@ -210,6 +257,11 @@ def build(name: str, member_ids: list[str], w: float, out_root: Path | None = No
         pairs = resolve_members(swap.split(","))[:2]
         swap_dss = [d for d, _ in pairs]
         nb = swap_v5(nb, [w for _, w in pairs], swap_dss)
+    if arms:
+        nb, arm_dss = swap_arms(nb, arms)
+        swap_dss += arm_dss
+    if coat_shift:
+        nb = shift_coat_weight(nb, coat_shift)
     members = resolve_members(member_ids) if w > 0 else []
     files = [f for _, f in members]
     if len(set(files)) != len(files):
@@ -240,7 +292,7 @@ def build(name: str, member_ids: list[str], w: float, out_root: Path | None = No
     (d / "kernel-metadata.json").write_text(json.dumps(meta2, indent=1))
     (d / "ENSEMBLE.json").write_text(json.dumps(
         {"base": nb_path.name, "members": member_ids if members else [], "weights": files, "w": w,
-         "swap_v5": swap, "tails": {f: [[member_ids[j] for j in ix], tw] for f, (ix, tw) in tail_map.items()}},
+         "swap_v5": swap, "swap_arms": arms or {}, "coat_shift": coat_shift, "tails": {f: [[member_ids[j] for j in ix], tw] for f, (ix, tw) in tail_map.items()}},
         indent=1))
     return d
 
@@ -255,9 +307,16 @@ def main() -> None:
     ap.add_argument("--tail", action="append", default=[],
                     help="per-finding leg, repeatable: 'PF OA|m5b5942352cf,m440e7701125|0.4' or "
                          "'weak5|soupX|0.3' (findings ';'-separated); overrides --members/--w")
+    ap.add_argument("--swap-arm", action="append", default=[],
+                    help="replace another Raptor arm: 'v8=soupX' or 'v10=soupX' (repeatable)")
+    ap.add_argument("--coat-shift", type=float, default=0.0,
+                    help="add to every finding's CoAtNet-branch weight (clipped to [0, 1])")
     a = ap.parse_args()
+    arms = dict(x.split("=", 1) for x in a.swap_arm)
+    if bad := set(arms) - set(ARM_FILES):
+        raise SystemExit(f"--swap-arm keys must be in {sorted(ARM_FILES)}, got {sorted(bad)}")
     d = build(a.name, [m for m in a.members.split(",") if m], a.w, swap=a.swap_v5,
-              tails=[parse_tail(t) for t in a.tail] or None)
+              tails=[parse_tail(t) for t in a.tail] or None, arms=arms or None, coat_shift=a.coat_shift)
     print(f"built {d}\npush (user-approved): kaggle kernels push -p {d}")
 
 

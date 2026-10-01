@@ -389,3 +389,20 @@ def test_strategist_gpu_jobs_are_proposals_under_policy(msandbox, tmp_path):
     assert job["approved"] is False
     members.tick(loop_active=False)
     assert members.load()["running"] == []   # unapproved proposal never launches
+
+
+def test_swap_arms_and_coat_shift(tmp_path):
+    cells = ['ASSET_ROOTS = [\n',
+             'ARMS = [{"name": "native384-v8", "file": "raptor_ft_coatnet_v8_full_swa.pt"},\n'
+             ' {"name": "x", "file": "raptor_ft_coatnet_v10_full.pt"}]\n',
+             "_coatnet_weight = {l: 0.60 for l in L}\n_coatnet_weight.update({'ACL': 0.75, 'X': 1.0})\n"
+             "_blend_output = _blend_transformer.copy()\n"]
+    nb = {"cells": [{"cell_type": "code", "source": c} for c in cells]}
+    nb2, dss = BEK.swap_arms(nb, {"v8": "abc123"})
+    assert dss == ["girishbose/rsna-knee-rp-n-abc123-out"]
+    assert '"file": "raptor_ft_abc123.pt"' in nb2["cells"][1]["source"]
+    assert "raptor_ft_coatnet_v10_full.pt" in nb2["cells"][1]["source"]
+    nb3 = BEK.shift_coat_weight(nb, 0.15)
+    ns = {"L": ["ACL", "Y", "X"], "_blend_transformer": pd.DataFrame()}
+    exec(nb3["cells"][2]["source"], ns)
+    assert ns["_coatnet_weight"] == {"ACL": 0.9, "Y": 0.75, "X": 1.0}
