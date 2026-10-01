@@ -485,6 +485,10 @@ def apply_ops(m: dict) -> None:
             job = dict(op["job_spec"])
             m["queue"].insert(0, job)
             log("gate", f"op requeue {job['job']} (retries={job.get('retries')})")
+        elif op.get("op") == "add_done":
+            rec = dict(op["record"])
+            m["done"][rec["tag"]] = rec
+            log("gate", f"op add_done {rec['tag']}" + (f" (soup of {len(rec['soup_of'])})" if rec.get("soup_of") else ""))
     m["active"] = _running(m)[0] if _running(m) else None
 
 

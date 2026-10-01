@@ -92,13 +92,15 @@ def main() -> None:
     (d / "dataset-metadata.json").write_text(json.dumps(
         {"title": f"rsna-knee-soup-{a.name}", "id": slug, "licenses": [{"name": "CC0-1.0"}]}))
     subprocess.run([KAGGLE, "datasets", "create", "-p", str(d), "--dir-mode", "zip", "-q"], check=True)
-    m = json.loads(MEMBERS.read_text())
     # Kaggle flattens a single-file subfolder: the soup sits at the dataset root.
-    m["done"][tag] = {"tag": tag, "dataset": slug, "weights": wname, "path": wname, "soup_of": tags,
-                      "genome": done[tags[0]]["genome"], "init": done[tags[0]].get("init"), "seed": None,
-                      "gold_dev": None, "holdout_auc": None}
-    MEMBERS.write_text(json.dumps(m, indent=1, default=str))
-    print(f"uploaded {slug}; registered member {tag}")
+    # Registered through the loop's ops file (a direct members.json write races a running tick).
+    sys.path.insert(0, str(REPO / "src"))
+    from rsna_knee.agent import members as M
+    M.request_op({"op": "add_done", "record": {
+        "tag": tag, "dataset": slug, "weights": wname, "path": wname, "soup_of": tags,
+        "genome": done[tags[0]]["genome"], "init": done[tags[0]].get("init"), "seed": None,
+        "gold_dev": None, "holdout_auc": None}})
+    print(f"uploaded {slug}; member {tag} registers at the loop's next tick")
 
 
 if __name__ == "__main__":
