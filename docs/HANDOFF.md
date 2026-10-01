@@ -46,6 +46,10 @@ Strong findings (ACL, MCL, Med Men, Med OA, Effusion, Baker's) are 0.96–0.99; 
 - Soups: `scripts/make_soup.py --name X --members a,b,... --upload`; eval: `members eval --targets soupX`.
 - Kernels: `scripts/build_ensemble_kernel.py --name … --w 0 --swap-v5 <member|soup>`; verify the loaded checkpoint
   in the run's `btkd_v559_complete.json` before submitting. LB pushes/submits only with user approval.
+- **After editing agent code, restart the loop** (`launchctl kickstart -k gui/$(id -u)/com.rsna.agentloop`) — the
+  running process keeps old code (2026-10-01: stale code launched the weak5 job without `--label_weights`).
+- Per-finding tails: `build_ensemble_kernel.py --swap-v5 soupbestof4 --tail "PF OA|soupk16|0.4"`; check
+  `dataset_sources` in kernel-metadata.json before pushing (soups must be registered in members.json first).
 - I (assistant) cannot terminate RunPod pods (permission system) — ask the user.
 - Tests: `.venv/bin/python -m pytest -q tests/ --ignore=tests/test_rank_architecture.py` (104 pass).
 

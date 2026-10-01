@@ -296,3 +296,15 @@ Format: date | decision | why | rejected
 ## 2026-10-01 — Focus the 5 weak findings, then soup (user); k=16 = PF OA specialist
 - **Evidence:** k=16 bestof members macro-58 0.9266 (k=8: 0.9330) but PF OA 0.882 vs 0.855; Contusion −0.028. Public v5 (our protocol) is weak on the same five findings (Syn 0.80, LatMen 0.855, PF 0.857, LatOA 0.896, Cont 0.927), so the public CoAt branch shares our weak spots — the expert bench is deferred (optional, end-stage blend tuning only).
 - **Decision:** next = per-finding loss weights (2–3× on the weak five), per-finding tail weights in the submit kernel (0 on strong findings), soup per-finding winners, dual finals by 2026-10-16. Seeds per recipe capped at 2. ROI crops skipped (`roi_localize`/`roi_boxes.npz` never vendored; v5 slot cannot reproduce crops).
+
+## 2026-10-01 — Per-finding loss weights + per-finding tails; daily LB cadence (user)
+- **Built:** trainer `--label_weights` (12 multipliers, rescaled to mean 1, BCE `weight`); genome key
+  `label_weights` (presets `weak5x2.5`, `weak5x4`) = its own recipe under the 2-seed cap; `members queue --label_weights`.
+  Kernel builder `--tail "FINDINGS|members|w"` (repeatable; `weak5` shorthand): each finding blends its own member
+  subset at its own weight; untouched findings keep the public stack's raw values. `make_soup` registers soups via
+  `members.request_op({"op": "add_done"})`.
+- **Lesson:** the loop is a long-running process; code changes reach it only after
+  `launchctl kickstart -k gui/$(id -u)/com.rsna.agentloop`. The first weak5 launch ran stale code (no flag) and the
+  first add_done op was silently dropped.
+- **Cadence (user):** ≥1 LB submission per day, each user-approved, from the calendar in STATUS; one leg checkpoint
+  per kernel until a 2-checkpoint leg is shown to fit 9 h. Expect single-finding tails to move macro by ≤0.001.
