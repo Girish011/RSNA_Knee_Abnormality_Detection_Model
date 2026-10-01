@@ -44,3 +44,9 @@ The public stack gives ~40% of its weight to the two weakest families, and every
 - Claude: architecture, approvals, submissions (user-approved policy: only candidates expected to beat best).
 - DeepSeek strategist: analysis + proposals only (GPU spend via host approval).
 - Kaggle GPU (free, 2 concurrent, 30 h/week): forks. RunPod (top-up): CoAt fine-tunes.
+
+## Results log
+- 2026-10-01 22:30 — RadImageNet forks on bestof_v1 (gold OOF macro, 58): **E13 0.8612 vs upstream 0.8576 (+0.004;
+  blend α0.5 0.8701 vs 0.8654)**; main V52 0.8388 vs 0.8543 (−0.016: MCL/MedMen/Contusion/Synovitis down). Mixed →
+  not wired yet. Fused-label forks (expert agreement 0.946) running: fork-e9main-fused-full, fork-e13-fused-full.
+  Heads/OOF saved under outputs/rad_heads/ (gitignored weights).
