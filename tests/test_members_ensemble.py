@@ -105,6 +105,42 @@ def test_ensemble_kernel_blends_and_falls_back(tmp_path, monkeypatch):
     assert np.allclose(out2[LABEL_COLS].to_numpy(), pub[LABEL_COLS].to_numpy())
 
 
+def test_per_finding_tails_blend_only_listed_findings(tmp_path, monkeypatch):
+    monkeypatch.setattr(BEK, "BASE", _fake_kernel(tmp_path))
+    tails = [BEK.parse_tail("PF OA|aaa111|0.4"), BEK.parse_tail("Synovitis;Contusion|aaa111,bbb222|0.25")]
+    kdir = BEK.build("ens-tail", [], 0.0, out_root=tmp_path / "k", tails=tails)
+    ens = json.loads((kdir / "ENSEMBLE.json").read_text())
+    assert ens["tails"]["PF OA"] == [["aaa111"], 0.4] and ens["members"] == ["aaa111", "bbb222"]
+    rng = np.random.default_rng(1)
+    ids = [f"s{i}" for i in range(40)]
+    pub = pd.DataFrame(rng.random((40, 12)), columns=LABEL_COLS)
+    pub.insert(0, "StudyInstanceUID", ids)
+    work = tmp_path / "w"
+    work.mkdir()
+    m0, m1 = pub.copy(), pub.copy()
+    m0[LABEL_COLS] = rng.random((40, 12))
+    m1[LABEL_COLS] = rng.random((40, 12))
+    allm = pub.copy()
+    allm[LABEL_COLS] = (m0[LABEL_COLS].rank(pct=True) + m1[LABEL_COLS].rank(pct=True)) / 2
+    for nm, f in (("m0", m0), ("m1", m1), ("all", allm)):
+        f.iloc[::-1].to_csv(tmp_path / f"{nm}.csv", index=False)  # leg order != public order
+    leg = ("import os, shutil; o = os.environ['OURS_OUT']; "
+           f"shutil.copy({str(tmp_path / 'all.csv')!r}, o); "
+           f"shutil.copy({str(tmp_path / 'm0.csv')!r}, o[:-4] + '_m0.csv'); "
+           f"shutil.copy({str(tmp_path / 'm1.csv')!r}, o[:-4] + '_m1.csv')")
+    out = _run_tail(kdir, work, leg, pub)
+    r = lambda s: s.rank(pct=True).to_numpy()  # noqa: E731
+    assert np.allclose(out["PF OA"], 0.6 * r(pub["PF OA"]) + 0.4 * r(m0["PF OA"]))
+    assert np.allclose(out["Synovitis"], 0.75 * r(pub["Synovitis"]) + 0.25 * r(allm["Synovitis"]))
+    strong = [c for c in LABEL_COLS if c not in ("PF OA", "Synovitis", "Contusion")]
+    assert np.allclose(out[strong].to_numpy(), pub[strong].to_numpy())  # untouched raw values
+    with pytest.raises(SystemExit):
+        BEK.parse_tail("Nope|aaa111|0.3")
+    with pytest.raises(SystemExit):
+        BEK.build("x", [], 0.0, out_root=tmp_path / "k", tails=tails + [BEK.parse_tail("PF OA|bbb222|0.2")])
+    assert BEK.parse_tail("weak5|aaa111|0.3")[0] == BEK.WEAK5
+
+
 def test_submit_gate_refuses_duplicates_and_daily_cap(tmp_path, monkeypatch):
     monkeypatch.setattr(BEK, "BASE", _fake_kernel(tmp_path))
     kdir = BEK.build("ens-g", ["abc123"], 0.2, out_root=tmp_path / "k")

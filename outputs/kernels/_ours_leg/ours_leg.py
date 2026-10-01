@@ -347,6 +347,11 @@ def main():
     for j in range(M):
         pj = pd.DataFrame(probs[j], columns=LAB)
         df_rank.append(pj.rank(pct=True).fillna(0.5).to_numpy())
+    # Per-member ranks too: the blend may use a member subset per finding (specialist tails).
+    for j in range(M):
+        pm = pd.DataFrame(df_rank[j].astype(np.float32), columns=LAB)
+        pm.insert(0, "StudyInstanceUID", test_ids)
+        pm.to_csv(out[:-4] + f"_m{j}.csv", index=False)
     final = np.mean(df_rank, axis=0).astype(np.float32)
     sub = pd.DataFrame(final, columns=LAB)
     sub.insert(0, "StudyInstanceUID", test_ids)

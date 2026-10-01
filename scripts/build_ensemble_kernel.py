@@ -8,6 +8,8 @@ leg (error, deadline, constant column) restores the public output, so the floor 
 
     python scripts/build_ensemble_kernel.py --name ens-d4-5bc0 --members 5bc0a0f45d75 --w 0.2
     python scripts/build_ensemble_kernel.py --name ens-d4-m3 --members m1234,m5678 --w 0.3
+    python scripts/build_ensemble_kernel.py --name tail-pf --swap-v5 soupbestof4 \\
+        --tail "PF OA|m5b5942352cf,m440e7701125|0.4" --tail "Synovitis;Contusion|soupX|0.3"
 
 Members are online node ids (fold-0 weights, dataset ``rsna-knee-rp-n-<id>-out``) or
 full-data member tags from ``agent/runs/members.json``. This script only BUILDS the kernel;
@@ -64,27 +66,40 @@ _ens_rc = _ens_sp.call([_ens_sys.executable, _ENS_LEG], env=_ens_env)
 print(f"[ours 2/3] leg exit {_ens_rc}", flush=True)
 '''
 
-BLEND = '''# ==== OURS 3/3: rank blend, one global weight; any problem -> public stack stands ====
+BLEND = '''# ==== OURS 3/3: per-finding rank blend; any problem -> public stack stands ====
 import numpy as _ens_np
-_ENS_W = __W__
-def _ens_rank(f):
+# finding -> (member indices into the leg, weight of our leg); findings not listed stay public.
+_ENS_TAILS = __TAILS__
+_ENS_NM = __N_MEMBERS__
+def _ens_load(path):
+    f = _ens_pd.read_csv(path, dtype={"StudyInstanceUID": str})
+    f = f.set_index("StudyInstanceUID").reindex(_ens_pub["StudyInstanceUID"]).reset_index()
+    if f[_ENS_TARGETS].isna().any().any():
+        raise RuntimeError(f"{path} is missing studies")
+    if len(_ens_pub) > 10 and float(f[_ENS_TARGETS].to_numpy(float).std(axis=0).min()) < 1e-9:
+        raise RuntimeError(f"{path} has a constant column")
     return f[_ENS_TARGETS].rank(method="average", pct=True)
 try:
     if _ens_rc != 0 or not _ens_os.path.exists(_ENS_OURS):
         raise RuntimeError(f"leg failed rc={_ens_rc}")
-    _ens_ours = _ens_pd.read_csv(_ENS_OURS, dtype={"StudyInstanceUID": str})
-    _ens_ours = _ens_ours.set_index("StudyInstanceUID").reindex(_ens_pub["StudyInstanceUID"]).reset_index()
-    if _ens_ours[_ENS_TARGETS].isna().any().any():
-        raise RuntimeError("our leg is missing studies")
-    if len(_ens_pub) > 10 and float(_ens_ours[_ENS_TARGETS].to_numpy(float).std(axis=0).min()) < 1e-9:
-        raise RuntimeError("our leg has a constant column")
+    _ens_all = _ens_load(_ENS_OURS)
+    _ens_per = {}
     _ens_out = _ens_pub.copy()
-    _ens_out[_ENS_TARGETS] = ((1 - _ENS_W) * _ens_rank(_ens_pub).to_numpy()
-                              + _ENS_W * _ens_rank(_ens_ours).to_numpy())
+    _ens_pr = _ens_pub[_ENS_TARGETS].rank(method="average", pct=True)
+    _ens_log = []
+    for _f, (_idx, _w) in _ENS_TAILS.items():
+        if len(_idx) == _ENS_NM:
+            _o = _ens_all[_f]
+        else:
+            for _j in _idx:
+                if _j not in _ens_per:
+                    _ens_per[_j] = _ens_load(_ENS_OURS[:-4] + f"_m{_j}.csv")
+            _o = sum(_ens_per[_j][_f] for _j in _idx) / len(_idx)
+        _ens_out[_f] = (1 - _w) * _ens_pr[_f].to_numpy() + _w * _o.rank(method="average", pct=True).to_numpy()
+        _ens_log.append(f"{_f}:w{_w}/m{list(_idx)}/corr{_ens_pr[_f].corr(_o):.3f}")
     assert _ens_np.isfinite(_ens_out[_ENS_TARGETS].to_numpy(float)).all()
     _ens_out.to_csv(_ENS_SUB, index=False)
-    _ens_corr = _ens_np.mean([_ens_rank(_ens_pub)[c].corr(_ens_rank(_ens_ours)[c]) for c in _ENS_TARGETS])
-    print(f"[ours 3/3] blended w={_ENS_W}; mean rank corr public vs ours {_ens_corr:.3f}", flush=True)
+    print("[ours 3/3] blended " + " | ".join(_ens_log), flush=True)
 except Exception as _ens_e:
     _ens_shutil.copy2(_ENS_PUB, _ENS_SUB)
     print(f"[ours 3/3] NOT blended ({type(_ens_e).__name__}: {_ens_e}); public stack stands", flush=True)
@@ -154,8 +169,37 @@ def swap_v5(nb: dict, weights: list[str], datasets: list[str]) -> dict:
     return nb
 
 
+TARGETS = ["ACL", "MCL", "Medial Meniscus", "Lateral Meniscus", "Medial OA", "Lateral OA",
+           "PF OA", "Effusion", "Synovitis", "Baker's", "Contusion", "Fracture"]
+WEAK5 = ["Lateral Meniscus", "Lateral OA", "PF OA", "Synovitis", "Contusion"]
+
+
+def parse_tail(spec: str) -> tuple[list[str], list[str], float]:
+    """'PF OA;Synovitis|m1,m2|0.4' -> (findings, members, w); 'weak5' expands to the weak five."""
+    try:
+        fs, ms, w = spec.split("|")
+    except ValueError:
+        raise SystemExit(f"--tail wants 'FINDING;FINDING|member,member|w', got {spec!r}")
+    findings = [x for f in fs.split(";") for x in (WEAK5 if f.strip() == "weak5" else [f.strip()])]
+    if bad := [f for f in findings if f not in TARGETS]:
+        raise SystemExit(f"unknown findings {bad}; use {TARGETS}")
+    members = [m.strip() for m in ms.split(",") if m.strip()]
+    if not members or not 0.0 < float(w) < 1.0:
+        raise SystemExit(f"--tail {spec!r}: need members and 0 < w < 1")
+    return findings, members, float(w)
+
+
 def build(name: str, member_ids: list[str], w: float, out_root: Path | None = None,
-          swap: str | None = None) -> Path:
+          swap: str | None = None, tails: list[tuple[list[str], list[str], float]] | None = None) -> Path:
+    """Global mode: every finding blends all ``member_ids`` at ``w``. Tail mode: each finding gets
+    its own member subset and weight; findings with no tail keep the public stack's values."""
+    if tails:
+        member_ids = list(dict.fromkeys(m for _, ms, _ in tails for m in ms))
+        if dup := [f for f, n in __import__("collections").Counter(f for fs, _, _ in tails for f in fs).items() if n > 1]:
+            raise SystemExit(f"findings in more than one --tail: {dup}")
+        w = max(t[2] for t in tails)
+    elif member_ids and w > 0:
+        tails = [(TARGETS, member_ids, w)]
     if not 0.0 <= w < 1.0 or (w == 0.0 and not swap):
         raise SystemExit("--w must be in (0, 1), or 0 with --swap-v5")
     nb_path = next(BASE.glob("*.ipynb"))
@@ -175,8 +219,11 @@ def build(name: str, member_ids: list[str], w: float, out_root: Path | None = No
                .replace("__MEMBER_FILES__", repr(files)))
     nb2 = copy.deepcopy(nb)
     start = code_cell("import time as _ens_t\n_ENS_START = _ens_t.time()  # wall clock for our leg's deadline\n")
-    tail = ([code_cell(STASH), code_cell(run_leg), code_cell(BLEND.replace("__W__", repr(float(w))))]
-            if members else [])
+    tail_map = {f: ([member_ids.index(m) for m in ms], round(float(tw), 4))
+                for fs, ms, tw in (tails or []) for f in fs}
+    blend = (BLEND.replace("__TAILS__", repr(tail_map))
+             .replace("__N_MEMBERS__", str(len(member_ids))))
+    tail = ([code_cell(STASH), code_cell(run_leg), code_cell(blend)] if members else [])
     nb2["cells"] = [start] + nb["cells"] + tail
     d = (out_root or REPO / "outputs" / "kernels") / name
     d.mkdir(parents=True, exist_ok=True)
@@ -193,7 +240,8 @@ def build(name: str, member_ids: list[str], w: float, out_root: Path | None = No
     (d / "kernel-metadata.json").write_text(json.dumps(meta2, indent=1))
     (d / "ENSEMBLE.json").write_text(json.dumps(
         {"base": nb_path.name, "members": member_ids if members else [], "weights": files, "w": w,
-         "swap_v5": swap}, indent=1))
+         "swap_v5": swap, "tails": {f: [[member_ids[j] for j in ix], tw] for f, (ix, tw) in tail_map.items()}},
+        indent=1))
     return d
 
 
@@ -204,8 +252,12 @@ def main() -> None:
     ap.add_argument("--w", type=float, default=0.2, help="global rank weight of our leg (0 = no leg)")
     ap.add_argument("--swap-v5", default=None,
                     help="member tag replacing v5 in both maxspan arms, or 'normal,reverse' tags")
+    ap.add_argument("--tail", action="append", default=[],
+                    help="per-finding leg, repeatable: 'PF OA|m5b5942352cf,m440e7701125|0.4' or "
+                         "'weak5|soupX|0.3' (findings ';'-separated); overrides --members/--w")
     a = ap.parse_args()
-    d = build(a.name, [m for m in a.members.split(",") if m], a.w, swap=a.swap_v5)
+    d = build(a.name, [m for m in a.members.split(",") if m], a.w, swap=a.swap_v5,
+              tails=[parse_tail(t) for t in a.tail] or None)
     print(f"built {d}\npush (user-approved): kaggle kernels push -p {d}")
 
 
