@@ -161,7 +161,7 @@
   "fingerprint": "137ce2124829361e",
   "why": "LEARNING: soupbestof4 in all Raptor arms (v5,v8,v10) - does more of our CoAt pay?",
   "ref": 56754652,
-  "public_lb": null,
+  "public_lb": 0.944,
   "ensemble": {
    "base": "rsna-knee-fast-2xt4-inference.ipynb",
    "members": [],
@@ -184,7 +184,7 @@
   "fingerprint": "d6c1cdc62c6797bf",
   "why": "LEARNING: soup4 swap + CoAt branch weight +0.15 all findings",
   "ref": 56754655,
-  "public_lb": null,
+  "public_lb": 0.945,
   "ensemble": {
    "base": "rsna-knee-fast-2xt4-inference.ipynb",
    "members": [],

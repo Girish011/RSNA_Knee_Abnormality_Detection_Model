@@ -50,3 +50,8 @@ The public stack gives ~40% of its weight to the two weakest families, and every
   blend α0.5 0.8701 vs 0.8654)**; main V52 0.8388 vs 0.8543 (−0.016: MCL/MedMen/Contusion/Synovitis down). Mixed →
   not wired yet. Fused-label forks (expert agreement 0.946) running: fork-e9main-fused-full, fork-e13-fused-full.
   Heads/OOF saved under outputs/rad_heads/ (gitignored weights).
+- 2026-10-02 04:15 — **LB coat-up15-b4 = 0.945 (new best)**; raptor-all-b4 = 0.944 (more soup in v8/v10 slots: no).
+  **Fused-label forks win:** E13 heads gold OOF 0.8745 vs upstream 0.8576 (+0.017; bestof 0.8612); main heads 0.8594 vs
+  0.8543 (+0.005; LatOA +0.05, Syn +0.035, MedMen +0.036, Fracture +0.06; LatMen −0.06, PF −0.04 — LatMen is CoAt-only
+  in the stack). Cross-architecture distillation confirmed → A5 / DINO next on fused labels.
+  Heads: `girishbose/rsna-knee-rad-heads-fused`. Candidate `coat15-radfused` (coat +0.15 + both fused heads) pushed.
