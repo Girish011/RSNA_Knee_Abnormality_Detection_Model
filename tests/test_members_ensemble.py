@@ -126,6 +126,21 @@ def test_warm_start_member_args(msandbox):
         members.queue("p1", [42], ["dread"], init="nope")
 
 
+def test_label_weights_member_is_its_own_recipe(msandbox):
+    g = dict(G.BASE, label_weights="weak5x2.5")
+    assert G.validate(g) == [] or all(e.startswith(("epochs=",)) for e in G.validate(g))
+    _, args = members.full_cli(g, 42, init="v5", epochs=6)
+    assert "--label_weights 1,1,1,2.5,1,2.5,2.5,1,2.5,1,2.5,1" in args
+    assert "--label_weights" not in members.full_cli(G.BASE, 42)[1]
+    assert members.member_tag(g, 42) != members.member_tag(G.BASE, 42)
+    job = members.queue("p1", [42], ["dread"], init="v5", epochs=6, label_weights="weak5x2.5")
+    assert job["arms"][0]["genome"]["label_weights"] == "weak5x2.5"
+    with pytest.raises(SystemExit):
+        members.queue("p1", [7], ["dread"], label_weights="nope")
+    assert "unknown" not in " ".join(G.validate(dict(G.BASE, label_weights="nope")))
+    assert any("label_weights" in e for e in G.validate(dict(G.BASE, label_weights="nope")))
+
+
 def test_swap_v5_rewires_both_arms_and_roots(tmp_path):
     arms = ('ARMS = [\n    {"name": "maxspan-v5", "file": "raptor_ft_coatnet_v5_full_swa.pt", "w": 0.6},\n'
             '    {"name": "maxspan-v5-reverse", "file": "raptor_ft_coatnet_v5_full_swa.pt", "w": 0.1}]\n')

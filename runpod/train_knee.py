@@ -405,6 +405,9 @@ def main():
     ap.add_argument("--ema", type=float, default=0.999,
                     help="decay for the exponential moving average of the weights "
                          "(0 disables; the EMA checkpoint is saved as raptor_ft_<tag>_ema.pt)")
+    ap.add_argument("--label_weights", default=None,
+                    help="12 comma-separated loss multipliers in LAB order (rescaled to mean 1); "
+                         "up-weights chosen findings in the BCE. Default: all 1")
     ap.add_argument("--eval_passes", type=int, default=2,
                     help="TTA passes at eval: averages the sigmoid over N shifted deterministic "
                          "window grids (1 = old behaviour, same windows every time)")
@@ -545,7 +548,14 @@ def main():
     steps = max(len(tl) * a.epochs, 1)
     sched = torch.optim.lr_scheduler.OneCycleLR(opt, max_lr=[a.bb_lr, a.head_lr],
                                                 total_steps=steps, pct_start=0.15)
-    lossf = nn.BCEWithLogitsLoss(pos_weight=pw)
+    lw = None
+    if a.label_weights:
+        lw = np.array([float(x) for x in a.label_weights.split(",")], dtype=np.float32)
+        assert lw.shape == (len(LAB),) and (lw > 0).all(), f"--label_weights needs {len(LAB)} positive values"
+        lw = lw / lw.mean()
+        print("[loss] label weights " + ", ".join(f"{n} {w:.2f}" for n, w in zip(LAB, lw)), flush=True)
+        lw = torch.tensor(lw, device=dev)
+    lossf = nn.BCEWithLogitsLoss(pos_weight=pw, weight=lw)
 
     # ---- TTA inference helper: average sigmoid over shifted eval-window grids ----
     def _predict_ids(ids_sub, k_win, passes=None):
@@ -677,7 +687,8 @@ def main():
                    "hist": hist, "res": a.res, "epochs": a.epochs, "bb_lr": a.bb_lr,
                    "head_lr": a.head_lr, "n_train": len(train_ids), "n_gold": len(gold_ids),
                    "roi": a.roi, "roi_mode": a.roi_mode, "ema": a.ema,
-                   "eval_passes": a.eval_passes, "partial": False, "epochs_done": a.epochs},
+                   "eval_passes": a.eval_passes, "label_weights": a.label_weights,
+                   "partial": False, "epochs_done": a.epochs},
                   open(os.path.join(HERE, f"raptor_ft_{a.tag}.json"), "w"), indent=1)
         print(f"saved raptor_ft_{a.tag}.pt / raptor_gold_{a.tag}.npz / raptor_ft_{a.tag}.json", flush=True)
 

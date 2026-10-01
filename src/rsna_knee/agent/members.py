@@ -108,7 +108,7 @@ def _node_genome(node_id: str) -> dict:
 
 def queue(node_id: str, seeds: list[int], labels: list[str] | None = None,
           m: dict | None = None, init: str | None = None, epochs: int | None = None,
-          k: int | None = None) -> dict:
+          k: int | None = None, label_weights: str | None = None) -> dict:
     """Queue one pod job whose arms are (seed × label set) full-data retrains of ``node_id``."""
     m = m if m is not None else load()
     if init and init not in INITS:
@@ -120,6 +120,12 @@ def queue(node_id: str, seeds: list[int], labels: list[str] | None = None,
         if int(k) not in (8, 12, 16):
             raise SystemExit("k must be 8, 12 or 16")
         base["k"] = int(k)
+    if label_weights:
+        if label_weights not in G.LABEL_WEIGHTS:
+            raise SystemExit(f"label_weights {label_weights!r} not in {sorted(G.LABEL_WEIGHTS)}")
+        base["label_weights"] = label_weights
+    else:
+        base.pop("label_weights", None)
     arms, seen = [], {t for j in m["queue"] for t in (a["tag"] for a in j["arms"])} | set(m["done"])
     for lab in labels or [base["labels"]]:
         g = dict(base, labels=lab)
@@ -129,11 +135,12 @@ def queue(node_id: str, seeds: list[int], labels: list[str] | None = None,
         same = sum(1 for r in m["done"].values()
                    if r.get("fold") is None and not r.get("eval_of") and not r.get("soup_of")
                    and (r.get("genome") or {}).get("labels") == lab
-                   and (r.get("genome") or {}).get("k", 8) == g["k"] and r.get("init") == init)
+                   and (r.get("genome") or {}).get("k", 8) == g["k"] and r.get("init") == init
+                   and (r.get("genome") or {}).get("label_weights") == g.get("label_weights"))
         if same >= SEEDS_PER_RECIPE:
             # 4-seed and 2-seed soups scored the same (0.9365 / 0.9364): more seeds of one recipe
             # do not move the ensemble. DeepSeek re-queued seed jobs repeatedly on 2026-09-30.
-            raise SystemExit(f"{lab} (k={g['k']}, init={init}) already has {same} members; "
+            raise SystemExit(f"{lab} (k={g['k']}, init={init}, lw={g.get('label_weights')}) already has {same} members; "
                              f"cap {SEEDS_PER_RECIPE} — change the recipe instead of adding seeds")
         for s in seeds:
             tag = member_tag(g, s, init)
@@ -519,6 +526,8 @@ def main() -> None:
     ap.add_argument("--init", default=None, help="warm start: v5 (public full-SWA CoAtNet)")
     ap.add_argument("--epochs", type=int, default=None, help="override epochs (warm starts: 4-8)")
     ap.add_argument("--k", type=int, default=None, help="train windows per study; >8 pins to 48 GB GPUs")
+    ap.add_argument("--label_weights", default=None,
+                    help=f"per-finding loss preset: {sorted(G.LABEL_WEIGHTS)}")
     a = ap.parse_args()
     m = load()
     if a.cmd == "refold":
@@ -535,7 +544,8 @@ def main() -> None:
         if not a.node:
             raise SystemExit("--node required")
         j = queue(a.node, [int(s) for s in a.seeds.split(",")],
-                  a.labels.split(",") if a.labels else None, m, init=a.init, epochs=a.epochs, k=a.k)
+                  a.labels.split(",") if a.labels else None, m, init=a.init, epochs=a.epochs, k=a.k,
+                  label_weights=a.label_weights)
         print(json.dumps(j, indent=1, default=str))
     elif a.cmd in ("approve", "drop"):
         for j in list(m["queue"]):

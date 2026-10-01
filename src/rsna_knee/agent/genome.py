@@ -37,6 +37,16 @@ PROTOCOL = {"seed": 42, "folds": 5, "fold": 0}
 BASE = {"corpus": "dense80", "labels": "dread", "arch": "coatnet384", "epochs": 16, "k": 8,
         "k_eval": 24, "bb_lr": 3e-5, "head_lr": 1e-3, "wd": 0.02, "freeze_blocks": 0}
 
+# Optional per-finding BCE multipliers (trainer --label_weights, LAB order, rescaled to mean 1).
+# Member-only knob; absent = all 1. weak5: Lateral Meniscus, Lateral OA, PF OA, Synovitis, Contusion.
+LAB = ["ACL", "MCL", "Medial Meniscus", "Lateral Meniscus", "Medial OA", "Lateral OA", "PF OA",
+       "Effusion", "Synovitis", "Baker's", "Contusion", "Fracture"]
+WEAK5 = ["Lateral Meniscus", "Lateral OA", "PF OA", "Synovitis", "Contusion"]
+LABEL_WEIGHTS = {
+    "weak5x2.5": [2.5 if n in WEAK5 else 1.0 for n in LAB],
+    "weak5x4": [4.0 if n in WEAK5 else 1.0 for n in LAB],
+}
+
 # Rough 4090 hours for a 4/5-fold run of each arch at 16 epochs (3090 is ~1.6x).
 HOURS_16EP = {"coatnet384": 2.6, "convnext_b384": 2.2}
 
@@ -52,7 +62,9 @@ def label_registry() -> dict[str, dict]:
 
 def validate(genome: dict) -> list[str]:
     errs = []
-    unknown = set(genome) - set(MENU) - {"labels"}
+    unknown = set(genome) - set(MENU) - {"labels", "label_weights"}
+    if "label_weights" in genome and genome["label_weights"] not in LABEL_WEIGHTS:
+        errs.append(f"label_weights {genome['label_weights']!r} not in {sorted(LABEL_WEIGHTS)}")
     if unknown:
         errs.append(f"unknown fields {sorted(unknown)}")
     for k, allowed in MENU.items():
@@ -77,6 +89,8 @@ def validate(genome: dict) -> list[str]:
 def clamp(genome: dict) -> dict:
     """Snap a (possibly historical) genome onto the live MENU; used when expanding parents."""
     out = dict(BASE)
+    if genome.get("label_weights") in LABEL_WEIGHTS:
+        out["label_weights"] = genome["label_weights"]
     for k in list(MENU) + ["labels"]:
         if k not in genome:
             continue
@@ -106,6 +120,8 @@ def to_cli(genome: dict, bundle_dir: str = ".") -> tuple[str, str]:
             f"--seed {PROTOCOL['seed']} --folds {PROTOCOL['folds']} --fold {PROTOCOL['fold']} "
             f"--fold_file {bundle_dir}/folds_nonexpert_5.json --holdout {bundle_dir}/expert_holdout.json "
             f"--workers 8")
+    if genome.get("label_weights"):
+        args += " --label_weights " + ",".join(f"{w:g}" for w in LABEL_WEIGHTS[genome["label_weights"]])
     return label_registry()[genome["labels"]]["file"], args
 
 
