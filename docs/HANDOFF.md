@@ -1,78 +1,62 @@
-# Handoff — campaign to submit/LB AUC ≥ 0.958 (2026-09-29, ensemble pivot)
+# Handoff — weak-finding push (2026-10-01)
 
-Paste the **New-chat opener** at the bottom into a fresh chat. Source of truth: this file,
-`docs/STATUS.md`, `docs/DECISIONS.md` (esp. 2026-09-23/25/27/28), `docs/AGENT_PLAN.md`,
-`agent/runs/loop_state.json`, `agent/runs/journal.json`, `agent/runs/holdout.json`.
-**STATUS beats this file if they disagree.** Repo files beat chat history.
+Paste the **New-chat opener** at the bottom into a fresh chat. Source of truth: `docs/STATUS.md`
+(wins on conflicts), `docs/DECISIONS.md` (esp. 2026-09-29 → 2026-10-01), `docs/experiments.md`,
+`docs/HIGHER_PATH.md`, `agent/runs/members.json`, `agent/runs/submits.json`. Repo beats chat.
 
 ## Where we are
-- Branch: **`agent/autorun`**. Budget cap **$300**; spent ~**$34**.
-- **True goal:** Kaggle **public / final macro AUC ≥ 0.958** (stretch talk of 0.970 is not the gate). Fold-0 proxy is compass only.
-- Loop + dashboard under launchd (`com.rsna.agentloop`, `com.rsna.dashboard`). DeepSeek owns idle ticks (coder allowlist + `launch_runpod_train`). One-pod / $300 / >$10 / **no auto-LB**.
-- Settled recipe: **CoAtNet-384 + dense80 + better labels**, **k=8**, **k_eval=24**.
+- **Public LB 0.944, rank 258/4660** (ref 56704765): public D4 stack (`outputs/kernels/_base_d4`, 0.943) with our
+  **4-seed bestof soup** (`soupbestof4`) in the v5 maxspan arms. Top of board 0.961; 86 teams ≥ 0.950.
+- Lock finals **2026-10-16** (official deadline 2026-10-22 23:59 UTC; Oct 15 = entry/merger only, we are entered).
+- Budget: campaign ≈ $80 of $300; **RunPod ≈ $9.7 (top up ~$20 before more GPU)**; DeepSeek ≈ $30.
 
-## 2026-09-29 pivot (read first)
-- Our single model = LB 0.920; public D4 stack = 0.943; top-20 = 0.955–0.960. Submits are now **D4 stack + our members** (`scripts/build_ensemble_kernel.py --name … --members … --w …`).
-- Member track: `python -m rsna_knee.agent.members queue --node <id> --seeds 42,1337 --labels a,b [--init v5 --epochs 6]`; `members status`. Full-data, multi-arm, one pod, auto-launched by the loop tick; loop does not plan while a member job is queued/active.
-- LB submits only via `scripts/submit_gate.py submit --kernel … --version N --why … --i-approve` (after the user approves). `submit_gate.py ledger` / `record --ref --score`.
-- v5 warm start (`--init_model`, CC0 public checkpoint) is member-only (fold-0 proxy would be leaky).
+## What is measured (AUC on 58 expert studies = mean of gold-dev 29 + holdout 29)
+| Model | Macro | Lat Men | Lat OA | PF OA | Synovitis | Contusion |
+|---|---:|---:|---:|---:|---:|---:|
+| public v5 (eval-only, our protocol) | 0.9256 | 0.855 | 0.896 | 0.857 | 0.801 | 0.927 |
+| bestof_v1 members, k=8 (n=4) | 0.9330 | 0.877 | 0.891 | 0.855 | 0.863 | 0.943 |
+| bestof_v1 members, **k=16** (n=2) | 0.9266 | 0.857 | 0.881 | **0.882** | 0.857 | 0.915 |
+| soup bestof4 (= LB 0.944 swap) | **0.9365** | 0.862 | 0.890 | 0.857 | 0.865 | 0.957 |
+Strong findings (ACL, MCL, Med Men, Med OA, Effusion, Baker's) are 0.96–0.99; Fracture ~0.93.
 
-## Workflow (how the system works)
-1. RunPod trains one genome at a time → uploads OOF to a private Kaggle result dataset.
-2. Mac loop `observe` downloads → scores **online proxy** (fold-0 vs agreement ruler) + gold_dev veto + hidden holdout.
-3. Idle `plan`: free **dream** blends over saved OOF, then DeepSeek proposes one-field diffs / allowlisted code / relabel.
-4. LB submit is **manual / user-approved**: build kernel under `outputs/kernels/`, push, then `kaggle competitions submit -k … -v N -f submission.csv`. **Do not background-poll** kernels.
+## Closed (do not reopen without new evidence)
+- lr/wd/head_lr/epoch micro-diffs; fold-0 ImageNet trains (`loop.FOLD0_TRAINS=False`).
+- **Self-training / label fusion**: fused labels agree with experts (0.946–0.949 vs report 0.883) but members trained
+  on them = 0.9330 (same as bestof). Hard-blocked by `agent/runs/policy.json` {"fold_jobs_closed": true}.
+- More seeds of a tested recipe (2- and 4-seed soups equal): `members.SEEDS_PER_RECIPE = 2`.
+- Tail-leg blending a weak model across all findings (cost −0.002 on LB).
+- Two different members in the two maxspan arms (stack loads ONE model for forward+reverse) → use a soup.
 
-## Drawbacks / failure modes (do not ignore)
-- **Proxy≠LB:** first own-weights submit `5bc0` proxy **0.9366** → public **0.920** (gap **−0.017**). Do not treat proxy ≳ 0.936 as 0.958-ready.
-- **VRAM:** k>8 / k_eval>24 CUDA-OOM on 24GB after dense80 — hard ban + `genome.clamp`.
-- **dense80 pull:** ~40 GB; IncompleteRead common; use `fetch_dense80.py` Range-resume. Boot stall kill at 5 h. Hung downloads have burned hours.
-- **Phantoms / capacity:** community pods vanish; launcher verifies; loop infra-retries — still noisy at night.
-- **Host crashes block DeepSeek:** e.g. stale `greedy_rank_blend` import crashed every tick before planner ran — needs launchd restart; DeepSeek never sees host exceptions.
-- **Duplicate LB burns:** two submits both scored **0.920**; do not resubmit near-clones. Quota 5/day — use only for diagnosed lifts (SWA/EMA/eval/blend/new parent).
-- **lr/epoch/wd micro-diffs** often fail to beat best online; prefer unused labels + submit-gap closers.
+## Next plan (user-agreed direction: focus the 5 weak findings, then soup)
+1. **Per-finding loss weights**: add trainer flag `--label_weights` (multiply BCE per finding; 2–3× for Lateral
+   Meniscus, Lateral OA, PF OA, Synovitis, Contusion); member option `--label_weights`; 2 seeds bestof_v1 k=8 v5 6 ep.
+2. PF OA specialist already exists: k=16 members `m5b5942352cf`, `m440e7701125` (PF OA 0.882).
+3. **Per-finding tail** in `scripts/build_ensemble_kernel.py`: BLEND weight per finding (0 on strong findings,
+   ~0.3–0.5 on the weak five) with our specialist leg; keep soup4 in the v5 slot. Submit via `scripts/submit_gate.py`.
+4. Soup the per-finding winners; dual finals by Oct 16. Expert bench (public stack on 58 experts) optional/deferred.
+- (ROI/compartment crops: trainer flag exists but `roi_localize` + `roi_boxes.npz` were never vendored; skip.)
 
-## Scores (STATUS wins)
-| Kind | Best | Notes |
-|---|---:|---|
-| **Public LB** | **0.920** | `submit-dense80-5bc0` v2 (refs 56643440, 56646862) |
-| Online proxy | **0.9366** | `5bc0a0f45d75` epochs→20, dense80 + `relabel_8c56cdf0` |
-| Dream | **0.9391** | greedy blend — free CPU, **not** LB |
-| Recent miss | 0.9342 | `564c` head_lr→0.002 |
-
-## Live (check STATUS)
-- `n-ca830ada7798` on `s0yb5c4835xdkr` ($0.34/h) — bb_lr→1e-5, k=8. One-pod; do not double-launch.
-
-## Settled — do not reopen without new failure
-- MENU `k=[8]`, `k_eval=[24]`, `arch=[coatnet384]`; dream-first; no new backbones / MONAI / Jev-RLCD this week.
-- Efficiency student later from same weights.
-- dense80 via Range-resume; no campaign restart from scratch.
-- Approvals: >$10, LB submits, finals, budget changes.
-
-## Next
-1. Score live pod; if bb_lr fails, prefer unused labels over more lr micro-sweeps.
-2. Next LB only with a **gap story** (SWA/EMA / denser k_eval / blend) expected to beat **0.920**.
-3. Submit ledger + 5/day gate + duplicate filter: **shipped** (`scripts/submit_gate.py`).
-4. End session: update `docs/STATUS.md`.
+## Harness (how it works now)
+- launchd `com.rsna.agentloop` runs `rsna_knee.agent.loop`; idle/busy ticks call the DeepSeek strategist
+  (V4.1-Flash, thinking ≤ $3/day, relabels ≤ $15/day). Fold-0 planner disabled.
+- Member jobs: `python -m rsna_knee.agent.members queue|eval|status --node 5bc0a0f45d75 --labels … --init v5 --epochs 6 [--k 16]`.
+  Up to **2 pods** at once (user-approved). Phantom pods retried ×6. Pods seen alive are never relaunched as phantoms.
+- **Edit member state only via ops**: `members.request_op({"op": "drop_running"|"drop_queued"|"requeue", ...})`
+  (`agent/runs/members_ops.jsonl`, applied at next tick) — direct edits get overwritten by a running tick.
+- Soups: `scripts/make_soup.py --name X --members a,b,... --upload`; eval: `members eval --targets soupX`.
+- Kernels: `scripts/build_ensemble_kernel.py --name … --w 0 --swap-v5 <member|soup>`; verify the loaded checkpoint
+  in the run's `btkd_v559_complete.json` before submitting. LB pushes/submits only with user approval.
+- I (assistant) cannot terminate RunPod pods (permission system) — ask the user.
+- Tests: `.venv/bin/python -m pytest -q tests/ --ignore=tests/test_rank_architecture.py` (104 pass).
 
 ## New-chat opener (copy/paste)
 
 ```
-Read docs/STATUS.md, docs/DECISIONS.md (esp. 2026-09-28 speed + LB calibration, plus 2026-09-23/25/27), and docs/HANDOFF.md. Repo files beat chat history; STATUS wins on conflicts.
+Read docs/HANDOFF.md, docs/STATUS.md, and the 2026-09-29 → 2026-10-01 entries of docs/DECISIONS.md. Repo files beat chat; STATUS wins on conflicts. Branch agent/autorun.
 
-Branch agent/autorun. Goal: Kaggle public/final macro AUC ≥ 0.958 ($300 cap; spent ~$34). Fold-0 proxy is compass only — not the trophy. Stretch 0.970 is not the gate. Approvals: >$10, LB, finals. Dual finals later; efficiency student later from same weights.
+Goal: Kaggle public/final macro AUC as high as possible (aim 0.950+, stretch higher); lock finals by 2026-10-16 (official deadline 2026-10-22). Current LB 0.944 (rank 258) = public D4 stack with our 4-seed bestof soup in the v5 slot.
 
-Workflow: one RunPod train → OOF upload → Mac loop scores online proxy + dreams → DeepSeek proposes one-field genome / allowlisted code / relabel. LB is user-approved kernel push + competitions submit (no auto-LB; do not background-poll Kaggle).
+Plan I agreed: focus ONLY the 5 weak findings (Lateral Meniscus, Lateral OA, PF OA, Synovitis, Contusion), then soup. Step 1: add per-finding loss weights to runpod/train_knee.py (--label_weights) + members option, train 2 seeds bestof_v1 (k=8, v5, 6 ep). Step 2: reuse k=16 members for PF OA. Step 3: per-finding tail weights in scripts/build_ensemble_kernel.py (0 on strong findings). Step 4: soup winners, dual finals.
 
-Live: check docs/STATUS.md (members queue: `python -m rsna_knee.agent.members status`). One-pod; do not double-launch. launchd com.rsna.agentloop.
-
-Pivot 2026-09-29: submits = public D4 stack (0.943) + our full-data members rank-blended (scripts/build_ensemble_kernel.py); LB only via scripts/submit_gate.py with user approval; v5 warm start is member-only.
-
-Scores: public LB 0.920 (submit-dense80-5bc0; proxy was 0.9366 → gap −0.017). Best online 0.9366 (5bc0). Best dream 0.9391 (free blend, not LB). 564c head_lr=0.002 → 0.9342 miss.
-
-Known drawbacks: proxy≠LB; VRAM ban k>8; dense80 download hangs/phantoms; host tick crashes can idle DeepSeek; duplicate submits both hit 0.920 — do not burn 5/day on clones.
-
-Speed policy (settled): MENU k=8 / k_eval=24 / coatnet384; dream-first; GPU only labels/lr/epoch/wd; no new backbones. dense80 via fetch_dense80.py Range-resume.
-
-Next: (1) score ca830; (2) next LB only with diagnosed gap-closer expected to beat 0.920; (3) prefer unused labels over micro-lr thrash; (4) update docs/STATUS.md end of session. Never print secrets.
+Closed: self-training (policy.json), lr micro-diffs, fold-0 trains, >2 seeds per recipe. RunPod balance ~$9.7 — ask me before GPU spend beyond that. LB submits need my OK. You cannot terminate pods; ask me. Edit member state only through members.request_op. Watch context: give me a handoff prompt at ~80%.
 ```

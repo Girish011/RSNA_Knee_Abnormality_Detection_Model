@@ -292,3 +292,7 @@ Format: date | decision | why | rejected
 ## 2026-09-30 — Close self-training; next lever = input density (k=16 on 48 GB)
 - **Evidence (macro AUC on 58 experts):** bestof_v1 members 0.9330 (n=4); fused_7cdb6e83 (60% fused) 0.9315; fused_83969a7f (round 2) 0.9327; **fused_7cdb6e83_full 0.9330**; 5-fold bestof vs fused 0.9303 vs 0.9309. Fused labels agree with experts far better (0.946–0.949 vs report 0.883) but add little new information to the model (self-distillation). Soups: bestof4 0.9365, mix8 0.9358; public v5 0.9256.
 - **Decision:** self-training closed; held rounds dropped. Next: `members queue --k 16` (bestof_v1, v5 init, 6 ep, seeds 42/1337) pinned to 48 GB A6000/A40 (`launcher gpu_class="48"`), compared 1:1 with bestof_v1 at k=8.
+
+## 2026-10-01 — Focus the 5 weak findings, then soup (user); k=16 = PF OA specialist
+- **Evidence:** k=16 bestof members macro-58 0.9266 (k=8: 0.9330) but PF OA 0.882 vs 0.855; Contusion −0.028. Public v5 (our protocol) is weak on the same five findings (Syn 0.80, LatMen 0.855, PF 0.857, LatOA 0.896, Cont 0.927), so the public CoAt branch shares our weak spots — the expert bench is deferred (optional, end-stage blend tuning only).
+- **Decision:** next = per-finding loss weights (2–3× on the weak five), per-finding tail weights in the submit kernel (0 on strong findings), soup per-finding winners, dual finals by 2026-10-16. Seeds per recipe capped at 2. ROI crops skipped (`roi_localize`/`roi_boxes.npz` never vendored; v5 slot cannot reproduce crops).

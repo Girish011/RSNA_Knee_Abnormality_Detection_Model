@@ -75,6 +75,8 @@ Add a bullet only when a result is measured; never add opinions.
 
 - 2026-09-30 22:30 CLOSED: self-training. fused_7cdb6e83_full members = 0.9330 macro-58, identical to bestof_v1 (0.9330); all fused variants 0.9315–0.9330. Mixed soup (bestof+fused, 8) 0.9358 ≈ bestof4 soup 0.9365. Do not queue more fold/fusion rounds. Current test: k=16 windows per study on 48 GB (members queue --k 16) vs bestof_v1 at k=8.
 
+- 2026-10-01 PLAN (user): focus ONLY the 5 weak findings (Lateral Meniscus, Lateral OA, PF OA, Synovitis, Contusion), then soup. k=16 members: macro 0.9266 but PF OA 0.882 (vs 0.855). Do not queue seeds of tested recipes (cap 2). Prefer new recipes that target weak findings (per-finding loss weights, k=16 for PF OA). RunPod balance is low (~$10): queue at most one job at a time.
+
 ## Constraints
 
 - Reports and any text model are train-only; test.csv has no Report field.
