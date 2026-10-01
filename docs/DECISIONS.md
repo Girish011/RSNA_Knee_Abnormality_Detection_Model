@@ -308,3 +308,10 @@ Format: date | decision | why | rejected
   first add_done op was silently dropped.
 - **Cadence (user):** ≥1 LB submission per day, each user-approved, from the calendar in STATUS; one leg checkpoint
   per kernel until a 2-checkpoint leg is shown to fit 9 h. Expect single-finding tails to move macro by ≤0.001.
+
+## 2026-10-01 (evening) — Results: tails invisible on LB; loss weights → Synovitis specialist; seed cap fixed
+- **LB:** tail-pf-k16 0.944, tail-pfsyn-k16 0.944 (= base 0.944). A tail on 1–2 findings moves macro by ≤0.001.
+- **weak5x2.5** (2 seeds): Synovitis 0.888 (bestof 0.863), PF OA 0.862, Lat Men 0.876, Lat OA 0.887, Contusion 0.921
+  (−0.022); macro 0.932 vs 0.933. The weights reshuffle per-finding AUC rather than add signal → use as Synovitis soup.
+- **Seed cap bug:** done-only counting let the strategist train 6 seeds of relabel_d19bf15e (~$3). The cap now counts
+  queued + running arms and truncates multi-seed requests.
