@@ -21,6 +21,7 @@ from __future__ import annotations
 import argparse
 import copy
 import json
+import re
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
@@ -219,6 +220,36 @@ def swap_arms(nb: dict, arms: dict[str, str]) -> tuple[dict, list[str]]:
     return nb, [d for d, _ in pairs.values()]
 
 
+# RadImageNet stage (cell 25): file name -> SHA constant that pins it.
+RAD_HEADS = {"ref": ("v52_radimagenet_heads.pt", "_RAD_REFERENCE_HEADS_SHA256"),
+             "e13": ("v52_e11_heads.pt", "_RAD_E13_HEADS_SHA256")}
+
+
+def swap_rad_heads(nb: dict, heads: dict[str, tuple[str, str]]) -> tuple[dict, list[str]]:
+    """{'e13': (dataset slug, sha256)} -> the stack loads OUR heads (label-transplant forks).
+
+    The file keeps its upstream name inside our dataset; we put our dataset first in that file's
+    candidate list and re-pin the SHA constant, so a wrong/missing file fails the stack's own check."""
+    nb = copy.deepcopy(nb)
+    hits = {k: 0 for k in heads}
+    for c in nb["cells"]:
+        t = _src(c)
+        for k, (ds, sha) in heads.items():
+            fname, const = RAD_HEADS[k]
+            anchor = f"'{fname}': ["
+            pin = re.search(rf"{const} = '([0-9a-f]{{64}})'", t)
+            if t.count(anchor) == 1 and pin:
+                slug = ds.split("/", 1)[1]
+                ours = (f"\n                '/kaggle/input/datasets/{ds}/{fname}',"
+                        f"\n                '/kaggle/input/{slug}/{fname}',")
+                t = t.replace(anchor, anchor + ours).replace(pin.group(0), f"{const} = '{sha}'")
+                hits[k] += 1
+        c["source"] = t
+    if any(v != 1 for v in hits.values()):
+        raise SystemExit(f"rad heads anchors drifted: {hits}")
+    return nb, [ds for ds, _ in heads.values()]
+
+
 def shift_coat_weight(nb: dict, shift: float) -> dict:
     """Raise (or lower) the stack's per-finding CoAtNet-branch weight vs the transformer branch."""
     nb = copy.deepcopy(nb)
@@ -237,7 +268,8 @@ def shift_coat_weight(nb: dict, shift: float) -> dict:
 
 def build(name: str, member_ids: list[str], w: float, out_root: Path | None = None,
           swap: str | None = None, tails: list[tuple[list[str], list[str], float]] | None = None,
-          arms: dict[str, str] | None = None, coat_shift: float = 0.0) -> Path:
+          arms: dict[str, str] | None = None, coat_shift: float = 0.0,
+          rad_heads: dict[str, tuple[str, str]] | None = None) -> Path:
     """Global mode: every finding blends all ``member_ids`` at ``w``. Tail mode: each finding gets
     its own member subset and weight; findings with no tail keep the public stack's values."""
     if tails:
@@ -247,7 +279,7 @@ def build(name: str, member_ids: list[str], w: float, out_root: Path | None = No
         w = max(t[2] for t in tails)
     elif member_ids and w > 0:
         tails = [(TARGETS, member_ids, w)]
-    if not 0.0 <= w < 1.0 or (w == 0.0 and not (swap or arms or coat_shift)):
+    if not 0.0 <= w < 1.0 or (w == 0.0 and not (swap or arms or coat_shift or rad_heads)):
         raise SystemExit("--w must be in (0, 1), or 0 with --swap-v5/--swap-arm/--coat-shift")
     nb_path = next(BASE.glob("*.ipynb"))
     nb = json.loads(nb_path.read_text())
@@ -262,6 +294,9 @@ def build(name: str, member_ids: list[str], w: float, out_root: Path | None = No
         swap_dss += arm_dss
     if coat_shift:
         nb = shift_coat_weight(nb, coat_shift)
+    if rad_heads:
+        nb, rad_dss = swap_rad_heads(nb, rad_heads)
+        swap_dss += rad_dss
     members = resolve_members(member_ids) if w > 0 else []
     files = [f for _, f in members]
     if len(set(files)) != len(files):
@@ -292,7 +327,7 @@ def build(name: str, member_ids: list[str], w: float, out_root: Path | None = No
     (d / "kernel-metadata.json").write_text(json.dumps(meta2, indent=1))
     (d / "ENSEMBLE.json").write_text(json.dumps(
         {"base": nb_path.name, "members": member_ids if members else [], "weights": files, "w": w,
-         "swap_v5": swap, "swap_arms": arms or {}, "coat_shift": coat_shift, "tails": {f: [[member_ids[j] for j in ix], tw] for f, (ix, tw) in tail_map.items()}},
+         "swap_v5": swap, "swap_arms": arms or {}, "coat_shift": coat_shift, "rad_heads": rad_heads or {}, "tails": {f: [[member_ids[j] for j in ix], tw] for f, (ix, tw) in tail_map.items()}},
         indent=1))
     return d
 
@@ -311,12 +346,18 @@ def main() -> None:
                     help="replace another Raptor arm: 'v8=soupX' or 'v10=soupX' (repeatable)")
     ap.add_argument("--coat-shift", type=float, default=0.0,
                     help="add to every finding's CoAtNet-branch weight (clipped to [0, 1])")
+    ap.add_argument("--rad-heads", action="append", default=[],
+                    help="our RadImageNet heads: 'e13=owner/dataset:sha256' or 'ref=owner/dataset:sha256'")
     a = ap.parse_args()
+    rad = {k: tuple(v.rsplit(":", 1)) for k, v in (x.split("=", 1) for x in a.rad_heads)}
+    if bad := set(rad) - set(RAD_HEADS):
+        raise SystemExit(f"--rad-heads keys must be in {sorted(RAD_HEADS)}")
     arms = dict(x.split("=", 1) for x in a.swap_arm)
     if bad := set(arms) - set(ARM_FILES):
         raise SystemExit(f"--swap-arm keys must be in {sorted(ARM_FILES)}, got {sorted(bad)}")
     d = build(a.name, [m for m in a.members.split(",") if m], a.w, swap=a.swap_v5,
-              tails=[parse_tail(t) for t in a.tail] or None, arms=arms or None, coat_shift=a.coat_shift)
+              tails=[parse_tail(t) for t in a.tail] or None, arms=arms or None, coat_shift=a.coat_shift,
+              rad_heads=rad or None)
     print(f"built {d}\npush (user-approved): kaggle kernels push -p {d}")
 
 

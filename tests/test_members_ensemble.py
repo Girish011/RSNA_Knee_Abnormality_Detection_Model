@@ -406,3 +406,16 @@ def test_swap_arms_and_coat_shift(tmp_path):
     ns = {"L": ["ACL", "Y", "X"], "_blend_transformer": pd.DataFrame()}
     exec(nb3["cells"][2]["source"], ns)
     assert ns["_coatnet_weight"] == {"ACL": 0.9, "Y": 0.75, "X": 1.0}
+
+
+def test_swap_rad_heads_repins_sha_and_paths():
+    old = "a" * 64
+    cell = (f"_RAD_E13_HEADS_SHA256 = '{old}'\nby_name = {{\n    'v52_e11_heads.pt': [\n"
+            "        '/kaggle/input/x/v52_e11_heads.pt',\n    ],\n}\n")
+    nb = {"cells": [{"cell_type": "code", "source": cell}]}
+    nb2, dss = BEK.swap_rad_heads(nb, {"e13": ("me/rad-ours", "b" * 64)})
+    t = nb2["cells"][0]["source"]
+    assert dss == ["me/rad-ours"] and "b" * 64 in t and old not in t
+    assert t.index("/kaggle/input/datasets/me/rad-ours/v52_e11_heads.pt") < t.index("/kaggle/input/x/")
+    with pytest.raises(SystemExit):
+        BEK.swap_rad_heads(nb, {"ref": ("me/rad-ours", "b" * 64)})
