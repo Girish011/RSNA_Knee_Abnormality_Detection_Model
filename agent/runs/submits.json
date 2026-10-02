@@ -282,5 +282,31 @@
    "tails": {}
   },
   "ts": 1790934531.974018
+ },
+ {
+  "date": "2026-10-02T17:37:04.319566+00:00",
+  "kernel": "girishbose/coat15-radexfx",
+  "version": 1,
+  "fingerprint": "f6d0f18e4ff6f586",
+  "why": "LEARNING: best 0.945 + Fracture into the cell-25 Rad blend (_RAD_EXCLUDE=Baker's only, as public d4-blend 0.946)",
+  "ref": 56779149,
+  "public_lb": null,
+  "ensemble": {
+   "base": "rsna-knee-fast-2xt4-inference.ipynb",
+   "members": [],
+   "weights": [],
+   "w": 0.0,
+   "swap_v5": "soupbestof4",
+   "swap_arms": {},
+   "coat_shift": 0.15,
+   "rad_heads": {},
+   "dino": null,
+   "dino_extra": null,
+   "rad_exclude": [
+    "Baker's"
+   ],
+   "tails": {}
+  },
+  "ts": 1790962626.302499
  }
 ]
