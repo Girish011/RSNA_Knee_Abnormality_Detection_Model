@@ -62,6 +62,10 @@ The public stack gives ~40% of its weight to the two weakest families, and every
   every transformer mix lowers gold-58 — yet our CoAt alone is 0.920 on LB. Gold-58 overstates anything trained on our
   labels → use it only as a sanity gate; ship decisions on LB probes. DINO fine-tune kernel built (CPU smoke passed:
   fingerprints 1e-5, prefix SHA = stack pin 0a55b893) and running on Kaggle.
+- 2026-10-02 15:00 — coat30-radfused = 0.944 (no gain past +0.15). **DINO fine-tune (20/20, 3.3 h free T4x2) passes
+  gate: gold OOF 0.8386 → 0.8543** (Syn +0.07, ACL +0.044, Eff +0.028; LatMen/LatOA/PF flat), fused agreement
+  0.917 → 0.929, pixel check corr 0.998. Weights `girishbose/rsna-knee-dino-ft-fused`; candidate `coat15-dinoft`
+  (= coat-up15-b4 + DINO swap) pushed. Strategist paused (user); RunPod ~$20 at Claude's discretion.
 
 ## Next build: DINO warm-start fine-tune on fused labels (design, ready to implement)
 - Members: `pilkwang/rsna-knee-weights` (20 × `m_*.pt` + `manifest.json`), all ONE pixel group: 336 px, 12 slices,
