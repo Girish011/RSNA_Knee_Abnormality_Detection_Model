@@ -57,6 +57,11 @@ The public stack gives ~40% of its weight to the two weakest families, and every
   Heads: `girishbose/rsna-knee-rad-heads-fused`. Candidate `coat15-radfused` (coat +0.15 + both fused heads) pushed.
 - 2026-10-02 04:55 — `coat15-radfused` verified (ref heads 829bc…, E13 d87c…, coat +0.15) → **submitted ref 56760305**.
   `coat30-radfused` (coat +0.30, same heads) auto-submits after the 05:30 IST quota reset as a direction probe.
+- 2026-10-02 12:00 — `coat15-radfused` = **0.944** (base 0.945): fused RadImageNet heads, +0.017 gold OOF, did not
+  transfer to LB. Diagnostic (gold-58, OOF): DINO 0.840, RAD e13-fused 0.875, main-fused 0.859, our 5-fold CoAt 0.931;
+  every transformer mix lowers gold-58 — yet our CoAt alone is 0.920 on LB. Gold-58 overstates anything trained on our
+  labels → use it only as a sanity gate; ship decisions on LB probes. DINO fine-tune kernel built (CPU smoke passed:
+  fingerprints 1e-5, prefix SHA = stack pin 0a55b893) and running on Kaggle.
 
 ## Next build: DINO warm-start fine-tune on fused labels (design, ready to implement)
 - Members: `pilkwang/rsna-knee-weights` (20 × `m_*.pt` + `manifest.json`), all ONE pixel group: 336 px, 12 slices,

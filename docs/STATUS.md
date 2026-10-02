@@ -1,6 +1,6 @@
 # STATUS
 
-Last updated: 2026-10-02 (~05:00 IST). Plan: docs/PLAN_TO_TOP.md (results log + next build).
+Last updated: 2026-10-02 (~12:00 IST). Plan: docs/PLAN_TO_TOP.md (results log + next build).
 
 ## Leaderboard
 | ref | kernel | public |
@@ -13,8 +13,8 @@ Last updated: 2026-10-02 (~05:00 IST). Plan: docs/PLAN_TO_TOP.md (results log + 
 | 56744346 | + PF OA, Synovitis ← soupk16 w0.35 | 0.944 |
 | 56754652 | LEARNING raptor-all-b4: soup4 in v5+v8+v10 | 0.944 |
 | **56754655** | **coat-up15-b4: soup4 swap + CoAt weight +0.15** | **0.945 (best)** |
-| 56760305 | coat15-radfused: + fused-label RadImageNet heads | pending |
-| (auto 05:30 IST) | LEARNING coat30-radfused: CoAt +0.30 + fused heads | pending |
+| 56760305 | coat15-radfused: + fused-label RadImageNet heads | 0.944 |
+| 56761295 | LEARNING coat30-radfused: CoAt +0.30 + fused heads | pending (6 h+) |
 
 ## Best models (AUC on 58 experts)
 - soupbestof4 0.9365 (in LB 0.944); bestof_v1 k=8 members 0.9330; public v5 0.9256.
@@ -23,11 +23,14 @@ Last updated: 2026-10-02 (~05:00 IST). Plan: docs/PLAN_TO_TOP.md (results log + 
 - Weak findings everywhere: Lateral Meniscus, Lateral OA, PF OA, Synovitis, Contusion.
 
 ## Live
-- Fused-label RadImageNet heads beat upstream (E13 0.8745 vs 0.8576; main 0.8594 vs 0.8543) → dataset
-  `girishbose/rsna-knee-rad-heads-fused`, wired via `--rad-heads`. Background job submits coat30 probe after reset and
-  records both scores in submits.json.
-- No RunPod pods; strategist propose-only. Next build: DINO warm-start fine-tune (design in PLAN_TO_TOP.md).
-
+- **DINO warm-start fine-tune running** (`girishbose/fork-dino-ft-fused` v1, pushed ~11:25 IST, T4x2): 20 public
+  members x 3 ep at public LR/5 on fused labels, paired holdout OOF. Builder `scripts/build_dino_ft_kernel.py`;
+  gate `scripts/eval_dino_ft.py <ft_oof.npz> --public oof.npz`; wire `build_ensemble_kernel.py --dino-weights
+  girishbose/<dataset>` (after uploading /kaggle/working/weights as a dataset). Prefix SHA verified = stack pin.
+- Fused RadImageNet heads: gold OOF +0.017 (E13) but LB 0.944 vs 0.945 → **gold-58 gains do not transfer**.
+  Gold-58 is contaminated for models trained on our labels (bestof selection + fusion fit on experts): our 5-fold
+  CoAt alone scores 0.931 on gold-58 but our own-weights LB was 0.920. LB probes are the judge.
+- No RunPod pods; strategist propose-only (it is spending ~$0.13/turn with "no action").
 ## Money
 - Campaign ≈ $85 of $300. **RunPod $4.10 at 20:30 IST**; user tops up 2026-10-02. DeepSeek ≈ $30.
 
@@ -35,6 +38,6 @@ Last updated: 2026-10-02 (~05:00 IST). Plan: docs/PLAN_TO_TOP.md (results log + 
 Only submit candidates expected to beat 0.944 (or explicit learning probes). Gate ≤5/day.
 
 ## Next 3 actions
-1. Read 56760305 / coat30 scores; keep the better coat shift as the new base.
-2. Build + run the DINO fine-tune kernel (PLAN_TO_TOP.md "Next build"); gate on gold OOF > 0.8425; wire into stack.
-3. Locate the A5 trainer; same recipe. RunPod top-up → v8/v10 fine-tunes only if stack evidence supports it.
+1. coat30 score → keep the better coat shift (0.945 base = coat-up15-b4); if coat30 ≥ 0.946 probe coat45.
+2. DINO ft output → eval_dino_ft gate → upload weights dataset → candidate `coat15-dinoft` (base + --dino-weights).
+3. A5: trainer not public (`mattiaangeli` has none) → warm-start fine-tune built around the stack's A5 inference code.
