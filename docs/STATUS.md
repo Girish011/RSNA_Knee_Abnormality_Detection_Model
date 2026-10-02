@@ -30,9 +30,9 @@ Last updated: 2026-10-02 (~12:00 IST). Plan: docs/PLAN_TO_TOP.md (results log + 
 - Fused RadImageNet heads: gold OOF +0.017 (E13) but LB 0.944 vs 0.945 → **gold-58 gains do not transfer**.
   Gold-58 is contaminated for models trained on our labels (bestof selection + fusion fit on experts): our 5-fold
   CoAt alone scores 0.931 on gold-58 but our own-weights LB was 0.920. LB probes are the judge.
-- No RunPod pods; strategist propose-only (it is spending ~$0.13/turn with "no action").
+- No RunPod pods. **Strategist paused** (policy `strategist: paused`, user 2026-10-02); loop still monitors pods/members.
 ## Money
-- Campaign ≈ $85 of $300. **RunPod $4.10 at 20:30 IST**; user tops up 2026-10-02. DeepSeek ≈ $30.
+- Campaign ≈ $85 of $300. **RunPod ~$20 (topped up 2026-10-02)**; Claude may spend it on new training tries that need GPU capacity; default $0 until a lever is LB-supported. DeepSeek ≈ $30.
 
 ## Submission policy
 Only submit candidates expected to beat 0.944 (or explicit learning probes). Gate ≤5/day.
