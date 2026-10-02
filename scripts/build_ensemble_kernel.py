@@ -352,6 +352,21 @@ def add_dino_extra(nb: dict, ds: str, beta: float) -> tuple[dict, list[str]]:
     return nb, [ds]
 
 
+def set_rad_exclude(nb: dict, labels: tuple[str, ...]) -> dict:
+    """Findings the cell-25 Rad reference blend skips (public d4-blend 0.946 uses ("Baker's",) vs base +Fracture)."""
+    nb = copy.deepcopy(nb)
+    old = "_RAD_EXCLUDE = (\"Baker's\", 'Fracture')"
+    n = 0
+    for c in nb["cells"]:
+        t = _src(c)
+        if t.count(old) == 1:
+            c["source"] = t.replace(old, f"_RAD_EXCLUDE = {tuple(labels)!r}  # ours")
+            n += 1
+    if n != 1:
+        raise SystemExit(f"rad exclude anchor drifted ({n})")
+    return nb
+
+
 def shift_coat_weight(nb: dict, shift: float) -> dict:
     """Raise (or lower) the stack's per-finding CoAtNet-branch weight vs the transformer branch."""
     nb = copy.deepcopy(nb)
@@ -372,7 +387,7 @@ def build(name: str, member_ids: list[str], w: float, out_root: Path | None = No
           swap: str | None = None, tails: list[tuple[list[str], list[str], float]] | None = None,
           arms: dict[str, str] | None = None, coat_shift: float = 0.0,
           rad_heads: dict[str, tuple[str, str]] | None = None, dino: str | None = None,
-          dino_extra: tuple[str, float] | None = None) -> Path:
+          dino_extra: tuple[str, float] | None = None, rad_exclude: tuple[str, ...] | None = None) -> Path:
     """Global mode: every finding blends all ``member_ids`` at ``w``. Tail mode: each finding gets
     its own member subset and weight; findings with no tail keep the public stack's values."""
     if tails:
@@ -382,7 +397,7 @@ def build(name: str, member_ids: list[str], w: float, out_root: Path | None = No
         w = max(t[2] for t in tails)
     elif member_ids and w > 0:
         tails = [(TARGETS, member_ids, w)]
-    if not 0.0 <= w < 1.0 or (w == 0.0 and not (swap or arms or coat_shift or rad_heads or dino or dino_extra)):
+    if not 0.0 <= w < 1.0 or (w == 0.0 and not (swap or arms or coat_shift or rad_heads or dino or dino_extra or rad_exclude is not None)):
         raise SystemExit("--w must be in (0, 1), or 0 with --swap-v5/--swap-arm/--coat-shift")
     nb_path = next(BASE.glob("*.ipynb"))
     nb = json.loads(nb_path.read_text())
@@ -403,6 +418,8 @@ def build(name: str, member_ids: list[str], w: float, out_root: Path | None = No
     if dino:
         nb, dino_dss = swap_dino_weights(nb, dino)
         swap_dss += dino_dss
+    if rad_exclude is not None:
+        nb = set_rad_exclude(nb, rad_exclude)
     if dino_extra:
         nb, dx_dss = add_dino_extra(nb, *dino_extra)
         swap_dss += dx_dss
@@ -436,7 +453,7 @@ def build(name: str, member_ids: list[str], w: float, out_root: Path | None = No
     (d / "kernel-metadata.json").write_text(json.dumps(meta2, indent=1))
     (d / "ENSEMBLE.json").write_text(json.dumps(
         {"base": nb_path.name, "members": member_ids if members else [], "weights": files, "w": w,
-         "swap_v5": swap, "swap_arms": arms or {}, "coat_shift": coat_shift, "rad_heads": rad_heads or {}, "dino": dino, "dino_extra": list(dino_extra) if dino_extra else None, "tails": {f: [[member_ids[j] for j in ix], tw] for f, (ix, tw) in tail_map.items()}},
+         "swap_v5": swap, "swap_arms": arms or {}, "coat_shift": coat_shift, "rad_heads": rad_heads or {}, "dino": dino, "dino_extra": list(dino_extra) if dino_extra else None, "rad_exclude": list(rad_exclude) if rad_exclude is not None else None, "tails": {f: [[member_ids[j] for j in ix], tw] for f, (ix, tw) in tail_map.items()}},
         indent=1))
     return d
 
@@ -461,6 +478,8 @@ def main() -> None:
                     help="our DINOv2 member package dataset 'owner/slug' (20 members + manifest.json)")
     ap.add_argument("--dino-extra", default=None,
                     help="'owner/slug:beta' - our DINO package blended AFTER the calibrator at weight beta")
+    ap.add_argument("--rad-exclude", default=None,
+                    help="';'-separated findings the cell-25 Rad blend skips (base: Baker's;Fracture)")
     a = ap.parse_args()
     rad = {k: tuple(v.rsplit(":", 1)) for k, v in (x.split("=", 1) for x in a.rad_heads)}
     if bad := set(rad) - set(RAD_HEADS):
@@ -471,7 +490,8 @@ def main() -> None:
     d = build(a.name, [m for m in a.members.split(",") if m], a.w, swap=a.swap_v5,
               tails=[parse_tail(t) for t in a.tail] or None, arms=arms or None, coat_shift=a.coat_shift,
               rad_heads=rad or None, dino=a.dino_weights,
-              dino_extra=(lambda d, b: (d, float(b)))(*a.dino_extra.rsplit(":", 1)) if a.dino_extra else None)
+              dino_extra=(lambda d, b: (d, float(b)))(*a.dino_extra.rsplit(":", 1)) if a.dino_extra else None,
+              rad_exclude=tuple(x for x in a.rad_exclude.split(";") if x) if a.rad_exclude is not None else None)
     print(f"built {d}\npush (user-approved): kaggle kernels push -p {d}")
 
 
