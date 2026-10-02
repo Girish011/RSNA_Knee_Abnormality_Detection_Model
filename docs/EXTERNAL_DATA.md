@@ -28,9 +28,3 @@
 - The user saves the links in `~/.rsna_ext/fastmri_links.txt` (chmod 600; outside the repo). Scripts read that
   file, download straight to a RunPod volume (~100 GB singlecoil knee train+val), and never print the links.
 - Derived arrays stay in private storage only (DSA: no redistribution).
-</content>
-</invoke>
-<invoke name="Bash">
-<parameter name="command">cd /Users/girish11/RSNA_Knee_Abnormality_Detection_Model && git add docs/EXTERNAL_DATA.md && git commit -q -m "EXTERNAL_DATA: rules + host rulings + candidate datasets (fastMRI+ = register; MRNet/KneeMRI/OAI/KneeCoT = skip)
-
-Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>" && git log --oneline -1
