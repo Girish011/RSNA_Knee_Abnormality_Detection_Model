@@ -347,11 +347,20 @@ def gpu_propose_only() -> bool:
     return pol.exists() and json.loads(pol.read_text()).get("strategist_gpu") == "propose"
 
 
+def paused() -> bool:
+    """2026-10-02 (user): DeepSeek turns paused - 40 turns / $3.65 produced only unapproved CoAt-seed
+    proposals and format failures. Policy ``strategist: "paused"``; the loop keeps monitoring pods."""
+    pol = members.POLICY
+    return pol.exists() and json.loads(pol.read_text()).get("strategist") == "paused"
+
+
 def research(state: dict, journal: Journal, results: Path, *, llm_tools=run_tools,
              model: str = FLASH, now: float | None = None) -> bool:
     """One strategist turn if due. Returns True if DeepSeek ran."""
     now = now or time.time()
     if now < float(state.get("next_research_after") or 0):
+        return False
+    if paused():
         return False
     state["next_research_after"] = now + RESEARCH_EVERY_S
     think = llm_spent_today(kinds=THINK_KINDS)
