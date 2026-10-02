@@ -264,7 +264,7 @@
   "fingerprint": "6adc80942a1bf7f1",
   "why": "best 0.945 (coat-up15-b4) + fine-tuned DINO (fused labels; holdout-29 pooled 0.806->0.823) blended beta=0.3 AFTER the calibrator",
   "ref": 56771185,
-  "public_lb": null,
+  "public_lb": 0.944,
   "ensemble": {
    "base": "rsna-knee-fast-2xt4-inference.ipynb",
    "members": [],

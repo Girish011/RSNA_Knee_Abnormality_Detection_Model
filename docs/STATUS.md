@@ -1,6 +1,6 @@
 # STATUS
 
-Last updated: 2026-10-02 (~15:30 IST). Plan: docs/PLAN_TO_TOP.md (results log + next build).
+Last updated: 2026-10-02 (~23:30 IST). Plan: docs/PLAN_TO_TOP.md (results log + next build).
 
 ## Leaderboard
 | ref | kernel | public |
@@ -15,7 +15,7 @@ Last updated: 2026-10-02 (~15:30 IST). Plan: docs/PLAN_TO_TOP.md (results log + 
 | **56754655** | **coat-up15-b4: soup4 swap + CoAt weight +0.15** | **0.945 (best)** |
 | 56760305 | coat15-radfused: + fused-label RadImageNet heads | 0.944 |
 | 56761295 | LEARNING coat30-radfused: CoAt +0.30 + fused heads | 0.944 |
-| 56771185 | coat15-dinox30: base + fine-tuned DINO β0.3 after calibrator | pending |
+| 56771185 | coat15-dinox30: base + fine-tuned DINO β0.3 after calibrator | 0.944 |
 
 ## Best models (AUC on 58 experts)
 - soupbestof4 0.9365 (in LB 0.944); bestof_v1 k=8 members 0.9330; public v5 0.9256.

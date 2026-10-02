@@ -331,3 +331,16 @@ Format: date | decision | why | rejected
   coat-up15-b4 (CoAt weight +0.15).
 - **Harness:** strategist GPU jobs are proposals (`policy.json strategist_gpu=propose`); `members.queue` seed cap counts
   queued/running arms; `submit_gate` records the Kaggle ref at submit time.
+
+## 2026-10-02 (night) — Label transplants are invisible on LB at their effective weight; public d4-blend = 0.946
+- **Evidence:** three transplants all 0.944 vs base 0.945: fused RadImageNet heads (inside calibrator), CoAt +0.30,
+  fine-tuned DINO β0.3 after the calibrator (holdout-29 pooled 0.806 → 0.823). After CoAt +0.15 the transformer branch
+  holds only ~0.10–0.25 of the final per-finding weight, so a β0.3 component inside it is ~0.03–0.08 effective —
+  below what a 3-decimal LB resolves. Public `pjmathematician/rsna-knee-d4-blend` = **0.946**: our exact D4 base +
+  `_RAD_EXCLUDE=("Baker's",)` + a private "student fleet" leg (S_dist/S_coat/S_cnxl) rank-blended at **w=0.45 on the
+  final submission** (assets are private → unusable in a fork). Other public: s75-w50 0.945, versia-5 0.943,
+  dinosaur-v5 0.942/0.943.
+- **Decision:** stop inner-branch transplants (no A5 transplant). LB moves come from a *diverse* family blended at
+  the final level with real weight. Next probes on top of coat-up15-b4: (1) `_RAD_EXCLUDE` Fracture tweak (free);
+  (2) final-level blend of our strongest independent family at w≈0.3–0.45 (needs a family whose rank-corr vs the
+  stack is low and whose LB alone is not far below — our own CoAt alone was 0.920, too weak at 0.45).
