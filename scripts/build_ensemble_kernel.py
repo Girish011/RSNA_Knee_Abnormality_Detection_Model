@@ -280,7 +280,12 @@ _dx_keep = Path('/kaggle/working/_public_dino_stage.csv')
 _dx_out = Path('/kaggle/working/_ours_dino_stage.csv')
 _dx_sh.copy(_dx_stage, _dx_keep)
 _dx_public_count = _DINOV2_MATCHED_MEMBERS
+_dx_elapsed = _ens_t.time() - _ENS_START
 try:
+    # Our pass costs about what the public DINO phase just cost (same decode + 20 members). Only run it when
+    # that phase was quick, so a heavy hidden test set cannot push the notebook past the 9 h limit.
+    if _dx_elapsed > __MAX_S__:
+        raise TimeoutError(f'public DINO phase ended at {_dx_elapsed / 60:.0f} min > __MAX_S__ s budget; skipping ours')
     _dx_roots = [Path('/kaggle/input/datasets/__DS__'), Path('/kaggle/input/__SLUG__')]
     _dx_root = next(r for r in _dx_roots if (r / 'manifest.json').is_file())
     _DINOV2_MATCHED_MEMBERS = 0
@@ -321,13 +326,17 @@ else:
 """
 
 
+DINO_EXTRA_MAX_S = 90 * 60  # run our DINO pass only if the public DINO phase ended within this
+
+
 def add_dino_extra(nb: dict, ds: str, beta: float) -> tuple[dict, list[str]]:
     """Our fine-tuned DINO members run right after the public DINO phase (cell 17, globals untouched) into a
     side file, then blend at ``beta`` AFTER the RadImageNet calibrator (cell 25), so the calibrator keeps its
     public inputs (PLAN_TO_TOP 2026-10-02 12:35 rule)."""
     nb = copy.deepcopy(nb)
     slug = ds.split("/", 1)[1]
-    run = code_cell(DINO_EXTRA_RUN.replace("__DS__", ds).replace("__SLUG__", slug))
+    run = code_cell(DINO_EXTRA_RUN.replace("__DS__", ds).replace("__SLUG__", slug)
+                    .replace("__MAX_S__", str(DINO_EXTRA_MAX_S)))
     blend = code_cell(DINO_EXTRA_BLEND.replace("__BETA__", repr(float(beta))))
     out, n_run, n_blend = [], 0, 0
     for c in nb["cells"]:
