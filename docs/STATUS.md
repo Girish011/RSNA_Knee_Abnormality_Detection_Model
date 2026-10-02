@@ -38,6 +38,7 @@ Last updated: 2026-10-02 (~12:00 IST). Plan: docs/PLAN_TO_TOP.md (results log + 
 Only submit candidates expected to beat 0.944 (or explicit learning probes). Gate ≤5/day.
 
 ## Next 3 actions
-1. coat30 = 0.944 = coat15-radfused: no gain past +0.15; base stays coat-up15-b4 (0.945), no coat45 probe.
-2. DINO ft output → eval_dino_ft gate → upload weights dataset → candidate `coat15-dinoft` (base + --dino-weights).
-3. A5: trainer not public (`mattiaangeli` has none) → warm-start fine-tune built around the stack's A5 inference code.
+1. Builder `--rad-extra β`: our fused heads blended AFTER the cell-25 calibrator (public heads keep feeding it);
+   probe on top of coat-up15-b4 (best 0.945). See PLAN_TO_TOP.md results log 2026-10-02 12:35.
+2. DINO fine-tune kernel (PLAN_TO_TOP.md design), wired outside the calibrator; gate on holdout-29 pooled AUC.
+3. Per-finding CoAt shift (only lever that has moved LB): e.g. +0.15 where CoAt ≫ transformer on experts.

@@ -5,7 +5,7 @@ Source of truth: `docs/STATUS.md` (wins on conflicts), `docs/PLAN_TO_TOP.md` (st
 
 ## Where we are
 - **Best LB 0.945** (56754655 `coat-up15-b4`: public D4 stack + soupbestof4 in v5 slot + CoAt-branch weight +0.15).
-  Pending: 56760305 `coat15-radfused` (+ our fused-label RadImageNet heads); `coat30-radfused` probe auto-submits ~05:30 IST.
+  coat15-radfused / coat30-radfused = 0.944: fused heads are better on clean holdout-29 but were swapped INSIDE the stack's fitted calibrator → next: blend them AFTER the calibrator (PLAN_TO_TOP.md log 2026-10-02 12:35).
 - Strategy (PLAN_TO_TOP.md): cross-architecture distillation — retrain/fine-tune the weak public families (RadImageNet,
   DINO, A5) on our fused labels (expert agreement 0.946 vs report 0.883); rebalance toward CoAt; grand soup; finals Oct 16.
 - Proven so far: fused-label RadImageNet heads beat upstream (E13 +0.017, main +0.005 gold OOF); CoAt weight +0.15 → +0.001 LB.
@@ -36,7 +36,7 @@ Read docs/HANDOFF.md, docs/STATUS.md, docs/PLAN_TO_TOP.md and the 2026-10-01 ent
 
 Goal: climb the Kaggle LB toward the top (best 0.945 now; aim 0.950+, then the 0.955-0.961 band); lock finals by 2026-10-16. You (Claude) own architecture decisions. Strategy = cross-architecture distillation: fine-tune the weak public stack families (RadImageNet done, DINO next, then A5) on our fused labels, rebalance toward CoAt, grand soup.
 
-First: record the scores of 56760305 (coat15-radfused) and the coat30-radfused probe (submit_gate.py ledger / record), keep the better as base. Then build and run the DINO warm-start fine-tune kernel exactly as designed in PLAN_TO_TOP.md "Next build"; gate on gold OOF > 0.8425 before wiring.
+First: read PLAN_TO_TOP.md results log 2026-10-02 12:35 (calibrator finding). Build `--rad-extra` (our fused RadImageNet heads blended AFTER the cell-25 calibrator) and probe it on top of coat-up15-b4 (best 0.945). Then the DINO warm-start fine-tune kernel (PLAN_TO_TOP.md design), wired outside the calibrator, gated on holdout-29 pooled AUC.
 
 Rules: submit only candidates expected to beat the current best (learning probes OK); gate ≤5/day via scripts/submit_gate.py. Strategist is propose-only for GPU. RunPod balance ~$4 — ask before spending beyond it; you cannot terminate pods. Edit member state only via members.request_op. After editing agent code restart the loop (launchctl kickstart -k gui/$(id -u)/com.rsna.agentloop). Give me a handoff prompt at ~80% context.
 ```

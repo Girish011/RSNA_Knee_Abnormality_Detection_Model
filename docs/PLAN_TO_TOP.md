@@ -77,3 +77,14 @@ The public stack gives ~40% of its weight to the two weakest families, and every
 - Wire: stack cell 15 (`SHARED_DINO_PREFIX_SHA256`, 20/20 fingerprint gate, manifest/dataset path) — frozen prefix
   (first 6 blocks) is unchanged by fine-tuning, so the prefix SHA should still match.
 - Then the same recipe for A5 (`mattiaangeli/knee-mri-fold-weights` m_f0..4; trainer not yet located).
+- 2026-10-02 12:35 — **LB: coat15-radfused 0.944, coat30-radfused 0.944** (best stays 0.945 coat-up15-b4).
+  Clean check (pooled AUC on holdout-29, never used by the fusion): fused heads ARE better — E13 0.8185 → 0.8400,
+  main 0.8128 → 0.8478 (worse on dev-29, so no fusion leak). **Cause found:** stack cell 25 feeds a fitted linear
+  calibrator (`_RAD_CAL_PAYLOAD`) with baseline_rank, reference_rank, second_rank and their differences, fitted to the
+  PUBLIC heads (and public DINO base); on gated findings it supplies 40% of the value. Swapping inputs mis-calibrates it.
+- **Rule from now on:** transplanted components enter OUTSIDE the calibrator. Keep the public heads/DINO feeding the
+  calibrator unchanged; blend our component's rank after `final` (cell 25) or at the branch level, with weight β.
+  Gate every component on pooled AUC over holdout-29 (not all-58: fused labels used dev-29).
+- Next: (1) builder patch `--rad-extra β`: compute our heads' ranks from the same encoded features, blend into `final`
+  after calibration; LB probe on top of coat-up15-b4. (2) DINO fine-tune kernel (design above), same outside-calibrator
+  wiring, gate on holdout-29. (3) per-finding coat shift (the one lever that has moved LB).
