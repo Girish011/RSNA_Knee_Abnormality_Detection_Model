@@ -136,3 +136,10 @@ The 0.01 gap is teams' own models — public-stack tweaking cannot close it. Les
   Pods: `launcher.launch(..., corpus="dense80", trainer="family_a.py")` (run_job.sh `TRAINER`). Tests `tests/test_family_a.py`.
 - Rulers: `scripts/family_a_rulers.py --fa '<result dirs>'`. CoAt 5-fold baseline: holdout-29 macro 0.943 / weak5 0.912
   (saturated: LatOA 1.000 → weak ruler); OOF weak5 vs pilk 0.887, vs dread 0.920. (b) is the main ruler.
+- 2026-10-03 — **fa-f0-v2 (fold 0, 10 ep, A40, $1.1) FAILS the rulers.** Weak5: holdout-29 0.892 vs CoAt 0.912; OOF vs
+  pilk 0.842 vs 0.884, vs dread 0.875 vs 0.923; rank blend w0.3 LOWERS CoAt (pilk 0.884→0.878); rank-corr vs CoAt
+  0.85–0.96 (not diverse). Its fused-label OOF looked great (weak5 0.937 vs CoAt 0.911) — **misleading**: fused@0.5 keeps
+  only clear-cut positives (ACL prev 0.14 vs pilk 0.29) and on Syn/Contusion/Effusion the fused label is dominated by the
+  old image model (Syn prev 0.26 vs report 0.12), which FA reproduced (0.98) = circular. **Rule: never judge a
+  fused-label-trained model on fused labels; only report labels + holdout-29.** Results `outputs/runpod_results/fa-f0-v2`.
+- Family B running (`fb-f0-v1`): fastMRI+ heatmap pretraining of the same encoder → identical fold-0 fine-tune = clean A/B.

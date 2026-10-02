@@ -37,7 +37,8 @@ Last updated: 2026-10-02 (~23:30 IST). Plan: docs/PLAN_TO_TOP.md (results log + 
 Only submit candidates expected to beat 0.944 (or explicit learning probes). Gate ≤5/day.
 
 ## Family A (own model, 2026-10-03)
-- `runpod/family_a.py` + rulers `scripts/family_a_rulers.py` built; fold-0 run `fa-f0-v1` (dense80, 10 ep) launched on RunPod.
+- `runpod/family_a.py` + rulers built. Fold-0 `fa-f0-v2` FAILED rulers (weak5 vs pilk 0.842 vs CoAt 0.884; blend lowers). Fused-label AUC is not a ruler.
+- Family B (`runpod/fastmri_pretrain.py`, fastMRI+ boxes → encoder init) A/B running on pod qvggyecacou7yb (`fb-f0-v1`).
 - 56779149 score not yet recorded (Kaggle CLI call was blocked in-session; user to run `submit_gate.py record`).
 
 ## Next 3 actions
