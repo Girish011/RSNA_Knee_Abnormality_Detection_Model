@@ -75,9 +75,10 @@ def test_extract_pretrain_and_init(tmp_path):
 
 
 def test_links_never_in_bundle_or_logs(monkeypatch, capsys):
-    monkeypatch.setenv("FASTMRI_LINKS", "https://secret.example/knee_singlecoil_val.tar.xz?Signature=abc\n"
-                       "https://secret.example/knee_DICOMs_batch1.tar?Signature=abc\n")
-    assert [fp._name(u) for u in fp._links()] == ["knee_singlecoil_val.tar.xz"]
+    monkeypatch.setenv("FASTMRI_LINKS", "knee_singlecoil_train.tar.xz: https://secret.example/knee_singlecoil_train.tar.xz?Signature=a\n\n"
+                       "knee_singlecoil_val.tar.xz https://secret.example/knee_singlecoil_val.tar.xz?Signature=abc\n"
+                       'curl -C - "https://secret.example/knee_DICOMs_batch1.tar?Signature=abc" --output x\n')
+    assert [fp._name(u) for u in fp._links()] == ["knee_singlecoil_train.tar.xz", "knee_singlecoil_val.tar.xz"]
     with pytest.raises(SystemExit):
         fp.download("https://127.0.0.1:9/knee_singlecoil_val.tar.xz?Signature=abc", "/tmp/_fm_x", tries=1)
     assert "Signature" not in capsys.readouterr().out

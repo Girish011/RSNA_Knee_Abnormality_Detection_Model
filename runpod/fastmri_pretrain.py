@@ -67,7 +67,8 @@ def _find(name):
 # ------------------------------------------------------------------ stage 1: prep
 def _links() -> list[str]:
     raw = os.environ.get("FASTMRI_LINKS", "")
-    links = [s.strip() for s in raw.splitlines() if s.strip().startswith("http")]
+    import re
+    links = re.findall(r"https?://[^\s\"'<>]+", raw)        # any line format ("name: url", curl ..., bare)
     links = [u for u in links if _name(u).startswith("knee_singlecoil_")]   # DICOM batches: separate job
     if not links:
         raise SystemExit("FASTMRI_LINKS env missing (links are never stored in the bundle)")
