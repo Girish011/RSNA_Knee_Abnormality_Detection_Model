@@ -1,6 +1,6 @@
 # STATUS
 
-Last updated: 2026-10-02 (~12:00 IST). Plan: docs/PLAN_TO_TOP.md (results log + next build).
+Last updated: 2026-10-02 (~15:30 IST). Plan: docs/PLAN_TO_TOP.md (results log + next build).
 
 ## Leaderboard
 | ref | kernel | public |
@@ -23,10 +23,7 @@ Last updated: 2026-10-02 (~12:00 IST). Plan: docs/PLAN_TO_TOP.md (results log + 
 - Weak findings everywhere: Lateral Meniscus, Lateral OA, PF OA, Synovitis, Contusion.
 
 ## Live
-- **DINO warm-start fine-tune running** (`girishbose/fork-dino-ft-fused` v1, pushed ~11:25 IST, T4x2): 20 public
-  members x 3 ep at public LR/5 on fused labels, paired holdout OOF. Builder `scripts/build_dino_ft_kernel.py`;
-  gate `scripts/eval_dino_ft.py <ft_oof.npz> --public oof.npz`; wire `build_ensemble_kernel.py --dino-weights
-  girishbose/<dataset>` (after uploading /kaggle/working/weights as a dataset). Prefix SHA verified = stack pin.
+- DINO fine-tune finished (3.3 h free T4x2, 20/20, pixel corr 0.998). Builder `scripts/build_dino_ft_kernel.py`, gate `scripts/eval_dino_ft.py`.
 - Fused RadImageNet heads: gold OOF +0.017 (E13) but LB 0.944 vs 0.945 → **gold-58 gains do not transfer**.
   Gold-58 is contaminated for models trained on our labels (bestof selection + fusion fit on experts): our 5-fold
   CoAt alone scores 0.931 on gold-58 but our own-weights LB was 0.920. LB probes are the judge.
@@ -40,5 +37,8 @@ Only submit candidates expected to beat 0.944 (or explicit learning probes). Gat
 ## Next 3 actions
 1. Builder `--rad-extra β`: our fused heads blended AFTER the cell-25 calibrator (public heads keep feeding it);
    probe on top of coat-up15-b4 (best 0.945). See PLAN_TO_TOP.md results log 2026-10-02 12:35.
-2. DINO fine-tune kernel (PLAN_TO_TOP.md design), wired outside the calibrator; gate on holdout-29 pooled AUC.
+2. DINO fine-tune DONE + gated: holdout-29 pooled 0.8057 → 0.8228 (dev-29 0.8181 → 0.8371; all-58 macro 0.839 → 0.854).
+   Weights `girishbose/rsna-knee-dino-ft-fused`. **`coat15-dinox30` running** (`--dino-extra ds:0.3`: our 20 members run
+   after the public DINO phase into a side file, blended at β=0.3 AFTER the cell-25 calibrator) → check log, then submit.
+   `coat15-dinoft` (inside-calibrator swap) is a reference run only — do not submit.
 3. Per-finding CoAt shift (only lever that has moved LB): e.g. +0.15 where CoAt ≫ transformer on experts.
