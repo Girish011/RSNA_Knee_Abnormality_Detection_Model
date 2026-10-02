@@ -36,6 +36,10 @@ Last updated: 2026-10-02 (~23:30 IST). Plan: docs/PLAN_TO_TOP.md (results log + 
 ## Submission policy
 Only submit candidates expected to beat 0.944 (or explicit learning probes). Gate ≤5/day.
 
+## Family A (own model, 2026-10-03)
+- `runpod/family_a.py` + rulers `scripts/family_a_rulers.py` built; fold-0 run `fa-f0-v1` (dense80, 10 ep) launched on RunPod.
+- 56779149 score not yet recorded (Kaggle CLI call was blocked in-session; user to run `submit_gate.py record`).
+
 ## Next 3 actions
 1. Record 56779149 (coat15-radexfx, LEARNING: Fracture into the Rad blend as in public d4-blend 0.946).
 2. **Own-model track (PLAN_TO_TOP 2026-10-02 night):** Family A weak-five specialists on dense80 (RunPod, ~$20), final-level blend.

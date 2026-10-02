@@ -105,26 +105,33 @@ ls -la /workspace/input/*/
 cp "$B/train.csv" "$OUT/train.csv"
 
 status "smoke"
-mkdir -p "$OUT/smoke" && cp "$B/train_knee.py" "$OUT/smoke/"
+# TRAINER: train_knee.py (CoAt members, default) or family_a.py (region-aware specialists).
+TRAINER="${TRAINER:-train_knee.py}"
+mkdir -p "$OUT/smoke" && cp "$B/$TRAINER" "$OUT/smoke/"
 first_labels=$(head -1 "$B/arms.txt" | cut -d'|' -f2)
-python "$OUT/smoke/train_knee.py" --smoke --arch coatnet_rmlp_2_rw_384.sw_in12k_ft_in1k --res 384 \
-  --norm imagenet --grad_ckpt --tag smoke --labels "$B/$first_labels" \
+if [ "$TRAINER" = train_knee.py ]; then
+  SMOKE_ARGS="--arch coatnet_rmlp_2_rw_384.sw_in12k_ft_in1k --res 384 --norm imagenet"
+else
+  SMOKE_ARGS="--workers 4"
+fi
+# shellcheck disable=SC2086
+python "$OUT/smoke/$TRAINER" --smoke $SMOKE_ARGS --grad_ckpt --tag smoke --labels "$B/$first_labels" \
   > "$OUT/smoke/train.log" 2>&1 || { tail -40 "$OUT/smoke/train.log"; finish "smoke failed"; }
 tail -5 "$OUT/smoke/train.log"
 
 while IFS='|' read -r tag labels extra; do
   [ -z "$tag" ] && continue
   status "training $tag"
-  mkdir -p "$OUT/$tag" && cp "$B/train_knee.py" "$OUT/$tag/"
+  mkdir -p "$OUT/$tag" && cp "$B/$TRAINER" "$OUT/$tag/"
   # shellcheck disable=SC2086
-  if ! python "$OUT/$tag/train_knee.py" --labels "$B/$labels" --tag "$tag" $extra \
+  if ! python "$OUT/$tag/$TRAINER" --labels "$B/$labels" --tag "$tag" $extra \
     > "$OUT/$tag/train.log" 2>&1; then
     # Host limits (small /dev/shm → DataLoader "Bus error"; mmap faults) killed arms on A40 hosts.
     echo "arm $tag FAILED; retrying once with --workers 2"
     mv "$OUT/$tag/train.log" "$OUT/$tag/train_try1.log"
     extra2=$(echo "$extra" | sed -E 's/--workers [0-9]+/--workers 2/')
     # shellcheck disable=SC2086
-    python "$OUT/$tag/train_knee.py" --labels "$B/$labels" --tag "$tag" $extra2 \
+    python "$OUT/$tag/$TRAINER" --labels "$B/$labels" --tag "$tag" $extra2 \
       > "$OUT/$tag/train.log" 2>&1 || echo "arm $tag FAILED twice (continuing)"
   fi
   tail -20 "$OUT/$tag/train.log"

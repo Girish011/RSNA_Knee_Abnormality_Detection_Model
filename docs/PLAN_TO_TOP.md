@@ -125,3 +125,14 @@ The 0.01 gap is teams' own models — public-stack tweaking cannot close it. Les
 | Oct 6–9 | Family A 5-fold × 2 seeds; stack inference cell; LB probe at final level | probe |
 | Oct 8–14 | Family B (fastMRI+) pretrain → A coronal init; iterate on weak five | best |
 | Oct 15–20 | grand blend (stack + A + soups), finals A/B | finals |
+
+### Family A — build log
+- 2026-10-03 — Built `runpod/family_a.py` (RegionMIL): ConvNeXt-S in22k shared tile encoder; tiles = 3-slot 2.5D windows,
+  Sag/Ax full 320 px, coronal split into two overlapping halves upsampled ×1.5 (384×288); tokens + series/half and
+  slice-position embeddings → 2-layer transformer mix → 12 finding queries with routing masks (PF OA ← Ax+Sag,
+  Syn/Eff/Baker ← Ax+Sag, menisci/OA ← Cor+Sag, Contusion ← fluid series). Consistent 3D mirror aug (cor/ax flip +
+  sagittal order reversal). Folds `folds_nonexpert_5.json` (same as CoAt f-7cdb6e8357), fused labels
+  certainty-weighted, weak five ×2 loss, dev-29 at w3, holdout-29 never trained. No epoch selection: members = EMA + last.
+  Pods: `launcher.launch(..., corpus="dense80", trainer="family_a.py")` (run_job.sh `TRAINER`). Tests `tests/test_family_a.py`.
+- Rulers: `scripts/family_a_rulers.py --fa '<result dirs>'`. CoAt 5-fold baseline: holdout-29 macro 0.943 / weak5 0.912
+  (saturated: LatOA 1.000 → weak ruler); OOF weak5 vs pilk 0.887, vs dread 0.920. (b) is the main ruler.

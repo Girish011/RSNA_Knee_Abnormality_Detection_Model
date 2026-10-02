@@ -59,6 +59,7 @@ def build_bundle(job: str, arms: list[Arm], inits: list[tuple[str, str, str]] | 
     shutil.rmtree(d, ignore_errors=True)
     d.mkdir(parents=True)
     shutil.copy(REPO / "runpod" / "train_knee.py", d)
+    shutil.copy(REPO / "runpod" / "family_a.py", d)
     shutil.copy(REPO / "runpod" / "run_job.sh", d)
     shutil.copy(REPO / "runpod" / "fetch_dense80.py", d)
     for f in PROTOCOL_FILES:
@@ -90,7 +91,7 @@ def upload_bundle(d: Path) -> str:
 
 def launch(job: str, arms: list[Arm], hours: float, *, capacity_rounds: int = 8,
            corpus: str = "raptor44", inits: list[tuple[str, str, str]] | None = None,
-           gpu_class: str | None = None) -> dict:
+           gpu_class: str | None = None, trainer: str = "train_knee.py") -> dict:
     """Upload the bundle and start a pod. Returns {pod, costPerHr, monitor, bundle, result}.
 
     Retries across community 3090 (preferred) → 4090 → secure 4090, with backoff, until a
@@ -113,7 +114,7 @@ def launch(job: str, arms: list[Arm], hours: float, *, capacity_rounds: int = 8,
         "env": {"KAGGLE_API_TOKEN": Path("~/.kaggle/access_token").expanduser().read_text().strip(),
                 "RUNPOD_API_KEY": runpod.secret("RUNPOD_API_KEY"),
                 "RESULT_DATASET": result, "RESULT_TITLE": f"rsna-knee-rp-{job}-out",
-                "CORPUS": corpus},
+                "CORPUS": corpus, "TRAINER": trainer},
         "dockerStartCmd": ["bash", "-c", BOOT.replace("{bundle}", bundle)],
     }
     # Order = reliability first, then speed/capacity. Secure last (pip hangs on secure hosts).
