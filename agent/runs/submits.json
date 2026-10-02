@@ -256,5 +256,31 @@
    "tails": {}
   },
   "ts": 1790899415.107061
+ },
+ {
+  "date": "2026-10-02T09:48:50.814382+00:00",
+  "kernel": "girishbose/coat15-dinox30",
+  "version": 2,
+  "fingerprint": "6adc80942a1bf7f1",
+  "why": "best 0.945 (coat-up15-b4) + fine-tuned DINO (fused labels; holdout-29 pooled 0.806->0.823) blended beta=0.3 AFTER the calibrator",
+  "ref": 56771185,
+  "public_lb": null,
+  "ensemble": {
+   "base": "rsna-knee-fast-2xt4-inference.ipynb",
+   "members": [],
+   "weights": [],
+   "w": 0.0,
+   "swap_v5": "soupbestof4",
+   "swap_arms": {},
+   "coat_shift": 0.15,
+   "rad_heads": {},
+   "dino": null,
+   "dino_extra": [
+    "girishbose/rsna-knee-dino-ft-fused",
+    0.3
+   ],
+   "tails": {}
+  },
+  "ts": 1790934531.974018
  }
 ]
