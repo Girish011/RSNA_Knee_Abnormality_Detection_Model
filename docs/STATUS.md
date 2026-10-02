@@ -37,10 +37,6 @@ Last updated: 2026-10-02 (~23:30 IST). Plan: docs/PLAN_TO_TOP.md (results log + 
 Only submit candidates expected to beat 0.944 (or explicit learning probes). Gate ≤5/day.
 
 ## Next 3 actions
-1. Builder `--rad-extra β`: our fused heads blended AFTER the cell-25 calibrator (public heads keep feeding it);
-   probe on top of coat-up15-b4 (best 0.945). See PLAN_TO_TOP.md results log 2026-10-02 12:35.
-2. DINO fine-tune DONE + gated: holdout-29 pooled 0.8057 → 0.8228 (dev-29 0.8181 → 0.8371; all-58 macro 0.839 → 0.854).
-   Weights `girishbose/rsna-knee-dino-ft-fused`. **`coat15-dinox30` submitted (56771185)** (`--dino-extra ds:0.3`: our 20 members run
-   after the public DINO phase into a side file, blended at β=0.3 AFTER the cell-25 calibrator) (v2 log verified: 20/20 public + 20/20 ours, blend after calibrator; >90 min runtime guard).
-   `coat15-dinoft` (inside-calibrator swap) is a reference run only — do not submit.
-3. Per-finding CoAt shift (only lever that has moved LB): e.g. +0.15 where CoAt ≫ transformer on experts.
+1. Record 56779149 (coat15-radexfx, LEARNING: Fracture into the Rad blend as in public d4-blend 0.946).
+2. **Own-model track (PLAN_TO_TOP 2026-10-02 night):** Family A weak-five specialists on dense80 (RunPod, ~$20), final-level blend.
+3. User registers for fastMRI (docs/EXTERNAL_DATA.md) → Family B pretraining when links land in ~/.rsna_ext/fastmri_links.txt.

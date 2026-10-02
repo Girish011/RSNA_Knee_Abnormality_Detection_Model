@@ -32,11 +32,11 @@ Source of truth: `docs/STATUS.md` (wins on conflicts), `docs/PLAN_TO_TOP.md` (st
 ## New-chat opener (copy/paste)
 
 ```
-Read docs/HANDOFF.md, docs/STATUS.md, docs/PLAN_TO_TOP.md and the 2026-10-01 entries of docs/DECISIONS.md. Repo files beat chat; STATUS wins on conflicts. Branch agent/autorun.
+Read docs/HANDOFF.md, docs/STATUS.md, docs/PLAN_TO_TOP.md (esp. "2026-10-02 night — PIVOT: own-model track"), docs/EXTERNAL_DATA.md and the 2026-10-02 entries of docs/DECISIONS.md. Repo files beat chat; STATUS wins on conflicts. Branch agent/autorun.
 
-Goal: climb the Kaggle LB toward the top (best 0.945 now; aim 0.950+, then the 0.955-0.961 band); lock finals by 2026-10-16. You (Claude) own architecture decisions. Strategy = cross-architecture distillation: fine-tune the weak public stack families (RadImageNet done, DINO next, then A5) on our fused labels, rebalance toward CoAt, grand soup.
+Goal: #1 on the Kaggle LB (board: #1 0.961, #10 0.958; us 0.945, best public notebook 0.946). We go all in on OUR OWN models for the weak five findings (Lateral Meniscus, Lateral OA, PF OA, Synovitis, Contusion): Family A = region-aware 2.5D specialists on our dense80 cache (RunPod), blended at the FINAL level with real weight (0.3-0.45); Family B = fastMRI+ pretraining once the user's NYU links are in ~/.rsna_ext/fastmri_links.txt (never print/commit them). You (Claude) own architecture. Public-stack inner transplants are closed (invisible at their effective weight).
 
-First: read PLAN_TO_TOP.md results log 2026-10-02 12:35 (calibrator finding). Build `--rad-extra` (our fused RadImageNet heads blended AFTER the cell-25 calibrator) and probe it on top of coat-up15-b4 (best 0.945). Then the DINO warm-start fine-tune kernel (PLAN_TO_TOP.md design), wired outside the calibrator, gated on holdout-29 pooled AUC.
+First: record the score of 56779149 (coat15-radexfx probe) via scripts/submit_gate.py record. Then build Family A: data module over dense80 (runpod/fetch_dense80.py), model, 1-fold smoke on RunPod, rulers (holdout-29 pooled AUC + 5-fold OOF vs report labels + rank-corr vs stack).
 
-Rules: submit only candidates expected to beat the current best (learning probes OK); gate ≤5/day via scripts/submit_gate.py. Strategist is propose-only for GPU. RunPod balance ~$4 — ask before spending beyond it; you cannot terminate pods. Edit member state only via members.request_op. After editing agent code restart the loop (launchctl kickstart -k gui/$(id -u)/com.rsna.agentloop). Give me a handoff prompt at ~80% context.
+Rules: LB submits only for candidates expected to beat the best (learning probes OK), gate <=5/day via scripts/submit_gate.py. RunPod: ~$20 at Claude's discretion for plan training; ask before more; user terminates pods. Strategist paused (policy.json). Edit member state only via members.request_op; restart the loop after agent-code edits. Give a handoff prompt at ~80% context.
 ```

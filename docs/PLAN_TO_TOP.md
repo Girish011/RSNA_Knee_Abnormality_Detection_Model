@@ -92,3 +92,36 @@ The public stack gives ~40% of its weight to the two weakest families, and every
 - Next: (1) builder patch `--rad-extra β`: compute our heads' ranks from the same encoded features, blend into `final`
   after calibration; LB probe on top of coat-up15-b4. (2) DINO fine-tune kernel (design above), same outside-calibrator
   wiring, gate on holdout-29. (3) per-finding coat shift (the one lever that has moved LB).
+
+## 2026-10-02 night — PIVOT: own-model track (user: go all in for #1)
+LB board: #1 0.961, #10 0.958, #49 0.954; best public notebook 0.946 (`pjmathematician/rsna-knee-d4-blend`); us 0.945.
+The 0.01 gap is teams' own models — public-stack tweaking cannot close it. Lessons that shape the build:
+1. **Effective weight decides LB visibility.** After CoAt +0.15 the transformer branch holds ~0.10–0.25 of the final
+   weight; our DINO at β0.3 inside it was ~0.03–0.08 → invisible (0.944 ×3). d4-blend moved LB with a *diverse* family
+   at **w=0.45 on the final submission**. Single-finding tails are invisible (1/12 of a per-finding delta).
+   → New families enter at the FINAL level, on all findings they help (≥5), with w 0.3–0.45.
+2. **Ruler.** No clean offline ruler exists for stack-level changes (public components trained on all train studies,
+   incl. gold). For OUR families: (a) pooled AUC on holdout-29 (never used by label fusion), (b) 5-fold OOF AUC vs
+   report-derived labels (`pilk`/`dread`, independent of our fusion) on ~4,349 studies, (c) rank-correlation vs the
+   stack (lower = more blend value). A family ships to LB only if (a) and (b) both beat our CoAt soup on the weak five.
+3. **Inputs we already own:** dense80 cache (80 slots × 336 px, 4,407 train; Sag fluid 22 / Sag non-fluid 18 / Cor fluid
+   15 / Cor other 10 / Ax 15; test-time builder = public widedense code) on Kaggle kernel outputs
+   `girishbose/rsna-knee-dense80-s0..s3`, fetched to pods by `runpod/fetch_dense80.py`. Kaggle-side 12-slice 336 px
+   DINO decode (`build_dino_ft_kernel.py`) also works (33 GB memmap, 1 h decode).
+
+### Family A — weak-five specialists (RunPod, $20 budget, start now)
+- Region-aware 2.5D model on dense80: per finding, attend over the plane/sequence slots that show it (Lat Men/Lat OA:
+  Cor fluid + Sag fluid lateral half; PF OA: Ax + Sag; Synovitis/Effusion: Ax + Sag fluid; Contusion: all fluid);
+  crops at higher effective resolution (e.g. lateral/medial half of coronal at 448) instead of the whole 140 mm field.
+- Backbone different from CoAt for diversity (ConvNeXt-S / EfficientNetV2-S, ImageNet-21k), slice-attention MIL head.
+- 5-fold (md5(Report) folds), labels = fused (gold w 3), 2 seeds; rulers (a)(b)(c); then inference cell in the stack
+  using the dense80 test builder, blended at final level on the weak five (w 0.3–0.45).
+### Family B — fastMRI+ (when the user's NYU access arrives; docs/EXTERNAL_DATA.md)
+- 974 coronal PD/PDFS volumes, 16,168 boxes (meniscus tear, cartilage loss, contusion/edema, effusion, ACL, MCL, cysts).
+  Pretrain a localized meniscus/cartilage/edema detector → initialise Family A's coronal branch. Links file
+  `~/.rsna_ext/fastmri_links.txt` (never print / commit). Derived data private only.
+### Calendar (lock moves to ~Oct 20; official deadline Oct 22)
+| Oct 3–5 | Family A data module + model, 1-fold smoke on RunPod, rulers | — |
+| Oct 6–9 | Family A 5-fold × 2 seeds; stack inference cell; LB probe at final level | probe |
+| Oct 8–14 | Family B (fastMRI+) pretrain → A coronal init; iterate on weak five | best |
+| Oct 15–20 | grand blend (stack + A + soups), finals A/B | finals |
