@@ -234,7 +234,7 @@
   "fingerprint": "3f1e56170b471e79",
   "why": "LEARNING direction: coat +0.30 + fused RadImageNet heads (vs coat15-radfused)",
   "ref": 56761295,
-  "public_lb": null,
+  "public_lb": 0.944,
   "ensemble": {
    "base": "rsna-knee-fast-2xt4-inference.ipynb",
    "members": [],

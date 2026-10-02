@@ -14,7 +14,7 @@ Last updated: 2026-10-02 (~12:00 IST). Plan: docs/PLAN_TO_TOP.md (results log + 
 | 56754652 | LEARNING raptor-all-b4: soup4 in v5+v8+v10 | 0.944 |
 | **56754655** | **coat-up15-b4: soup4 swap + CoAt weight +0.15** | **0.945 (best)** |
 | 56760305 | coat15-radfused: + fused-label RadImageNet heads | 0.944 |
-| 56761295 | LEARNING coat30-radfused: CoAt +0.30 + fused heads | pending (6 h+) |
+| 56761295 | LEARNING coat30-radfused: CoAt +0.30 + fused heads | 0.944 |
 
 ## Best models (AUC on 58 experts)
 - soupbestof4 0.9365 (in LB 0.944); bestof_v1 k=8 members 0.9330; public v5 0.9256.
@@ -38,6 +38,6 @@ Last updated: 2026-10-02 (~12:00 IST). Plan: docs/PLAN_TO_TOP.md (results log + 
 Only submit candidates expected to beat 0.944 (or explicit learning probes). Gate ≤5/day.
 
 ## Next 3 actions
-1. coat30 score → keep the better coat shift (0.945 base = coat-up15-b4); if coat30 ≥ 0.946 probe coat45.
+1. coat30 = 0.944 = coat15-radfused: no gain past +0.15; base stays coat-up15-b4 (0.945), no coat45 probe.
 2. DINO ft output → eval_dino_ft gate → upload weights dataset → candidate `coat15-dinoft` (base + --dino-weights).
 3. A5: trainer not public (`mattiaangeli` has none) → warm-start fine-tune built around the stack's A5 inference code.
