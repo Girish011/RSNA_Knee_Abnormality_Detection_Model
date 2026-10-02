@@ -60,6 +60,8 @@ pip freeze | grep -E '^(torch|torchvision|numpy)==' > /tmp/pins.txt; cat /tmp/pi
 timeout 900 pip install --progress-bar off --timeout 20 --retries 2 --prefer-binary -c /tmp/pins.txt timm kaggle pyarrow scikit-learn pandas 2>&1 \
   | grep --line-buffered -E "^(Collecting|Successfully|ERROR)" || true
 python -c "import timm, sklearn, pyarrow, pandas; print('deps ok, timm', timm.__version__)" || finish "pip failed"
+# fastMRI (Family B) only: separate, non-fatal so a resolver clash can never break CoAt jobs.
+timeout 300 pip install --progress-bar off --prefer-binary -c /tmp/pins.txt h5py 2>&1 | tail -1 || true
 nvidia-smi --query-gpu=name,memory.total,driver_version --format=csv
 free -g | head -2; nproc
 gpu_ok=0
@@ -121,17 +123,20 @@ tail -5 "$OUT/smoke/train.log"
 
 while IFS='|' read -r tag labels extra; do
   [ -z "$tag" ] && continue
+  # Per-arm trainer override: extra args starting with "@script.py" run that script instead.
+  ARM_TRAINER="$TRAINER"
+  case "$extra" in @*) ARM_TRAINER="${extra%% *}"; ARM_TRAINER="${ARM_TRAINER#@}"; extra="${extra#* }";; esac
   status "training $tag"
-  mkdir -p "$OUT/$tag" && cp "$B/$TRAINER" "$OUT/$tag/"
+  mkdir -p "$OUT/$tag" && cp "$B/$ARM_TRAINER" "$OUT/$tag/"
   # shellcheck disable=SC2086
-  if ! python "$OUT/$tag/$TRAINER" --labels "$B/$labels" --tag "$tag" $extra \
+  if ! python "$OUT/$tag/$ARM_TRAINER" --labels "$B/$labels" --tag "$tag" $extra \
     > "$OUT/$tag/train.log" 2>&1; then
     # Host limits (small /dev/shm → DataLoader "Bus error"; mmap faults) killed arms on A40 hosts.
     echo "arm $tag FAILED; retrying once with --workers 2"
     mv "$OUT/$tag/train.log" "$OUT/$tag/train_try1.log"
     extra2=$(echo "$extra" | sed -E 's/--workers [0-9]+/--workers 2/')
     # shellcheck disable=SC2086
-    python "$OUT/$tag/$TRAINER" --labels "$B/$labels" --tag "$tag" $extra2 \
+    python "$OUT/$tag/$ARM_TRAINER" --labels "$B/$labels" --tag "$tag" $extra2 \
       > "$OUT/$tag/train.log" 2>&1 || echo "arm $tag FAILED twice (continuing)"
   fi
   tail -20 "$OUT/$tag/train.log"

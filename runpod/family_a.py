@@ -342,6 +342,8 @@ def main():
     ap.add_argument("--n_shards", type=int, default=4)
     ap.add_argument("--limit", type=int, default=0)
     ap.add_argument("--no_pretrained", action="store_true")
+    ap.add_argument("--init_encoder", default=None,
+                    help="raptor_fmri_*.pt from fastmri_pretrain.py: initialise the tile encoder (Family B)")
     ap.add_argument("--smoke", action="store_true")
     a = ap.parse_args()
     a.fold_file = a.fold_file or _find("folds_nonexpert_5.json")
@@ -369,7 +371,15 @@ def main():
     tl = DataLoader(tds, batch_size=a.bs, shuffle=True, drop_last=True, num_workers=a.workers,
                     collate_fn=collate, pin_memory=dev == "cuda", persistent_workers=a.workers > 0,
                     worker_init_fn=lambda w: np.random.seed((a.seed * 1000 + w + int(time.time())) % 2**31))
-    model = RegionMIL(a.arch, pretrained=not a.no_pretrained, grad_ckpt=a.grad_ckpt).to(dev)
+    model = RegionMIL(a.arch, pretrained=not a.no_pretrained, grad_ckpt=a.grad_ckpt)
+    if a.init_encoder:
+        ck = torch.load(a.init_encoder, map_location="cpu", weights_only=False)
+        assert ck.get("arch") == a.arch, f"encoder arch {ck.get('arch')} != {a.arch}"
+        miss, unex = model.backbone.load_state_dict(ck["backbone"], strict=False)
+        assert not miss, f"init_encoder missing {len(miss)} tensors"
+        print(f"[init] encoder from {os.path.basename(a.init_encoder)} (fastMRI ep {ck.get('epoch')}) | "
+              f"unexpected {len(unex)}", flush=True)
+    model = model.to(dev)
     bb = [p for n, p in model.named_parameters() if n.startswith("backbone.")]
     hd = [p for n, p in model.named_parameters() if not n.startswith("backbone.")]
     opt = torch.optim.AdamW([{"params": bb, "lr": a.bb_lr}, {"params": hd, "lr": a.head_lr}],
