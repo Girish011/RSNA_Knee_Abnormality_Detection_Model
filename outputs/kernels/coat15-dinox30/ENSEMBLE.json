@@ -1,0 +1,16 @@
+{
+ "base": "rsna-knee-fast-2xt4-inference.ipynb",
+ "members": [],
+ "weights": [],
+ "w": 0.0,
+ "swap_v5": "soupbestof4",
+ "swap_arms": {},
+ "coat_shift": 0.15,
+ "rad_heads": {},
+ "dino": null,
+ "dino_extra": [
+  "girishbose/rsna-knee-dino-ft-fused",
+  0.3
+ ],
+ "tails": {}
+}

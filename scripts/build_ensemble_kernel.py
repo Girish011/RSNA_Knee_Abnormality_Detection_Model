@@ -273,6 +273,76 @@ def swap_dino_weights(nb: dict, ds: str) -> tuple[dict, list[str]]:
     return nb, [ds]
 
 
+DINO_EXTRA_RUN = """# ==== OURS: fine-tuned DINO members, run OUTSIDE the calibrator (same stack inference path) ====
+import shutil as _dx_sh
+_dx_stage = Path('/kaggle/working/_pipeline_stage.csv')
+_dx_keep = Path('/kaggle/working/_public_dino_stage.csv')
+_dx_out = Path('/kaggle/working/_ours_dino_stage.csv')
+_dx_sh.copy(_dx_stage, _dx_keep)
+_dx_public_count = _DINOV2_MATCHED_MEMBERS
+try:
+    _dx_roots = [Path('/kaggle/input/datasets/__DS__'), Path('/kaggle/input/__SLUG__')]
+    _dx_root = next(r for r in _dx_roots if (r / 'manifest.json').is_file())
+    _DINOV2_MATCHED_MEMBERS = 0
+    rsna_phase('ours_dino', 'START')
+    infer_from_package(_dx_root, DEVS[0])
+    _v37_validate_submission('_pipeline_stage.csv', pd.read_csv(ROOT / 'test.csv'), 'ours dino')
+    _dx_sh.copy(_dx_stage, _dx_out)
+    print('[ours] fine-tuned DINO frontier written', _dx_out, flush=True)
+except Exception as _dx_e:
+    import traceback as _dx_tb; _dx_tb.print_exc()
+    print('[ours] fine-tuned DINO FAILED -> public stack unchanged:', repr(_dx_e), flush=True)
+    _dx_out.unlink(missing_ok=True)
+finally:
+    _dx_sh.copy(_dx_keep, _dx_stage)
+    _DINOV2_MATCHED_MEMBERS = _dx_public_count   # cell 29 asserts the public stage's 20
+    _speed_dino_templates.clear(); gc.collect()
+    rsna_phase('ours_dino', 'COMPLETE')
+"""
+
+DINO_EXTRA_BLEND = """# ==== OURS: blend fine-tuned DINO rank into the calibrated transformer branch (beta) ====
+import pandas as _dx_pd
+_dx_out = Path('/kaggle/working/_ours_dino_stage.csv')
+_dx_stage = Path('/kaggle/working/_pipeline_stage.csv')
+_DX_BETA = __BETA__
+if _dx_out.is_file():
+    _dx_b = _dx_pd.read_csv(_dx_stage, dtype={'StudyInstanceUID': str}).set_index('StudyInstanceUID')
+    _dx_o = _dx_pd.read_csv(_dx_out, dtype={'StudyInstanceUID': str}).set_index('StudyInstanceUID').reindex(_dx_b.index)
+    _dx_cols = [c for c in _dx_b.columns if c in _dx_o.columns]
+    if _dx_o[_dx_cols].isna().any().any():
+        print('[ours] DINO blend skipped: id mismatch', flush=True)
+    else:
+        _dx_b[_dx_cols] = ((1 - _DX_BETA) * _dx_b[_dx_cols].rank(pct=True)
+                           + _DX_BETA * _dx_o[_dx_cols].rank(pct=True)).rank(pct=True)
+        _dx_b.reset_index().to_csv(_dx_stage, index=False)
+        print(f'[ours] fine-tuned DINO blended at beta={_DX_BETA} into the calibrated transformer branch', flush=True)
+else:
+    print('[ours] no fine-tuned DINO output; transformer branch unchanged', flush=True)
+"""
+
+
+def add_dino_extra(nb: dict, ds: str, beta: float) -> tuple[dict, list[str]]:
+    """Our fine-tuned DINO members run right after the public DINO phase (cell 17, globals untouched) into a
+    side file, then blend at ``beta`` AFTER the RadImageNet calibrator (cell 25), so the calibrator keeps its
+    public inputs (PLAN_TO_TOP 2026-10-02 12:35 rule)."""
+    nb = copy.deepcopy(nb)
+    slug = ds.split("/", 1)[1]
+    run = code_cell(DINO_EXTRA_RUN.replace("__DS__", ds).replace("__SLUG__", slug))
+    blend = code_cell(DINO_EXTRA_BLEND.replace("__BETA__", repr(float(beta))))
+    out, n_run, n_blend = [], 0, 0
+    for c in nb["cells"]:
+        out.append(c)
+        t = _src(c)
+        if c["cell_type"] == "code" and "rsna_phase('dinov2', 'COMPLETE')" in t:
+            out.append(run); n_run += 1
+        if c["cell_type"] == "code" and "rsna_phase('radimagenet', 'COMPLETE')" in t:
+            out.append(blend); n_blend += 1
+    if (n_run, n_blend) != (1, 1):
+        raise SystemExit(f"dino-extra anchors drifted (run {n_run}, blend {n_blend})")
+    nb["cells"] = out
+    return nb, [ds]
+
+
 def shift_coat_weight(nb: dict, shift: float) -> dict:
     """Raise (or lower) the stack's per-finding CoAtNet-branch weight vs the transformer branch."""
     nb = copy.deepcopy(nb)
@@ -292,7 +362,8 @@ def shift_coat_weight(nb: dict, shift: float) -> dict:
 def build(name: str, member_ids: list[str], w: float, out_root: Path | None = None,
           swap: str | None = None, tails: list[tuple[list[str], list[str], float]] | None = None,
           arms: dict[str, str] | None = None, coat_shift: float = 0.0,
-          rad_heads: dict[str, tuple[str, str]] | None = None, dino: str | None = None) -> Path:
+          rad_heads: dict[str, tuple[str, str]] | None = None, dino: str | None = None,
+          dino_extra: tuple[str, float] | None = None) -> Path:
     """Global mode: every finding blends all ``member_ids`` at ``w``. Tail mode: each finding gets
     its own member subset and weight; findings with no tail keep the public stack's values."""
     if tails:
@@ -302,7 +373,7 @@ def build(name: str, member_ids: list[str], w: float, out_root: Path | None = No
         w = max(t[2] for t in tails)
     elif member_ids and w > 0:
         tails = [(TARGETS, member_ids, w)]
-    if not 0.0 <= w < 1.0 or (w == 0.0 and not (swap or arms or coat_shift or rad_heads or dino)):
+    if not 0.0 <= w < 1.0 or (w == 0.0 and not (swap or arms or coat_shift or rad_heads or dino or dino_extra)):
         raise SystemExit("--w must be in (0, 1), or 0 with --swap-v5/--swap-arm/--coat-shift")
     nb_path = next(BASE.glob("*.ipynb"))
     nb = json.loads(nb_path.read_text())
@@ -323,6 +394,9 @@ def build(name: str, member_ids: list[str], w: float, out_root: Path | None = No
     if dino:
         nb, dino_dss = swap_dino_weights(nb, dino)
         swap_dss += dino_dss
+    if dino_extra:
+        nb, dx_dss = add_dino_extra(nb, *dino_extra)
+        swap_dss += dx_dss
     members = resolve_members(member_ids) if w > 0 else []
     files = [f for _, f in members]
     if len(set(files)) != len(files):
@@ -353,7 +427,7 @@ def build(name: str, member_ids: list[str], w: float, out_root: Path | None = No
     (d / "kernel-metadata.json").write_text(json.dumps(meta2, indent=1))
     (d / "ENSEMBLE.json").write_text(json.dumps(
         {"base": nb_path.name, "members": member_ids if members else [], "weights": files, "w": w,
-         "swap_v5": swap, "swap_arms": arms or {}, "coat_shift": coat_shift, "rad_heads": rad_heads or {}, "dino": dino, "tails": {f: [[member_ids[j] for j in ix], tw] for f, (ix, tw) in tail_map.items()}},
+         "swap_v5": swap, "swap_arms": arms or {}, "coat_shift": coat_shift, "rad_heads": rad_heads or {}, "dino": dino, "dino_extra": list(dino_extra) if dino_extra else None, "tails": {f: [[member_ids[j] for j in ix], tw] for f, (ix, tw) in tail_map.items()}},
         indent=1))
     return d
 
@@ -376,6 +450,8 @@ def main() -> None:
                     help="our RadImageNet heads: 'e13=owner/dataset:sha256' or 'ref=owner/dataset:sha256'")
     ap.add_argument("--dino-weights", default=None,
                     help="our DINOv2 member package dataset 'owner/slug' (20 members + manifest.json)")
+    ap.add_argument("--dino-extra", default=None,
+                    help="'owner/slug:beta' - our DINO package blended AFTER the calibrator at weight beta")
     a = ap.parse_args()
     rad = {k: tuple(v.rsplit(":", 1)) for k, v in (x.split("=", 1) for x in a.rad_heads)}
     if bad := set(rad) - set(RAD_HEADS):
@@ -385,7 +461,8 @@ def main() -> None:
         raise SystemExit(f"--swap-arm keys must be in {sorted(ARM_FILES)}, got {sorted(bad)}")
     d = build(a.name, [m for m in a.members.split(",") if m], a.w, swap=a.swap_v5,
               tails=[parse_tail(t) for t in a.tail] or None, arms=arms or None, coat_shift=a.coat_shift,
-              rad_heads=rad or None, dino=a.dino_weights)
+              rad_heads=rad or None, dino=a.dino_weights,
+              dino_extra=(lambda d, b: (d, float(b)))(*a.dino_extra.rsplit(":", 1)) if a.dino_extra else None)
     print(f"built {d}\npush (user-approved): kaggle kernels push -p {d}")
 
 
