@@ -1,0 +1,8 @@
+{
+ "src": "pilkwang/rsna-knee-baseline-v1",
+ "labels": "labels_fused_full.csv",
+ "epochs": 3,
+ "lr": "public / 5",
+ "members": "pilkwang/rsna-knee-weights x20",
+ "gate": "gold OOF macro (58) > 0.8425 and > paired parent"
+}

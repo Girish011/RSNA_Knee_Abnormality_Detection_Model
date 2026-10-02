@@ -250,6 +250,29 @@ def swap_rad_heads(nb: dict, heads: dict[str, tuple[str, str]]) -> tuple[dict, l
     return nb, [ds for ds, _ in heads.values()]
 
 
+def swap_dino_weights(nb: dict, ds: str) -> tuple[dict, list[str]]:
+    """Point the stack's DINOv2 member package (20 x m_*.pt + manifest.json) at OUR dataset
+    (fork-dino-ft-fused output). The stack's own gates still apply: 20/20 fingerprints, shared
+    frozen-prefix SHA, five folds."""
+    nb = copy.deepcopy(nb)
+    slug = ds.split("/", 1)[1]
+    old = ("        Path('/kaggle/input/datasets/pilkwang/rsna-knee-weights'),\n"
+           "        Path('/kaggle/input/rsna-knee-weights'),\n")
+    new = (f"        Path('/kaggle/input/datasets/{ds}'),  # ours: fine-tuned DINO members\n"
+           f"        Path('/kaggle/input/{slug}'),\n")
+    n = 0
+    for c in nb["cells"]:
+        t = _src(c)
+        if "def find_weights(name='manifest.json'):" in t and t.count(old) == 1:
+            c["source"] = t.replace(old, new)
+            n += 1
+        else:
+            c["source"] = t
+    if n != 1:
+        raise SystemExit(f"dino weights anchor drifted ({n})")
+    return nb, [ds]
+
+
 def shift_coat_weight(nb: dict, shift: float) -> dict:
     """Raise (or lower) the stack's per-finding CoAtNet-branch weight vs the transformer branch."""
     nb = copy.deepcopy(nb)
@@ -269,7 +292,7 @@ def shift_coat_weight(nb: dict, shift: float) -> dict:
 def build(name: str, member_ids: list[str], w: float, out_root: Path | None = None,
           swap: str | None = None, tails: list[tuple[list[str], list[str], float]] | None = None,
           arms: dict[str, str] | None = None, coat_shift: float = 0.0,
-          rad_heads: dict[str, tuple[str, str]] | None = None) -> Path:
+          rad_heads: dict[str, tuple[str, str]] | None = None, dino: str | None = None) -> Path:
     """Global mode: every finding blends all ``member_ids`` at ``w``. Tail mode: each finding gets
     its own member subset and weight; findings with no tail keep the public stack's values."""
     if tails:
@@ -279,7 +302,7 @@ def build(name: str, member_ids: list[str], w: float, out_root: Path | None = No
         w = max(t[2] for t in tails)
     elif member_ids and w > 0:
         tails = [(TARGETS, member_ids, w)]
-    if not 0.0 <= w < 1.0 or (w == 0.0 and not (swap or arms or coat_shift or rad_heads)):
+    if not 0.0 <= w < 1.0 or (w == 0.0 and not (swap or arms or coat_shift or rad_heads or dino)):
         raise SystemExit("--w must be in (0, 1), or 0 with --swap-v5/--swap-arm/--coat-shift")
     nb_path = next(BASE.glob("*.ipynb"))
     nb = json.loads(nb_path.read_text())
@@ -297,6 +320,9 @@ def build(name: str, member_ids: list[str], w: float, out_root: Path | None = No
     if rad_heads:
         nb, rad_dss = swap_rad_heads(nb, rad_heads)
         swap_dss += rad_dss
+    if dino:
+        nb, dino_dss = swap_dino_weights(nb, dino)
+        swap_dss += dino_dss
     members = resolve_members(member_ids) if w > 0 else []
     files = [f for _, f in members]
     if len(set(files)) != len(files):
@@ -327,7 +353,7 @@ def build(name: str, member_ids: list[str], w: float, out_root: Path | None = No
     (d / "kernel-metadata.json").write_text(json.dumps(meta2, indent=1))
     (d / "ENSEMBLE.json").write_text(json.dumps(
         {"base": nb_path.name, "members": member_ids if members else [], "weights": files, "w": w,
-         "swap_v5": swap, "swap_arms": arms or {}, "coat_shift": coat_shift, "rad_heads": rad_heads or {}, "tails": {f: [[member_ids[j] for j in ix], tw] for f, (ix, tw) in tail_map.items()}},
+         "swap_v5": swap, "swap_arms": arms or {}, "coat_shift": coat_shift, "rad_heads": rad_heads or {}, "dino": dino, "tails": {f: [[member_ids[j] for j in ix], tw] for f, (ix, tw) in tail_map.items()}},
         indent=1))
     return d
 
@@ -348,6 +374,8 @@ def main() -> None:
                     help="add to every finding's CoAtNet-branch weight (clipped to [0, 1])")
     ap.add_argument("--rad-heads", action="append", default=[],
                     help="our RadImageNet heads: 'e13=owner/dataset:sha256' or 'ref=owner/dataset:sha256'")
+    ap.add_argument("--dino-weights", default=None,
+                    help="our DINOv2 member package dataset 'owner/slug' (20 members + manifest.json)")
     a = ap.parse_args()
     rad = {k: tuple(v.rsplit(":", 1)) for k, v in (x.split("=", 1) for x in a.rad_heads)}
     if bad := set(rad) - set(RAD_HEADS):
@@ -357,7 +385,7 @@ def main() -> None:
         raise SystemExit(f"--swap-arm keys must be in {sorted(ARM_FILES)}, got {sorted(bad)}")
     d = build(a.name, [m for m in a.members.split(",") if m], a.w, swap=a.swap_v5,
               tails=[parse_tail(t) for t in a.tail] or None, arms=arms or None, coat_shift=a.coat_shift,
-              rad_heads=rad or None)
+              rad_heads=rad or None, dino=a.dino_weights)
     print(f"built {d}\npush (user-approved): kaggle kernels push -p {d}")
 
 
