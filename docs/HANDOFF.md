@@ -1,16 +1,29 @@
-# Handoff — plan to the top (2026-10-02)
+# Handoff — own-model track (2026-10-03)
 
-Source of truth: `docs/STATUS.md` (wins on conflicts), `docs/PLAN_TO_TOP.md` (strategy, results log, next build),
-`docs/DECISIONS.md` (2026-10-01 entries), `agent/runs/submits.json`. Repo beats chat.
+Source of truth: `docs/STATUS.md` (wins on conflicts), `docs/PLAN_TO_TOP.md` (results log; "Family A — build log"),
+`docs/EXTERNAL_DATA.md`, `agent/runs/submits.json`. Repo beats chat.
 
-## Where we are
-- **Best LB 0.945** (56754655 `coat-up15-b4`: public D4 stack + soupbestof4 in v5 slot + CoAt-branch weight +0.15).
-  coat15-radfused / coat30-radfused = 0.944: fused heads are better on clean holdout-29 but were swapped INSIDE the stack's fitted calibrator → next: blend them AFTER the calibrator (PLAN_TO_TOP.md log 2026-10-02 12:35).
-- Strategy (PLAN_TO_TOP.md): cross-architecture distillation — retrain/fine-tune the weak public families (RadImageNet,
-  DINO, A5) on our fused labels (expert agreement 0.946 vs report 0.883); rebalance toward CoAt; grand soup; finals Oct 16.
-- Proven so far: fused-label RadImageNet heads beat upstream (E13 +0.017, main +0.005 gold OOF); CoAt weight +0.15 → +0.001 LB.
-- Next build: DINO warm-start fine-tune kernel (exact design in PLAN_TO_TOP.md).
-- Money: RunPod $4.10 (user tops up); Kaggle GPU 30 h/week, 2 concurrent sessions (forks take ~1.5 h).
+## Where we are (2026-10-03 ~00:45 UTC)
+- Best LB 0.945 (56754655 coat-up15-b4). **56779149 (coat15-radexfx) score NOT recorded** — Kaggle submissions CLI
+  was blocked in-session; user to run `submit_gate.py record --ref 56779149 --score <lb>`.
+- **Family A** (`runpod/family_a.py`, RegionMIL: ConvNeXt-S tiles, coronal halves, routed finding queries) fold 0
+  `fa-f0-v2` **FAILED rulers** (`scripts/family_a_rulers.py`): weak5 vs pilk 0.842 vs CoAt 0.884, dread 0.875 vs
+  0.923, holdout-29 0.892 vs 0.912; blend lowers CoAt. Fused-label AUC is NOT a ruler (circular).
+- **Family B** (`runpod/fastmri_pretrain.py`): fastMRI singlecoil → on-pod volumes (1,172; flipud = fastMRI+ frame;
+  320→336) → HeatNet box-heatmap pretraining of the same encoder → `family_a.py --init_encoder` fold 0 = clean A/B
+  vs fa-f0-v2. Running on pod `q1a2we500s1ydu` (job `fb-f0-v2`, result `girishbose/rsna-knee-rp-fb-f0-v2-out`).
+  Pretrain ep1 held-out tile AUC: meniscus 0.957, cart_full 0.993, bone_edema 0.966, acl 0.956.
+  Prep cost ~1.9 h (xz decompression is serial).
+- Links: `~/.rsna_ext/fastmri_links.txt` lines `knee_singlecoil_train <url>` — passed to pods only via env
+  `FASTMRI_LINKS` (launcher `extra_env`); never print/commit; prep takes only `knee_singlecoil_*` links.
+- Decision rule (agreed with user): fastMRI init gains ≥~0.02 weak5 vs report labels → build fastMRI knee DICOM
+  pipeline (batch1 134 GB + batch2 30 GB; unlabeled → pretraining / teacher pseudo-labels, judged only on report
+  labels + holdout-29). Else skip DICOMs; fix the Family A recipe / stack levers.
+- Inference budget: external data adds 0 submission time; an extra 5-fold Family A/B leg ≈ +1–1.5 h (unmeasured:
+  current stack runtime — read it from run 56754655 before adding a leg).
+- Money: RunPod ≈ $7 of $20 spent after fb-f0-v2. Pods: `launcher.launch(..., corpus="dense80",
+  trainer="family_a.py", gpu_class="48", extra_env=...)`; arms may start `@script.py` to switch trainer per arm.
+  Run the launcher with `PATH=.venv/bin:$PATH` (needs the kaggle CLI). Community hosts vary 8–50 MB/s.
 
 ## Harness (how it works now)
 - launchd `com.rsna.agentloop` runs `rsna_knee.agent.loop`; idle/busy ticks call the DeepSeek strategist
