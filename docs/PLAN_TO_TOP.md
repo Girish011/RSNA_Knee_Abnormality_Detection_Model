@@ -149,3 +149,21 @@ The 0.01 gap is teams' own models — public-stack tweaking cannot close it. Les
   0.923 vs 0.892 (CoAt 0.912; blend50 w/ CoAt macro 0.948 vs 0.943) — n=29 too noisy to overrule 870 OOF studies.
   Fused-label OOF: early lead on LatMen/Contusion faded by ep6. Rank-corr FM vs ImageNet start 0.90–0.96.
   → per decision rule: **skip fastMRI DICOMs**. Cost: prep 1.9 h (serial xz). Results `outputs/runpod_results/fb-f0-v2`.
+
+## 2026-10-03 — NEW PLAN: native-resolution region specialists (user: budget up to $250, check in each $50)
+Why: own models are weaker than public components (our CoAt alone LB 0.920; Family A/B 0.04–0.05 below CoAt on
+report-label OOF). Stack tweaks are invisible (+0.001). The lever is single-model strength on small structures:
+dense80 squeezes 140 mm into 336 px (0.42 mm/px); DICOM slices are ~1.8 MB (≈0.3 mm/px native).
+**Judge own models ALONE on LB** (baseline own CoAt 0.920) — readable 0.005–0.02 steps; offline gate = 5-fold OOF vs
+pilk (independent of our label pipeline; bestof/fused are dread-based) + holdout-29. Fused-label AUC is never a ruler.
+1. **dense512 cache** (Kaggle CPU kernels next to the DICOMs, like dense80 = `outputs/kernels/dense80_cache/`):
+   same picker/slots/140 mm crop, IMG=512 (~21 MB/study, ~92 GB, ~8 shards). Test-time builder = same code.
+2. **Stage-1 localiser** per series → joint centre + compartment boxes (medial/lateral TF, PF, notch, suprapatellar
+   recess). Start geometric (tissue bbox + joint-line detection), upgrade with the fastMRI HeatNet
+   (`runpod/fastmri_pretrain.py`, coronal lesions) if needed.
+3. **Region specialists** (~6; weak five first): lateral compartment (LatMen, LatOA), patellofemoral (PF OA),
+   recesses (Effusion, Synovitis, Baker's), bone marrow (Contusion, Fracture); later medial, notch. 448–512 px
+   native crops, 2.5D windows + slice attention, ConvNeXt/EffNetV2/MaxViT × 5 folds × 2 seeds, parallel pods (4–8).
+4. Per-finding combiner → 12 preds; own-alone LB probe; then final-level blend with the stack. Measure per-study
+   inference cost (1,322 test studies, 9 h) before any leg ships.
+Option 2 (`fa-f0-rep`: Family A on bestof_v1 report labels, 16 ep, pod prno0rfoyp7hh9) decides the label set.
