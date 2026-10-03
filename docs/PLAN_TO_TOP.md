@@ -143,3 +143,9 @@ The 0.01 gap is teams' own models — public-stack tweaking cannot close it. Les
   old image model (Syn prev 0.26 vs report 0.12), which FA reproduced (0.98) = circular. **Rule: never judge a
   fused-label-trained model on fused labels; only report labels + holdout-29.** Results `outputs/runpod_results/fa-f0-v2`.
 - Family B running (`fb-f0-v1`): fastMRI+ heatmap pretraining of the same encoder → identical fold-0 fine-tune = clean A/B.
+- 2026-10-03 — **Family B A/B (fb-f0-v2, fold 0): fastMRI+ init does NOT pass.** Pretrain (1,172 vols, 10 ep, 70 min)
+  held-out tile AUC meniscus 0.959 / cart_full 0.982 / bone_edema 0.955. Fine-tune vs ImageNet start (fa-f0-v2):
+  OOF weak5 vs pilk 0.833 vs 0.842, vs dread 0.869 vs 0.875 (−0.006…−0.010; CoAt 0.884/0.923); holdout-29 weak5
+  0.923 vs 0.892 (CoAt 0.912; blend50 w/ CoAt macro 0.948 vs 0.943) — n=29 too noisy to overrule 870 OOF studies.
+  Fused-label OOF: early lead on LatMen/Contusion faded by ep6. Rank-corr FM vs ImageNet start 0.90–0.96.
+  → per decision rule: **skip fastMRI DICOMs**. Cost: prep 1.9 h (serial xz). Results `outputs/runpod_results/fb-f0-v2`.

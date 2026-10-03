@@ -38,7 +38,7 @@ Only submit candidates expected to beat 0.944 (or explicit learning probes). Gat
 
 ## Family A (own model, 2026-10-03)
 - `runpod/family_a.py` + rulers built. Fold-0 `fa-f0-v2` FAILED rulers (weak5 vs pilk 0.842 vs CoAt 0.884; blend lowers). Fused-label AUC is not a ruler.
-- Family B (`runpod/fastmri_pretrain.py`, fastMRI+ boxes → encoder init) A/B running on pod qvggyecacou7yb (`fb-f0-v1`).
+- Family B (fastMRI+ encoder init) A/B fb-f0-v2: no gain on report labels (weak5 pilk 0.833 vs 0.842); holdout-29 +0.03 (noisy). DICOMs skipped per rule. RunPod ≈ $5 of $20 spent.
 - 56779149 score not yet recorded (Kaggle CLI call was blocked in-session; user to run `submit_gate.py record`).
 
 ## Next 3 actions
