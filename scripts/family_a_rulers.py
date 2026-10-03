@@ -91,7 +91,8 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--fa", required=True, help="glob of Family A result dirs")
     ap.add_argument("--fa-oof", default="raptor_oof_*_fold[0-9].npz")
-    ap.add_argument("--base", default=str(REPO / "outputs/runpod_results/f-7cdb6e8357*/*"))
+    # Clean baseline: ImageNet-init CoAt fold 0 (LB 0.920). f-7cdb6e8357* is v5-init = saw the fold studies (leaky).
+    ap.add_argument("--base", default=str(REPO / "outputs/runpod_results/n-5bc0a0f45d75/*"))
     ap.add_argument("--base-oof", default="raptor_oof_*_fold[0-9].npz")
     ap.add_argument("--json", default=None)
     a = ap.parse_args()
