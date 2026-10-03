@@ -234,3 +234,6 @@ Method (`scripts/make_round_labels.py`; refuses leaky `init:` teachers):
   diverse family for the last blend, trained on round labels.
 Final-level blend probe (user go-ahead 2026-10-03): deferred to the first round-1 student ensemble — the only own
 leg we could blend today is the 0.920 CoAt, already measured at final level (D4 + 5bc0 w0.2 = 0.941 vs 0.943).
+- 2026-10-03 15:20 — `rs-f0-v2/pf-fused` (native-res PF specialist, fold 0, 51 min): PF OA OOF vs pilk 0.846 vs clean
+  CoAt 0.835 (+0.011), vs dread 0.875 vs 0.855 (+0.020), blend45 0.852 / 0.876; but holdout-29 0.794 vs 0.936 (n=29,
+  ~10 positives). Mixed → keep as a late diverse family on round labels; not a reason to change the label-round plan.
