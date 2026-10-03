@@ -44,12 +44,16 @@ Only submit candidates expected to beat 0.944 (or explicit learning probes). Gat
 ## Region specialists (2026-10-03, native-res plan)
 - dense512 cache built as 8 Kaggle CPU kernels (`rsna-knee-dense512-s0..7`); geometric localiser (no training) +
   `runpod/region_spec.py` (regions tf / pf / rec / bm / side). Details: PLAN_TO_TOP "Region specialists — build log".
-- 56779149 coat15-radexfx = 0.945 (ties best). Option 2 `fa-f0-rep` training on pod prno0rfoyp7hh9 (ETA ~14:15 IST).
+- 56779149 coat15-radexfx = 0.945 (ties best). 
 - dense512 complete: 4,407 studies, 0 errors, 0 empty (8 shards, 6–12 min each).
-- **Running:** `rs-f0-v1` on pod h4l6xr6wl6trwu (A40-class, $0.49/h, est 6.5 h ≈ $3.2): arms side → tf-fused → pf-fused →
-  tf-rep (fold 0, 10 ep). Result `girishbose/rsna-knee-rp-rs-f0-v1-out`. Judge: `scripts/family_a_rulers.py --fa
-  'outputs/runpod_results/rs-f0-v1/tf-fused'` (pilk OOF vs CoAt on LatMen/LatOA/MedMen/MedOA; `pf-fused` for PF OA).
-- **RunPod spend line (budget $250, check-in each $50): ≈ $8 spent + fa-f0-rep (~$2) + rs-f0-v1 (~$3) in flight ≈ $13.**
+- **Results 14:30 (PLAN_TO_TOP build log):** (1) the CoAt baseline `f-7cdb6e8357` is v5-init = leaky; clean baseline is
+  `n-5bc0a0f45d75` (LB 0.920). (2) Option 2: bestof report labels lose to fused → keep fused. (3) `tf-fused`
+  native-res specialist = clean CoAt on pilk (0.869 vs 0.877 on its 4 findings): no single-model gain.
+  (4) Cross-family rank blend CoAt+TF+FA: +0.006 pilk / +0.011 dread; same-family blend +0.
+- **Running:** `rs-f0-v2` pod dugehqdl1phzyr ($0.49/h): pf-fused → tf-rep; ends ~17:15 IST, self-deletes.
+  `rs-f0-v1` (h4l6xr6wl6trwu) died at smoke (cv2 missing; fixed in run_job.sh) — self-deleted, user to confirm.
+  `fa-f0-rep` (prno0rfoyp7hh9) finished, self-deleting.
+- **RunPod spend line (budget $250, check-in each $50): ≈ $8 + fa-f0-rep $1.9 + rs-f0-v1 $0.2 + rs-f0-v2 ~$2.7 ≈ $13.**
 
 ## Next 3 actions
 1. Record 56779149 (coat15-radexfx, LEARNING: Fracture into the Rad blend as in public d4-blend 0.946).

@@ -183,3 +183,21 @@ Option 2 (`fa-f0-rep`: Family A on bestof_v1 report labels, 16 ep, pod prno0rfoy
   MedMen/MedOA share one model), `pf` (Ax anterior + mid-sagittal anterior), `rec` (Eff/Syn/Baker), `bm`
   (Contusion/Fracture), `side`. Protocol = Family A. Tests `tests/test_region_spec.py`.
   Rulers: `scripts/family_a_rulers.py` now scores only the findings a region predicts (others NaN).
+- 2026-10-03 14:30 — **The CoAt ruler baseline was leaky; first specialist result; option 2.**
+  1. `f-7cdb6e8357` (our "CoAt 5-fold OOF" baseline) starts from `raptor_ft_coatnet_v5_full_swa.pt` = public v5 trained
+     on ALL train studies with report labels, so its "OOF" has seen the fold studies. Clean baseline = ImageNet-init
+     CoAt fold-0 runs with OOF (`n-5bc0a0f45d75` = the LB 0.920 model, `n-6e0c83b59036`, …). Fold-0 OOF vs pilk,
+     macro12 / weak5: **v5-init 0.888 / 0.884 (leak) · clean CoAt 5bc0 0.857 / 0.846 · Family A fused 0.853 / 0.842 ·
+     Family A bestof 0.832 / 0.831.** → Family A never "failed": it equals clean CoAt. (FA vs FB A/B stays valid.)
+     **Rule: offline baseline = clean ImageNet-init CoAt (5bc0), never a v5-init run.**
+  2. **Option 2 (`fa-f0-rep`, bestof report labels, 16 ep): loses to fused** (pilk weak5 0.831 vs 0.842, macro 0.832 vs
+     0.853; only PF OA better 0.842 vs 0.817) → specialists train on fused labels.
+  3. **`rs-f0-v2/tf-fused` (native-res tibiofemoral specialist, fold 0, 10 ep, 1.9 h A40): no single-model gain.**
+     pilk LatMen / LatOA / MedMen / MedOA: TF 0.860 / 0.836 / 0.906 / 0.872 (mean 0.869) vs clean CoAt 5bc0
+     0.860 / 0.869 / 0.903 / 0.876 (0.877) vs Family A 0.861 / 0.854 / 0.900 / 0.862 (0.869). dread: TF 0.898 vs CoAt
+     0.897. Holdout-29 (4 findings): TF 0.956 vs v5-init CoAt 0.944 (n=29). Side model: acc 0.984 on 450 held-out tags.
+     **Native resolution + region crops is not the lever on these findings.**
+  4. Diversity is real but small: rank blends on the same 870 studies, mean of the 4 TF findings, pilk / dread —
+     CoAt 0.877 / 0.897 · CoAt×3 0.880 / 0.897 (same family adds nothing) · CoAt+TF 0.8835 / 0.9065 ·
+     CoAt+TF+FA 0.8835 / 0.908 (**+0.006 / +0.011**). Report-label ceiling (pilk vs dread) 0.93–0.97.
+  Running: `pf-fused`, then `tf-rep` (label A/B on TF) on pod dugehqdl1phzyr.

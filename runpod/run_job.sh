@@ -62,6 +62,11 @@ timeout 900 pip install --progress-bar off --timeout 20 --retries 2 --prefer-bin
 python -c "import timm, sklearn, pyarrow, pandas; print('deps ok, timm', timm.__version__)" || finish "pip failed"
 # fastMRI (Family B) only: separate, non-fatal so a resolver clash can never break CoAt jobs.
 timeout 300 pip install --progress-bar off --prefer-binary -c /tmp/pins.txt h5py 2>&1 | tail -1 || true
+# Region specialists warp crops with OpenCV (not in the base image; smoke died on import 2026-10-03).
+if [ "${TRAINER:-}" = region_spec.py ]; then
+  timeout 300 pip install --progress-bar off --prefer-binary -c /tmp/pins.txt opencv-python-headless 2>&1 | tail -1 || true
+  python -c "import cv2; print('cv2', cv2.__version__)" || finish "opencv install failed"
+fi
 nvidia-smi --query-gpu=name,memory.total,driver_version --format=csv
 free -g | head -2; nproc
 gpu_ok=0
