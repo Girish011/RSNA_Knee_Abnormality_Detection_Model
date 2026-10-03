@@ -201,3 +201,36 @@ Option 2 (`fa-f0-rep`: Family A on bestof_v1 report labels, 16 ep, pod prno0rfoy
      CoAt 0.877 / 0.897 · CoAt×3 0.880 / 0.897 (same family adds nothing) · CoAt+TF 0.8835 / 0.9065 ·
      CoAt+TF+FA 0.8835 / 0.908 (**+0.006 / +0.011**). Report-label ceiling (pilk vs dread) 0.93–0.97.
   Running: `pf-fused`, then `tf-rep` (label A/B on TF) on pod dugehqdl1phzyr.
+
+## 2026-10-03 evening — PIVOT: clean pseudo-label rounds (labels are the lever, not architecture or resolution)
+Evidence:
+1. Forum "Best single-model score" (read 2026-10-03): single-fold 2.5D CoAtNet @224 = 0.950; 5-fold ResNet50 @224 =
+   0.954; full-train CoAtNet @288 went 0.938 → 0.949 on label work alone; #5 (tennogh) 0.943 @288 "OOF pseudo-labels
+   correlate with LB; resolution is not a big driver". Recipe they describe: several weak-label sources → teachers →
+   OOF pseudo-labels → final model; check "OOF predictions closer to the radiologists than the extracted labels".
+   Our clean single CoAt (384, dense80) = 0.920 → the 0.03 gap is labels/recipe, same architecture.
+2. Our data, holdout-29 vs experts: report labels (pilk) 0.883 · clean fold-0 OOF ensemble (2 CoAt-family + FA) 0.927 ·
+   blend "round target" **0.943**. Reports are silent on a finding (pilk UNK) for Synovitis 84 %, Fracture 56 %,
+   Baker's 46 %, Lateral OA 33 %, Medial OA 26 %; experts mark 34 % of silent-Synovitis and 21 % of silent-PF-OA
+   positive, and confirm only 44–81 % of report YES. → weak five = the under-/over-reported findings.
+3. Our 2026-09-30 self-training was closed on bad evidence: teachers were v5-init (their "OOF" echoes the report
+   labels they memorised) and the judge was gold-58 with v5-init members.
+4. Native-res specialists and Family A/B = clean CoAt on report labels: architecture is not the lever.
+
+Method (`scripts/make_round_labels.py`; refuses leaky `init:` teachers):
+- **Round 0 teachers (clean, ImageNet init, 5 folds):** CoAt dense80 (5bc0 recipe, labels_relabel_8c56cdf0) and
+  Family A RegionMIL (bestof_v1, 16 ep). Fold 0 exists (n-5bc0a0f45d75, fa-f0-rep); folds 1–4 = jobs `r0-coat-f{1..4}`,
+  `r0-fa-f{1..4}` (8 pods, launched 2026-10-03 ~14:45 IST; CoAt ≈ 6.5 h, FA ≈ 3.7 h).
+- **Round r labels:** per finding e = mean family rank of OOF; p = Platt(e → report); target = a·report + (1−a)·p with
+  a = 0.5 where the report addresses the finding, 0.2 where it is silent. Gate printed by the script: holdout-29 AUC
+  of target > report.
+- **Round r students:** same two families, 5 folds, ImageNet init, on `labels_r{r}.parquet`; OOF → round r+1.
+  Stop when holdout-29 / LB stop moving (expect 2–3 rounds).
+- **Judges:** (1) own-alone LB probe after each round = 5-fold CoAt students through the existing dense80 leg
+  (`submit-dense80-5bc0` kernel; baseline 0.920); (2) holdout-29 pooled AUC; (3) OOF vs previous-round target is NOT
+  a ruler (circular) — only for sanity.
+- **Then:** stack + own ensemble at the final level (leg `--w`), full-data members, more families (224 px ResNet/CoAt
+  2.5D are cheap: ~1 h/fold) once labels are good. Region specialists (`runpod/region_spec.py`, dense512) stay as a
+  diverse family for the last blend, trained on round labels.
+Final-level blend probe (user go-ahead 2026-10-03): deferred to the first round-1 student ensemble — the only own
+leg we could blend today is the 0.920 CoAt, already measured at final level (D4 + 5bc0 w0.2 = 0.941 vs 0.943).

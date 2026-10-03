@@ -55,7 +55,10 @@ Only submit candidates expected to beat 0.944 (or explicit learning probes). Gat
   `fa-f0-rep` (prno0rfoyp7hh9) finished, self-deleting.
 - **RunPod spend line (budget $250, check-in each $50): ≈ $8 + fa-f0-rep $1.9 + rs-f0-v1 $0.2 + rs-f0-v2 ~$2.7 ≈ $13.**
 
-## Next 3 actions
-1. Record 56779149 (coat15-radexfx, LEARNING: Fracture into the Rad blend as in public d4-blend 0.946).
-2. **Own-model track (PLAN_TO_TOP 2026-10-02 night):** Family A weak-five specialists on dense80 (RunPod, ~$20), final-level blend.
-3. User registers for fastMRI (docs/EXTERNAL_DATA.md) → Family B pretraining when links land in ~/.rsna_ext/fastmri_links.txt.
+## Next 3 actions (2026-10-03 evening — pseudo-label rounds; PLAN_TO_TOP last section)
+1. When `r0-coat-f1..4` + `r0-fa-f1..4` finish: fetch results into outputs/runpod_results/<job>/, run
+   `scripts/make_round_labels.py --out labels_r1.parquet` with the two `--family` globs from its docstring
+   (CoAt = 5bc0 fold 0 + r0-coat folds 1–4; FA = fa-f0-rep + r0-fa folds 1–4); check the holdout-29 gate.
+2. Round-1 students: CoAt + FA × 5 folds on labels_r1 (ImageNet init), then own-alone LB probe of the 5 CoAt students
+   (baseline 0.920) via the dense80 leg; holdout-29.
+3. Round 2 if round 1 moved; then final-level blend with the stack and full-data members.
