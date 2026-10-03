@@ -55,6 +55,12 @@ Only submit candidates expected to beat 0.944 (or explicit learning probes). Gat
   `fa-f0-rep` (prno0rfoyp7hh9) finished, self-deleting.
 - **RunPod spend line (budget $250, check-in each $50): ≈ $8 + fa-f0-rep $1.9 + rs-f0-v1 $0.2 + rs-f0-v2 ~$2.7 ≈ $13.**
 
+## Label rounds monitor
+- Page: https://claude.ai/artifact/4yrR2cL71M3cXrhHYgSVkU (snapshot; regenerate with `scripts/label_rounds_page.py` →
+  `outputs/label_rounds.html`, then republish that file). Job registry: `agent/runs/label_rounds.json`.
+- 2026-10-03 16:15: `r0-coat-f2` / `r0-coat-f4` ($0.34 community 4090s) vanished (API 404, no results) → relaunched as
+  `r0-coat-f2b` (7a4c97ja2hutxq) / `r0-coat-f4b` (mnv3cfz8bprivf) on 48 GB hosts. Prefer `gpu_class="48"` for teachers.
+
 ## Next 3 actions (2026-10-03 evening — pseudo-label rounds; PLAN_TO_TOP last section)
 1. When `r0-coat-f1..4` + `r0-fa-f1..4` finish: fetch results into outputs/runpod_results/<job>/, run
    `scripts/make_round_labels.py --out labels_r1.parquet` with the two `--family` globs from its docstring
