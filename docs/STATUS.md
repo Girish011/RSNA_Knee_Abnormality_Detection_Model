@@ -1,6 +1,6 @@
 # STATUS
 
-Last updated: 2026-10-02 (~23:30 IST). Plan: docs/PLAN_TO_TOP.md (results log + next build).
+Last updated: 2026-10-03 (~11:45 IST). Plan: docs/PLAN_TO_TOP.md (results log + next build).
 
 ## Leaderboard
 | ref | kernel | public |
@@ -16,7 +16,7 @@ Last updated: 2026-10-02 (~23:30 IST). Plan: docs/PLAN_TO_TOP.md (results log + 
 | 56760305 | coat15-radfused: + fused-label RadImageNet heads | 0.944 |
 | 56761295 | LEARNING coat30-radfused: CoAt +0.30 + fused heads | 0.944 |
 | 56771185 | coat15-dinox30: base + fine-tuned DINO β0.3 after calibrator | 0.944 |
-| 56779149 | LEARNING coat15-radexfx: best + Fracture in Rad blend (d4-blend tweak) | pending |
+| 56779149 | LEARNING coat15-radexfx: best + Fracture in Rad blend (d4-blend tweak) | 0.945 |
 
 ## Best models (AUC on 58 experts)
 - soupbestof4 0.9365 (in LB 0.944); bestof_v1 k=8 members 0.9330; public v5 0.9256.
@@ -40,6 +40,12 @@ Only submit candidates expected to beat 0.944 (or explicit learning probes). Gat
 - `runpod/family_a.py` + rulers built. Fold-0 `fa-f0-v2` FAILED rulers (weak5 vs pilk 0.842 vs CoAt 0.884; blend lowers). Fused-label AUC is not a ruler.
 - Family B (fastMRI+ encoder init) A/B fb-f0-v2: no gain on report labels (weak5 pilk 0.833 vs 0.842); holdout-29 +0.03 (noisy). DICOMs skipped per rule. RunPod ≈ $6 spent; budget raised to $250 (user, 2026-10-03; check in each $50).
 - 56779149 score not yet recorded (Kaggle CLI call was blocked in-session; user to run `submit_gate.py record`).
+
+## Region specialists (2026-10-03, native-res plan)
+- dense512 cache built as 8 Kaggle CPU kernels (`rsna-knee-dense512-s0..7`); geometric localiser (no training) +
+  `runpod/region_spec.py` (regions tf / pf / rec / bm / side). Details: PLAN_TO_TOP "Region specialists — build log".
+- 56779149 coat15-radexfx = 0.945 (ties best). Option 2 `fa-f0-rep` training on pod prno0rfoyp7hh9 (ETA ~14:15 IST).
+- **RunPod spend line (budget $250, check-in each $50): ≈ $8 before today's region jobs.**
 
 ## Next 3 actions
 1. Record 56779149 (coat15-radexfx, LEARNING: Fracture into the Rad blend as in public d4-blend 0.946).

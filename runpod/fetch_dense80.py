@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""Download dense80 kernel-output shards with HTTP Range resume.
+"""Download dense80 / dense512 kernel-output shards with HTTP Range resume.
+
+DENSE_NAME=dense512 DENSE_SHARDS=8 fetches the native-resolution cache (adds geom/series files;
+shards are fetched DENSE_PAR at a time).
 
 ``kaggle kernels output`` dies with IncompleteRead near the end of ~10 GB vols.
 Refreshing signed URLs + Range resumes finishes the last ~1 GB instead of restarting.
@@ -15,7 +18,11 @@ from pathlib import Path
 import requests
 
 USER = "girishbose"
-OUT = Path(os.environ.get("DENSE80_DIR", "/workspace/input/dense80"))
+NAME = os.environ.get("DENSE_NAME", "dense80")
+N_SHARDS = int(os.environ.get("DENSE_SHARDS", "4"))
+PAR = int(os.environ.get("DENSE_PAR", "1" if NAME == "dense80" else "3"))
+EXTRA = [] if NAME == "dense80" else ["geom_s{s}.npy", "series_s{s}.json"]
+OUT = Path(os.environ.get("DENSE80_DIR", f"/workspace/input/{NAME}"))
 TOKEN = os.environ.get("KAGGLE_API_TOKEN") or os.environ.get("KAGGLE_KEY")
 MIN_VOL_BYTES = int(os.environ.get("DENSE80_MIN_VOL", str(5_000_000_000)))
 TRIES = int(os.environ.get("DENSE80_TRIES", "10"))
@@ -34,7 +41,7 @@ def _token() -> str:
 def list_files(shard: int) -> list[dict]:
     r = requests.get(
         "https://www.kaggle.com/api/v1/kernels/output",
-        params={"userName": USER, "kernelSlug": f"rsna-knee-dense80-s{shard}"},
+        params={"userName": USER, "kernelSlug": f"rsna-knee-{NAME}-s{shard}"},
         headers={"Authorization": f"Bearer {_token()}"},
         timeout=60,
     )
@@ -75,8 +82,9 @@ def download_resumable(url: str, dest: Path, tries: int = TRIES) -> None:
 
 
 def fetch_shard(shard: int) -> None:
-    print(f"=== dense80 shard {shard} ===", flush=True)
-    needed = {f"vols_s{shard}.npy", f"masks_s{shard}.npy", f"ids_s{shard}.npy", f"meta_s{shard}.json"}
+    print(f"=== {NAME} shard {shard} ===", flush=True)
+    needed = {f"vols_s{shard}.npy", f"masks_s{shard}.npy", f"ids_s{shard}.npy", f"meta_s{shard}.json",
+              *(e.format(s=shard) for e in EXTRA)}
     for t in range(1, TRIES + 1):
         try:
             files = {f["fileName"]: f["url"] for f in list_files(shard)}
@@ -110,14 +118,19 @@ def fetch_shard(shard: int) -> None:
             print(f"shard {shard} vols too small ({sz}); retry", flush=True)
             vol.unlink(missing_ok=True)
         time.sleep(10)
-    raise SystemExit(f"dense80 shard {shard} failed after retries")
+    raise SystemExit(f"{NAME} shard {shard} failed after retries")
 
 
 def main() -> None:
     OUT.mkdir(parents=True, exist_ok=True)
-    shards = [int(x) for x in (sys.argv[1:] or ["0", "1", "2", "3"])]
-    for s in shards:
-        fetch_shard(s)
+    shards = [int(x) for x in sys.argv[1:]] or list(range(N_SHARDS))
+    if PAR > 1:
+        from concurrent.futures import ThreadPoolExecutor
+        with ThreadPoolExecutor(PAR) as ex:
+            list(ex.map(fetch_shard, shards))
+    else:
+        for s in shards:
+            fetch_shard(s)
     print("ALL SHARDS OK", flush=True)
 
 

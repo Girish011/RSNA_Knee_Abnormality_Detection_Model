@@ -167,3 +167,19 @@ pilk (independent of our label pipeline; bestof/fused are dread-based) + holdout
 4. Per-finding combiner → 12 preds; own-alone LB probe; then final-level blend with the stack. Measure per-study
    inference cost (1,322 test studies, 9 h) before any leg ships.
 Option 2 (`fa-f0-rep`: Family A on bestof_v1 report labels, 16 ep, pod prno0rfoyp7hh9) decides the label set.
+
+### Region specialists — build log
+- 2026-10-03 — **dense512 cache**: `outputs/kernels/dense512_cache/` (8 CPU kernels `girishbose/rsna-knee-dense512-s0..7`,
+  ~10 min each, 11.6 GB/shard). Same picker/slots as dense80 (slot j = same slice), IMG=512, cubic when upsampling.
+  New outputs: `geom_s*.npy` (per-slot IPP/IOP/spacing/crop → pixel↔patient mm) and `series_s*.json` (Laterality,
+  SeriesDescription, …). Pods: `CORPUS=dense512` (`fetch_dense80.py` with DENSE_NAME=dense512, 3 shards in parallel).
+- **Stage-1 localiser needs no training** (shard 0, 551 studies): joint centre P = (x of sagittal stack centre, y of
+  coronal stack centre, z of axial stack centre) lands in the intercondylar notch (3/3 studies eyeballed, crops of
+  3 more OK). Knee side: DICOM Laterality on ~49% of studies; sign(P.x) agrees with the tag on 97.4% (but ~15% of
+  untagged studies sit near x=0) → `--region side` model (coronal + fibula, trained on tagged studies) fills the rest.
+- **`runpod/region_spec.py`** (RegionNet): regions = tile groups warped from the 512 px slice to canonical-mm boxes
+  around P (A lateral, B anterior, C superior), mirrored so all knees look alike, ~0.27 mm/px:
+  `tf` one tibiofemoral compartment per sample (lateral + mirrored medial sample per study → LatMen/LatOA and
+  MedMen/MedOA share one model), `pf` (Ax anterior + mid-sagittal anterior), `rec` (Eff/Syn/Baker), `bm`
+  (Contusion/Fracture), `side`. Protocol = Family A. Tests `tests/test_region_spec.py`.
+  Rulers: `scripts/family_a_rulers.py` now scores only the findings a region predicts (others NaN).

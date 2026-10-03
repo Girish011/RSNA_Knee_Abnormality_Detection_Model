@@ -83,6 +83,12 @@ if [ "${CORPUS:-raptor44}" = "dense80" ]; then
   mkdir -p /workspace/input/dense80
   status "downloading dense80 (resumeable)"
   python "$B/fetch_dense80.py" || finish "download dense80 failed after resume retries"
+elif [ "${CORPUS:-raptor44}" = "dense512" ]; then
+  # Native-resolution cache for the region specialists (8 shards, ~11.6 GB each, + geometry).
+  mkdir -p /workspace/input/dense512
+  status "downloading dense512 (resumeable)"
+  DENSE_NAME=dense512 DENSE_SHARDS=8 DENSE80_DIR=/workspace/input/dense512 python "$B/fetch_dense80.py" \
+    || finish "download dense512 failed after resume retries"
 else
   for ds in knee-raptor-corpus knee-raptor-corpus-ext; do
     kaggle datasets download "dreaddevelopment/$ds" -p "/workspace/input/$ds" --unzip -q \
@@ -113,6 +119,8 @@ mkdir -p "$OUT/smoke" && cp "$B/$TRAINER" "$OUT/smoke/"
 first_labels=$(head -1 "$B/arms.txt" | cut -d'|' -f2)
 if [ "$TRAINER" = train_knee.py ]; then
   SMOKE_ARGS="--arch coatnet_rmlp_2_rw_384.sw_in12k_ft_in1k --res 384 --norm imagenet"
+elif [ "$TRAINER" = region_spec.py ]; then
+  SMOKE_ARGS="--workers 4 --region tf"
 else
   SMOKE_ARGS="--workers 4"
 fi

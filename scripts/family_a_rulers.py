@@ -60,10 +60,13 @@ def public_dino_oof() -> pd.DataFrame:
     return pd.DataFrame(P, index=z["ids"].astype(str), columns=LAB)
 
 
+ONLY: list[str] = []  # findings the family predicts (region specialists leave the others NaN)
+
+
 def aucs(P: pd.DataFrame, Y: pd.DataFrame) -> dict[str, float]:
     ids = P.index.intersection(Y.index)
     out = {}
-    for f in LAB:
+    for f in ONLY or LAB:
         y = Y.loc[ids, f].dropna()
         y = (y >= 0.5).astype(int)
         if 0 < y.sum() < len(y):
@@ -72,7 +75,7 @@ def aucs(P: pd.DataFrame, Y: pd.DataFrame) -> dict[str, float]:
 
 
 def summ(t: dict[str, float]) -> str:
-    w = [t[f] for f in WEAK5 if f in t]
+    w = [t[f] for f in WEAK5 if f in t] or [np.nan]
     per = " ".join(f"{f.split()[0][:4]}{f.split()[-1][:3]} {t[f]:.3f}" for f in WEAK5 if f in t)
     return f"macro {np.mean(list(t.values())):.4f} | weak5 {np.mean(w):.4f} | {per}"
 
@@ -101,6 +104,9 @@ def main() -> None:
 
     fa_h, fa_o = load_family(a.fa, a.fa_oof)
     co_h, co_o = load_family(a.base, a.base_oof)
+    ONLY[:] = [f for f in LAB if len(fa_o) and fa_o[f].notna().all()] if fa_o.isna().any().any() else []
+    if ONLY:
+        print(f"findings scored (family predicts only these): {ONLY}")
     dino = public_dino_oof()
     res = {}
     print(f"Family A: holdout studies {len(fa_h)}, OOF studies {len(fa_o)} | CoAt OOF {len(co_o)}")
@@ -133,7 +139,7 @@ def main() -> None:
     print("\n(c) Spearman vs CoAt OOF / public DINO OOF (per finding)")
     res["c"] = {}
     di = ids.intersection(dino.index)
-    for f in LAB:
+    for f in ONLY or LAB:
         rc = spearmanr(fa_o.loc[ids, f], co_o.loc[ids, f]).statistic if len(ids) > 2 else np.nan
         rd = spearmanr(fa_o.loc[di, f], dino.loc[di, f]).statistic if len(di) > 2 else np.nan
         rcd = spearmanr(co_o.loc[di, f], dino.loc[di, f]).statistic if len(di) > 2 else np.nan

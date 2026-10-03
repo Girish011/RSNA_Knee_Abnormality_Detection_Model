@@ -60,6 +60,7 @@ def build_bundle(job: str, arms: list[Arm], inits: list[tuple[str, str, str]] | 
     d.mkdir(parents=True)
     shutil.copy(REPO / "runpod" / "train_knee.py", d)
     shutil.copy(REPO / "runpod" / "family_a.py", d)
+    shutil.copy(REPO / "runpod" / "region_spec.py", d)
     shutil.copy(REPO / "runpod" / "fastmri_pretrain.py", d)
     fmp = REPO / "data" / "external" / "fastmri_plus" / "knee.csv"   # public fastMRI+ boxes (MIT)
     if fmp.exists():
@@ -111,8 +112,8 @@ def launch(job: str, arms: list[Arm], hours: float, *, capacity_rounds: int = 8,
     result = result_slug(job)
     base = {
         "name": f"rsna-{job}", "imageName": IMAGE, "computeType": "GPU", "gpuCount": 1,
-        "containerDiskInGb": 80 if corpus == "dense80" else 30,
-        "volumeInGb": 200 if corpus == "dense80" else 100,
+        "containerDiskInGb": 80 if corpus.startswith("dense") else 30,
+        "volumeInGb": {"dense80": 200, "dense512": 250}.get(corpus, 100),
         "volumeMountPath": "/workspace",
         "ports": ["8000/http"],
         "allowedCudaVersions": ["13.0", "12.9", "12.8", "12.7", "12.6", "12.5", "12.4"],
