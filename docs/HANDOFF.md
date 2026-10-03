@@ -1,17 +1,19 @@
-# Handoff — native-res region specialists (2026-10-03)
+# Handoff — clean pseudo-label rounds (2026-10-03 evening)
 
-Source of truth: `docs/STATUS.md` (wins), `docs/PLAN_TO_TOP.md` (esp. "2026-10-03 — NEW PLAN"), `docs/EXTERNAL_DATA.md`.
+Source of truth: `docs/STATUS.md` (wins), `docs/PLAN_TO_TOP.md` (last section "2026-10-03 evening — PIVOT").
 
 ## Where we are
-- Best LB 0.945 (coat-up15-b4; 56779149 coat15-radexfx also 0.945, recorded). Stack tweaks exhausted.
-- Family A (dense80 RegionMIL) and Family B (fastMRI+ init) lost to CoAt on report-label OOF → DICOMs skipped.
-- **Running:** option 2 `fa-f0-rep` (Family A on `labels_bestof_v1`, 16 ep, fold 0) on pod `prno0rfoyp7hh9`,
-  result `girishbose/rsna-knee-rp-fa-f0-rep-out` (if whole-dataset download 404s, fetch files with `-f`).
-  Judge: `scripts/family_a_rulers.py --fa 'outputs/runpod_results/fa-f0-rep/fa-f0-rep'` — mainly pilk + holdout-29
-  (dread ruler is partly circular: bestof/fused are dread-based). Compare fa-f0-v2 (fused): pilk weak5 0.842.
-- **Budget: up to $250 RunPod approved (2026-10-03); spend ≈ $6–8; running line in STATUS; check in at each $50.**
-- Next build (Claude owns architecture): dense512 Kaggle cache → stage-1 localiser → region specialists (plan).
-- Kaggle CLI works (`.venv/bin/kaggle`); launcher needs `PATH=.venv/bin:$PATH`. fastMRI links: env only, never print.
+- Best LB 0.945 (coat-up15-b4; coat15-radexfx also 0.945). Own CoAt alone 0.920. Board #1 0.961.
+- **Lever = labels.** Forum: single 224 px CoAtNet/ResNet reach 0.950–0.954 via OOF pseudo-labels. Ours on holdout-29:
+  report labels 0.883, clean OOF ensemble 0.929, blended round target 0.945.
+- **Leak found:** `f-7cdb6e8357` (old CoAt baseline) and every `init:v5` run saw all train studies. Clean baseline =
+  `n-5bc0a0f45d75`. `scripts/family_a_rulers.py` defaults to it; `scripts/make_round_labels.py` refuses leaky teachers.
+- Native-res specialists (`runpod/region_spec.py`, dense512 cache `rsna-knee-dense512-s0..7`, geometric localiser + side
+  model) work but only equal clean CoAt → kept as a diverse family for later. Option 2: bestof < fused for Family A.
+- **Running:** round-0 teacher folds `r0-coat-f1..4` (dense80, ~6.5 h) and `r0-fa-f1..4` (~3.7 h); pod ids in
+  agent/runs/activity.jsonl; results `girishbose/rsna-knee-rp-<job>-out` (fetch files with `-f` or from the pod's
+  http server `<monitor>/<tag>/raptor_*.npz` before it self-deletes). `rs-f0-v2` (pf-fused, tf-rep) ends ~17:15 IST.
+- **Budget: $250 RunPod approved; spend ≈ $13 + round 0 ≈ $23 → ≈ $36. Check in at $50.** User terminates pods.
 
 ## Harness (how it works now)
 - launchd `com.rsna.agentloop` runs `rsna_knee.agent.loop`; idle/busy ticks call the DeepSeek strategist
@@ -33,11 +35,11 @@ Source of truth: `docs/STATUS.md` (wins), `docs/PLAN_TO_TOP.md` (esp. "2026-10-0
 ## New-chat opener (copy/paste)
 
 ```
-Read docs/HANDOFF.md, docs/STATUS.md, docs/PLAN_TO_TOP.md (esp. "2026-10-02 night — PIVOT: own-model track"), docs/EXTERNAL_DATA.md and the 2026-10-02 entries of docs/DECISIONS.md. Repo files beat chat; STATUS wins on conflicts. Branch agent/autorun.
+Read docs/HANDOFF.md, docs/STATUS.md and docs/PLAN_TO_TOP.md (last section "2026-10-03 evening — PIVOT: clean pseudo-label rounds"). Repo files beat chat; STATUS wins on conflicts. Branch agent/autorun.
 
-Goal: #1 on the Kaggle LB (board: #1 0.961, #10 0.958; us 0.945, best public notebook 0.946). We go all in on OUR OWN models for the weak five findings (Lateral Meniscus, Lateral OA, PF OA, Synovitis, Contusion): Family A = region-aware 2.5D specialists on our dense80 cache (RunPod), blended at the FINAL level with real weight (0.3-0.45); Family B = fastMRI+ pretraining once the user's NYU links are in ~/.rsna_ext/fastmri_links.txt (never print/commit them). You (Claude) own architecture. Public-stack inner transplants are closed (invisible at their effective weight).
+Goal: #1 on the Kaggle LB (board 0.961; us 0.945; own CoAt alone 0.920). The lever is labels: clean OOF pseudo-label rounds (teachers must be ImageNet-init, never init:v5 — those leak). Claude owns architecture and decisions.
 
-First: record the score of 56779149 (coat15-radexfx probe) via scripts/submit_gate.py record. Then build Family A: data module over dense80 (runpod/fetch_dense80.py), model, 1-fold smoke on RunPod, rulers (holdout-29 pooled AUC + 5-fold OOF vs report labels + rank-corr vs stack).
+First: collect round-0 teacher folds (jobs r0-coat-f1..4, r0-fa-f1..4 → outputs/runpod_results/<job>/<tag>/), run scripts/make_round_labels.py --out labels_r1.parquet (families in its docstring), check the holdout-29 gate, then launch round-1 students (CoAt 5bc0 recipe + family_a.py, 5 folds, ImageNet init, on labels_r1) on parallel pods. After round 1: own-alone LB probe of the 5 CoAt students through the dense80 leg (baseline 0.920), then round 2, then final-level blend with the stack.
 
-Rules: LB submits only for candidates expected to beat the best (learning probes OK), gate <=5/day via scripts/submit_gate.py. RunPod: ~$20 at Claude's discretion for plan training; ask before more; user terminates pods. Strategist paused (policy.json). Edit member state only via members.request_op; restart the loop after agent-code edits. Give a handoff prompt at ~80% context.
+Rules: budget up to $250 RunPod (running spend line in STATUS; check in at each $50); user terminates pods. LB submits for candidates expected to improve and own-alone probes, gate <=5/day via scripts/submit_gate.py. Offline baseline = n-5bc0a0f45d75 (clean). Edit member state only via members.request_op; restart the loop after agent-code edits. Give a handoff prompt at ~80% context.
 ```
