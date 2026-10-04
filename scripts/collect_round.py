@@ -68,7 +68,7 @@ def main() -> None:
     t0 = time.time()
     seen_gone: dict[str, int] = {}
     while True:
-        jobs = [j for j in json.loads(REG.read_text())["jobs"] if not j.get("done_local")]
+        jobs = [j for j in json.loads(REG.read_text())["jobs"] if not j.get("done_local") and not j.get("terminated")]
         st = {j["job"]: collect(j) for j in jobs}
         print(time.strftime("%H:%M"), json.dumps(st), flush=True)
         for k, v in st.items():   # a pod must be missing on 3 polls (15 min) before it counts as vanished

@@ -23,6 +23,8 @@ REPO = Path(__file__).resolve().parents[1]
 REG = REPO / "agent" / "runs" / "label_rounds.json"
 OUT = REPO / "outputs" / "label_rounds.html"
 RES = REPO / "outputs" / "runpod_results"
+SUBMITS = REPO / "agent" / "runs" / "submits.json"
+IST = dt.timezone(dt.timedelta(hours=5, minutes=30))
 LAB = ["ACL", "MCL", "Medial Meniscus", "Lateral Meniscus", "Medial OA", "Lateral OA", "PF OA",
        "Effusion", "Synovitis", "Baker's", "Contusion", "Fracture"]
 WEAK5 = {"Lateral Meniscus", "Lateral OA", "PF OA", "Synovitis", "Contusion"}
@@ -42,6 +44,9 @@ def poll(job: dict, now: dt.datetime) -> dict:
     local = list((RES / j["job"]).glob(f"*/raptor_oof_*_fold{j['fold']}.npz")) if j.get("job") else []
     if j.get("done_local") or local:
         j.update(state="collected", ep=j["epochs"], status="results on disk")
+        return j
+    if j.get("terminated"):
+        j.update(state="gone", ep=j.get("ep_at_stop", 0), status="terminated: " + j["terminated"])
         return j
     base = f"https://{j['pod']}-8000.proxy.runpod.net"
     status = get(f"{base}/STATUS", 300).strip()
@@ -70,8 +75,14 @@ def poll(job: dict, now: dt.datetime) -> dict:
 
 def label_quality(reg: dict) -> dict:
     cmd = [sys.executable, str(REPO / "scripts" / "make_round_labels.py"), "--out", "_check.parquet", "--min-cover", "2"]
-    for fam in reg["families"]:
-        cmd += ["--family", ",".join(str(RES / g) for g in fam["globs"])]
+    src = reg.get("label_source")   # the label set the current round trains on: {"families": [[glob, ..], ..], "args": [..]}
+    if src:
+        cmd += src.get("args", [])
+        for globs in src["families"]:
+            cmd += ["--family", ",".join(str(RES / g) for g in globs)]
+    else:
+        for fam in reg["families"]:
+            cmd += ["--family", ",".join(str(RES / g) for g in fam["globs"])]
     txt = subprocess.run(cmd, capture_output=True, text=True).stdout
     q = {"rows": {}, "per": {}, "cover": None}
     m = re.search(r"OOF coverage (\d+)/(\d+)", txt)
@@ -102,7 +113,8 @@ def render(reg: dict, jobs: list[dict], q: dict, now: dt.datetime) -> str:
         for lbl, key, cls in (("Report labels", "report (pilk)", "b0"), ("Clean model ensemble", "clean OOF ensemble", "b1"),
                               ("Round target (blend)", "round target", "b2"))
         if (v := q["rows"].get(key)) is not None)
-    fams = reg["families"]
+    fams = [f for f in reg["families"]   # only the families this round trains
+            if any(x["family"] == f["key"] and x["round"] == reg["round"] for x in jobs)] or reg["families"]
     grid = ""
     for fam in fams:
         cells = ""
@@ -119,8 +131,8 @@ def render(reg: dict, jobs: list[dict], q: dict, now: dt.datetime) -> str:
         grid += f'<tr><th>{esc(fam["name"])}<small>{esc(fam["note"])}</small></th>{cells}</tr>'
     rows = ""
     for j in jobs:
-        if j.get("done_local"):
-            continue
+        if j.get("done_local") or (j["state"] == "collected" and j["round"] != reg["round"]):
+            continue   # earlier rounds are on disk; the table is for what is running or belongs to this round
         rows += (f'<tr><td class="mono">{esc(j["job"])}</td><td><span class="chip {j["state"]}">{esc(j["state"])}</span></td>'
                  f'<td>{esc(j["status"][:60])}</td><td class="num">{j["ep"]}/{j["epochs"]}</td>'
                  f'<td class="num">{j.get("hours", 0):.1f}</td><td class="num">${j["price"]:.2f}</td>'
@@ -136,9 +148,17 @@ def render(reg: dict, jobs: list[dict], q: dict, now: dt.datetime) -> str:
     live = sum(j.get("cost", 0) for j in jobs)
     n_train = sum(j["state"] == "training" for j in jobs)
     n_done = sum(j["state"] in ("collected", "uploaded") for j in jobs if j["round"] == reg["round"])
-    n_all = 5 * len(fams)
+    n_all = sum(j["round"] == reg["round"] for j in jobs)   # launched folds; a fold-0 A/B counts one, not five
     cov = f'{q["cover"][0]:,} of {q["cover"][1]:,}' if q["cover"] else "–"
     lb = reg["lb"]
+    subs = ""
+    for r in reversed(json.loads(SUBMITS.read_text())[-8:] if SUBMITS.exists() else []):
+        t = dt.datetime.fromisoformat(r["date"]).astimezone(IST)
+        sc = r.get("public_lb")
+        subs += (f'<tr><td class="mono">{t:%m-%d %H:%M}</td><td class="mono">{esc(r["kernel"].split("/")[-1])}</td>'
+                 f'<td>{esc(r.get("why", ""))}</td><td class="num">'
+                 + (f"<b>{sc:.3f}</b>" if sc is not None else '<span class="chip starting">scoring</span>') + "</td></tr>")
+    src_name = (reg.get("label_source") or {}).get("name", "next round")
     return f"""<title>Label Rounds Monitor</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -179,20 +199,21 @@ tbody th {{ font-weight:600; min-width:150px }} .num {{ text-align:right; font-f
 .up {{ color:var(--good) }} .dn {{ color:var(--bad) }}
 </style>
 <main>
-<header><h1>Label rounds — round {reg["round"]} teachers</h1>
+<header><h1>Label rounds — round {reg["round"]} models</h1>
 <div class="asof">as of {now:%Y-%m-%d %H:%M} IST · regenerate with scripts/label_rounds_page.py</div></header>
 <div class="strip">
 <div><b>{lb["best"]:.3f}</b><span>best LB (stack)</span></div>
 <div><b>{lb["own"]:.3f}</b><span>own model alone, LB</span></div>
 <div><b>{lb["top"]:.3f}</b><span>LB #1</span></div>
-<div><b>{n_done}/{n_all}</b><span>teacher folds finished</span></div>
+<div><b>{n_done}/{n_all}</b><span>folds finished this round</span></div>
 <div><b>{n_train}</b><span>pods training</span></div>
 <div><b>${reg["spent_before"] + live:.0f}</b><span>RunPod spend of ${reg["budget"]}</span></div>
 </div>
 <section><h2>Label quality against the experts (holdout-{q["n"]})</h2><div class="panel">
-<p>Macro AUC of each label source against expert labels on the held-out expert studies. The round target is what the next round of models trains on. Teachers so far cover {cov} report-only studies; labels are written once all five folds are in.</p>
+<p>Macro AUC of each label source against expert labels on the held-out expert studies. The round target is what this round's models train on ({esc(src_name)}); it covers {cov} report-only studies.</p>
 {bars or "<p>No clean teacher predictions on disk yet.</p>"}
 <div class="axis"><i></i><span><i>{lo:.2f}</i><i>{(lo + hi) / 2:.2f}</i><i>{hi:.2f}</i></span><i></i></div></div></section>
+<section><h2>Leaderboard submissions (latest 8)</h2><div class="panel scroll"><table><thead><tr><th>Submitted (IST)</th><th>Kernel</th><th>What it tests</th><th class="num">Public LB</th></tr></thead><tbody>{subs}</tbody></table></div></section>
 <section><h2>Round {reg["round"]} folds</h2><div class="panel scroll"><table><thead><tr><th>Family</th>{"".join(f"<th>Fold {k}</th>" for k in range(5))}</tr></thead><tbody>{grid}</tbody></table></div></section>
 <section><h2>Pods</h2><div class="panel scroll"><table><thead><tr><th>Job</th><th>State</th><th>Pod status</th><th class="num">Epochs</th><th class="num">Hours</th><th class="num">$/h</th><th class="num">Cost</th><th>Pod id</th></tr></thead><tbody>{rows}</tbody></table></div></section>
 <section><h2>Per finding (holdout-{q["n"]} AUC)</h2><div class="panel scroll"><table><thead><tr><th>Finding</th><th class="num">Report silent</th><th class="num">Report</th><th class="num">Ensemble</th><th class="num">Target</th><th class="num">Target − report</th></tr></thead><tbody>{per}</tbody></table>

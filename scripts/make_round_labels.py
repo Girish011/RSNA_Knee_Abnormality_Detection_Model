@@ -77,6 +77,10 @@ def main() -> None:
     ap.add_argument("--out", required=True, help="parquet name under data/processed")
     ap.add_argument("--a-said", type=float, default=0.5, help="report weight where the report addresses the finding")
     ap.add_argument("--a-unk", type=float, default=0.2, help="report weight where the report is silent (pilk UNK)")
+    ap.add_argument("--silent-gold", type=float, default=0.0, metavar="C",
+                    help="if > 0: in report-silent cells use Platt(e -> gold) fitted on the 29 TRAINING experts "
+                         "(never the holdout; their predictions are raptor_gold_*.npz, mean over fold models), "
+                         "L2 strength C (small = shrunk); findings with < 2 expert positives keep the report Platt")
     ap.add_argument("--min-cover", type=float, default=0.98, help="required OOF coverage of non-expert studies")
     a = ap.parse_args()
 
@@ -103,9 +107,22 @@ def main() -> None:
     hid = sorted(set.intersection(*(set(h.index) for h in hol)) & set(hold)) if all(len(h) for h in hol) else []
     Eh = sum(h.loc[hid] for h in hol) / len(hol) if hid else None
 
+    Dg = None   # training-expert (gold-dev) ranks, same scale as E
+    if a.silent_gold > 0:
+        dev = [u for u in gold.index if u not in set(hold)]
+        gr = [family_rank(p, "raptor_gold_*.npz") for p in a.family]
+        gr = [g.loc[g.index.intersection(dev)] for g in gr]
+        gr = [g for g in gr if len(g)]   # Family A trains on the training experts: no clean predictions for them
+        if not gr:
+            raise SystemExit("--silent-gold: no family has raptor_gold_*.npz for the training experts")
+        did = sorted(set.intersection(*(set(g.index) for g in gr)))
+        Dg = sum(g.loc[did] for g in gr) / len(gr)
+        print(f"silent-gold calibration on {len(did)} training experts, {len(gr)}/{len(a.family)} families")
+
     out = rep.copy()
     P = pd.DataFrame(index=ids, columns=LAB, dtype=float)
     Ph = pd.DataFrame(index=hid, columns=LAB, dtype=float)
+    gcal: dict = {}
     print(f"\n{'finding':17s} silent%  prev(report) prev(target)  mean|target-report|")
     for f in LAB:
         y = (rep.loc[ids, f] >= 0.5).astype(int)
@@ -115,10 +132,23 @@ def main() -> None:
             Ph[f] = lr.predict_proba(Eh[[f]].values)[:, 1]
         silent = (pk[f + "__verdict"].reindex(ids) == "UNK").fillna(False).values
         w = np.where(silent, a.a_unk, a.a_said)
-        tgt = w * rep.loc[ids, f].values + (1 - w) * P[f].values
+        pf = P[f].values
+        if Dg is not None:
+            yg = (gold.loc[Dg.index, f] >= 0.5).astype(int)
+            if yg.sum() >= 2 and (len(yg) - yg.sum()) >= 2:
+                lg = LogisticRegression(C=a.silent_gold).fit(Dg[[f]].values, yg)
+                gcal[f] = lg
+                pf = np.where(silent, lg.predict_proba(E[[f]].values)[:, 1], pf)
+            else:
+                print(f"  {f}: only {int(yg.sum())}/{len(yg)} expert positives - report Platt kept")
+        tgt = w * rep.loc[ids, f].values + (1 - w) * pf
         print(f"{f:17s} {silent.mean():6.2f}  {y.mean():10.3f} {(tgt >= 0.5).mean():11.3f}  "
               f"{np.abs(tgt - rep.loc[ids, f].values).mean():10.3f}")
         out.loc[ids, f] = tgt
+        if f in gcal:   # holdout: silent cells through the same expert-fitted calibration
+            sh = (pk[f + "__verdict"].reindex(hid) == "UNK").fillna(False).values if hid else None
+            if hid:
+                Ph[f] = np.where(sh, gcal[f].predict_proba(Eh[[f]].values)[:, 1], Ph[f].values)
 
     if hid:
         rh = pk.loc[hid, LAB].astype(float)
@@ -126,7 +156,9 @@ def main() -> None:
         wh = np.where(sil.values, a.a_unk, a.a_said)
         th = pd.DataFrame(wh * rh.values + (1 - wh) * Ph.values, index=hid, columns=LAB)
         print(f"\nholdout-{len(hid)} AUC vs experts (macro over scorable findings)")
-        for name, frame in (("report (pilk)", rh), ("clean OOF ensemble", Ph), ("round target", th)):
+        # ensemble row = the raw rank mean: Platt is monotone, so this equals AUC(Ph) without --silent-gold and
+        # stays the ensemble's own number with it (Ph then mixes two calibrations within a finding)
+        for name, frame in (("report (pilk)", rh), ("clean OOF ensemble", Eh), ("round target", th)):
             t = auc_row(frame, gold.loc[hid])
             print(f"  {name:20s} {np.mean(list(t.values())):.4f}  " + " ".join(f"{v:.2f}" for v in t.values()))
     if cover < a.min_cover:

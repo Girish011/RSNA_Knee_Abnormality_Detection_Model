@@ -196,7 +196,7 @@ class StudyWindows(Dataset):
     """Per-study bag of 2.5D windows sampled from all_vols.npy (memmap).
     Each window = 3 physically-consecutive slices -> RGB, resized to `res`, in [0,1]
     (matches the SSL input pipeline: ToTensor, no ImageNet norm)."""
-    def __init__(self, root, ids, id2row, labels, res, k, train, aug=True, norm="none",
+    def __init__(self, root, ids, id2row, labels, res, k, train, aug=True, norm="none", aug_geo=0.0,
                  roi=False, roi_mode="tight", roi_pad=0.06, roi_overlap=0.12,
                  roi_sbox=None, roi_cen=None, eval_phase=0.0):
         self.root = root
@@ -204,6 +204,7 @@ class StudyWindows(Dataset):
         self.id2row = id2row
         self.labels = labels              # dict uid -> np.float32[12]
         self.res, self.k, self.train, self.aug = res, k, train, aug
+        self.aug_geo = float(aug_geo)     # 0 = off; 1 = +-12 deg, +-12 % scale, +-7 % shift per window, gamma per study
         self.norm = norm                  # "none"=[0,1] (Raptor SSL); "imagenet"=DINOv2 stats
         self._mean = torch.tensor([0.485, 0.456, 0.406]).view(3, 1, 1)
         self._std = torch.tensor([0.229, 0.224, 0.225]).view(3, 1, 1)
@@ -289,10 +290,28 @@ class StudyWindows(Dataset):
             # light medical-safe aug: NO flips (laterality is signal); mild intensity jitter
             g = 1.0 + (random.random() - 0.5) * 0.20
             x = (x * g).clamp(0, 1)
+            if self.aug_geo > 0:
+                x = _geo_aug(x, self.aug_geo)
         if self.norm == "imagenet":        # each backbone at its correct input distribution
             x = (x - self._mean) / self._std
         y = torch.from_numpy(self.labels[uid])
         return x, y
+
+
+def _geo_aug(x, s):
+    """Spatial augmentation the base recipe lacks: one random affine per window (rotation, isotropic scale,
+    shift; still NO flips), then one gamma for the study. x: (K,3,H,W) in [0,1]; s scales every range."""
+    K = x.shape[0]
+    ang = (torch.rand(K) * 2 - 1) * math.radians(12.0 * s)
+    sc = 1.0 + (torch.rand(K) * 2 - 1) * 0.12 * s
+    tx = (torch.rand(K) * 2 - 1) * 0.14 * s      # affine_grid units span [-1, 1]: 0.14 = 7 % of the width
+    ty = (torch.rand(K) * 2 - 1) * 0.14 * s
+    cos, sin = torch.cos(ang) / sc, torch.sin(ang) / sc
+    theta = torch.stack([torch.stack([cos, -sin, tx], 1), torch.stack([sin, cos, ty], 1)], 1)   # (K,2,3)
+    grid = F.affine_grid(theta, list(x.shape), align_corners=False)
+    x = F.grid_sample(x, grid, mode="bilinear", padding_mode="zeros", align_corners=False)
+    gam = math.exp((random.random() * 2 - 1) * 0.25 * s)
+    return x.clamp(0, 1) ** gam
 
 
 def collate(batch):
@@ -302,7 +321,7 @@ def collate(batch):
 
 
 # ------------------------------- model ---------------------------------------
-def build_backbone(arch="vit_small_patch16_224", pretrained=False):
+def build_backbone(arch="vit_small_patch16_224", pretrained=False, drop_path=0.0):
     hybrid = arch.startswith(("maxvit", "maxxvit", "coatnet", "coat_", "convnext"))
     is_vit = (not hybrid) and any(k in arch for k in ("vit", "deit", "dinov2", "eva", "beit"))
     kw = dict(pretrained=pretrained, num_classes=0, in_chans=3)
@@ -310,6 +329,8 @@ def build_backbone(arch="vit_small_patch16_224", pretrained=False):
         kw.update(global_pool="token", dynamic_img_size=True)
     else:
         kw.update(global_pool="avg")
+    if drop_path > 0:   # stochastic depth (training only; adds no weights, so checkpoints load unchanged)
+        kw.update(drop_path_rate=drop_path)
     return timm.create_model(arch, **kw)
 
 
@@ -408,6 +429,12 @@ def main():
     ap.add_argument("--label_weights", default=None,
                     help="12 comma-separated loss multipliers in LAB order (rescaled to mean 1); "
                          "up-weights chosen findings in the BCE. Default: all 1")
+    ap.add_argument("--aug_geo", type=float, default=0.0,
+                    help="strength of the per-window random affine + gamma augmentation (0 = off, the base recipe)")
+    ap.add_argument("--drop_path", type=float, default=0.0, help="stochastic-depth rate of the backbone (0 = off)")
+    ap.add_argument("--pos_weight_cap", type=float, default=10.0,
+                    help="upper clip of the per-finding positive weight (1-prev)/prev in the BCE; 1 = no "
+                         "up-weighting of positives (report YES is the noisy side). Default 10 = the base recipe")
     ap.add_argument("--eval_passes", type=int, default=2,
                     help="TTA passes at eval: averages the sigmoid over N shifted deterministic "
                          "window grids (1 = old behaviour, same windows every time)")
@@ -475,7 +502,10 @@ def main():
           + (f" | oof {len(oof_ids)}" if oof_ids else ""), flush=True)
 
     prev = np.clip(np.stack([labels[u] for u in train_ids]).mean(0), 0.03, 0.7)
-    pw = torch.tensor(np.clip((1 - prev) / prev, 1, 10), dtype=torch.float32, device=dev)
+    pw = torch.tensor(np.clip((1 - prev) / prev, 1, max(1.0, a.pos_weight_cap)), dtype=torch.float32, device=dev)
+    if a.pos_weight_cap != 10.0:
+        print(f"[loss] pos_weight cap {a.pos_weight_cap:g}: " + ", ".join(f"{n} {w:.1f}" for n, w in zip(LAB, pw.tolist())),
+              flush=True)
 
     # ---- ROI boxes (only when --roi) ----
     roi_sbox = roi_cen = None
@@ -496,12 +526,14 @@ def main():
     _roi_kw = dict(roi=a.roi, roi_mode=a.roi_mode, roi_pad=a.roi_pad, roi_overlap=a.roi_overlap,
                    roi_sbox=roi_sbox, roi_cen=roi_cen)
 
-    tds = StudyWindows(HERE, train_ids, id2row, labels, a.res, a.k, train=True, norm=a.norm, **_roi_kw)
+    tds = StudyWindows(HERE, train_ids, id2row, labels, a.res, a.k, train=True, norm=a.norm, aug_geo=a.aug_geo, **_roi_kw)
     tl = DataLoader(tds, batch_size=a.bs, shuffle=True, num_workers=a.workers, drop_last=True,
                     collate_fn=collate, pin_memory=True, persistent_workers=a.workers > 0)
 
     use_timm = a.ckpt in ("timm", "pretrained")
-    bb = build_backbone(a.arch, pretrained=use_timm)
+    bb = build_backbone(a.arch, pretrained=use_timm, drop_path=a.drop_path)
+    if a.aug_geo or a.drop_path:
+        print(f"[reg] aug_geo {a.aug_geo} | drop_path {a.drop_path}", flush=True)
     src = load_raptor(bb, a.ckpt)
     if use_timm: print(f"[raptor] timm-pretrained backbone: {a.arch}", flush=True)
     F_dim = bb.num_features
@@ -798,6 +830,7 @@ def main():
                    "res": a.res, "epochs": a.epochs, "bb_lr": a.bb_lr, "head_lr": a.head_lr,
                    "n_train": len(train_ids), "n_gold": len(gold_ids), "roi": a.roi,
                    "roi_mode": a.roi_mode, "ema": a.ema, "eval_passes": a.eval_passes,
+                   "aug_geo": a.aug_geo, "drop_path": a.drop_path, "pos_weight_cap": a.pos_weight_cap,
                    "oof_members": sorted(oof_comp), "partial": False, "epochs_done": a.epochs},
                   open(os.path.join(HERE, f"raptor_ft_{a.tag}.json"), "w"), indent=1)
         model.load_state_dict(best_state["model"]); model.eval()

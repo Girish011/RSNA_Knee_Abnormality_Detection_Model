@@ -110,6 +110,18 @@ print(f"[ours] submission.csv ok {_ens_final.shape}", flush=True)
 '''
 
 
+NEGATE = '''# ==== OURS: LB probe - reverse the order of chosen columns (AUC -> 1 - AUC) to read their public AUC ====
+import pandas as _ng_pd
+_NG_COLS = __COLS__
+_ng = _ng_pd.read_csv("/kaggle/working/submission.csv", dtype={"StudyInstanceUID": str})
+for _c in _NG_COLS:
+    _ng[_c] = 1.0 - _ng[_c].rank(method="average", pct=True)
+assert _ng.notna().all().all()
+_ng.to_csv("/kaggle/working/submission.csv", index=False)
+print("[ours] negated columns", _NG_COLS, flush=True)
+'''
+
+
 def resolve_members(ids: list[str]) -> list[tuple[str, str]]:
     """-> [(dataset slug, weight file name)]."""
     done = json.loads(MEMBERS.read_text())["done"] if MEMBERS.exists() else {}
@@ -119,6 +131,9 @@ def resolve_members(ids: list[str]) -> list[tuple[str, str]]:
             raise SystemExit(f"{i} is an eval record of {done[i]['eval_of']}, not a model")
         if i in done:
             out.append((done[i]["dataset"], done[i]["weights"]))
+        elif ":" in i:  # round-student checkpoint: <job>:<tag> -> rsna-knee-rp-<job>-out / raptor_ft_<tag>.pt
+            job, tag = i.split(":", 1)
+            out.append((f"{USER}/rsna-knee-rp-{job}-out", f"raptor_ft_{tag}.pt"))
         elif (i.startswith("m") and len(i) == 12) or i.startswith("soup"):
             raise SystemExit(f"member {i} not in {MEMBERS.name} done (still training or not collected yet)")
         else:
@@ -387,7 +402,8 @@ def build(name: str, member_ids: list[str], w: float, out_root: Path | None = No
           swap: str | None = None, tails: list[tuple[list[str], list[str], float]] | None = None,
           arms: dict[str, str] | None = None, coat_shift: float = 0.0,
           rad_heads: dict[str, tuple[str, str]] | None = None, dino: str | None = None,
-          dino_extra: tuple[str, float] | None = None, rad_exclude: tuple[str, ...] | None = None) -> Path:
+          dino_extra: tuple[str, float] | None = None, rad_exclude: tuple[str, ...] | None = None,
+          negate: list[str] | None = None) -> Path:
     """Global mode: every finding blends all ``member_ids`` at ``w``. Tail mode: each finding gets
     its own member subset and weight; findings with no tail keep the public stack's values."""
     if tails:
@@ -437,6 +453,10 @@ def build(name: str, member_ids: list[str], w: float, out_root: Path | None = No
     blend = (BLEND.replace("__TAILS__", repr(tail_map))
              .replace("__N_MEMBERS__", str(len(member_ids))))
     tail = ([code_cell(STASH), code_cell(run_leg), code_cell(blend)] if members else [])
+    if negate:   # per-finding LB probe: macro drops by (2 * AUC_f - 1) / 12 for each negated finding
+        if bad := [f for f in negate if f not in TARGETS]:
+            raise SystemExit(f"unknown findings {bad}; use {TARGETS}")
+        tail.append(code_cell(NEGATE.replace("__COLS__", repr(list(negate)))))
     nb2["cells"] = [start] + nb["cells"] + tail
     d = (out_root or REPO / "outputs" / "kernels") / name
     d.mkdir(parents=True, exist_ok=True)
@@ -453,7 +473,7 @@ def build(name: str, member_ids: list[str], w: float, out_root: Path | None = No
     (d / "kernel-metadata.json").write_text(json.dumps(meta2, indent=1))
     (d / "ENSEMBLE.json").write_text(json.dumps(
         {"base": nb_path.name, "members": member_ids if members else [], "weights": files, "w": w,
-         "swap_v5": swap, "swap_arms": arms or {}, "coat_shift": coat_shift, "rad_heads": rad_heads or {}, "dino": dino, "dino_extra": list(dino_extra) if dino_extra else None, "rad_exclude": list(rad_exclude) if rad_exclude is not None else None, "tails": {f: [[member_ids[j] for j in ix], tw] for f, (ix, tw) in tail_map.items()}},
+         "swap_v5": swap, "swap_arms": arms or {}, "coat_shift": coat_shift, "rad_heads": rad_heads or {}, "dino": dino, "dino_extra": list(dino_extra) if dino_extra else None, "rad_exclude": list(rad_exclude) if rad_exclude is not None else None, "negate": list(negate) if negate else None, "tails": {f: [[member_ids[j] for j in ix], tw] for f, (ix, tw) in tail_map.items()}},
         indent=1))
     return d
 
@@ -480,6 +500,8 @@ def main() -> None:
                     help="'owner/slug:beta' - our DINO package blended AFTER the calibrator at weight beta")
     ap.add_argument("--rad-exclude", default=None,
                     help="';'-separated findings the cell-25 Rad blend skips (base: Baker's;Fracture)")
+    ap.add_argument("--negate", default=None,
+                    help="';'-separated findings whose final column order is reversed (per-finding LB AUC probe)")
     a = ap.parse_args()
     rad = {k: tuple(v.rsplit(":", 1)) for k, v in (x.split("=", 1) for x in a.rad_heads)}
     if bad := set(rad) - set(RAD_HEADS):
@@ -491,7 +513,8 @@ def main() -> None:
               tails=[parse_tail(t) for t in a.tail] or None, arms=arms or None, coat_shift=a.coat_shift,
               rad_heads=rad or None, dino=a.dino_weights,
               dino_extra=(lambda d, b: (d, float(b)))(*a.dino_extra.rsplit(":", 1)) if a.dino_extra else None,
-              rad_exclude=tuple(x for x in a.rad_exclude.split(";") if x) if a.rad_exclude is not None else None)
+              rad_exclude=tuple(x for x in a.rad_exclude.split(";") if x) if a.rad_exclude is not None else None,
+              negate=[x for x in a.negate.split(";") if x] if a.negate else None)
     print(f"built {d}\npush (user-approved): kaggle kernels push -p {d}")
 
 

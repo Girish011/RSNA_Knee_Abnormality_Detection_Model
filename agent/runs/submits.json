@@ -290,7 +290,7 @@
   "fingerprint": "f6d0f18e4ff6f586",
   "why": "LEARNING: best 0.945 + Fracture into the cell-25 Rad blend (_RAD_EXCLUDE=Baker's only, as public d4-blend 0.946)",
   "ref": 56779149,
-  "public_lb": null,
+  "public_lb": 0.945,
   "ensemble": {
    "base": "rsna-knee-fast-2xt4-inference.ipynb",
    "members": [],
@@ -308,5 +308,417 @@
    "tails": {}
   },
   "ts": 1790962626.302499
+ },
+ {
+  "date": "2026-10-03T20:15:46.032691+00:00",
+  "kernel": "girishbose/probe-r1-coat-f0",
+  "version": 1,
+  "fingerprint": "db3d41c43385ecf5",
+  "why": "OWN-ALONE PROBE: round-1 CoAt student fold 0 alone (labels_r1) vs 5bc0 fold-0 teacher 0.920",
+  "ref": 56806013,
+  "public_lb": 0.928,
+  "ensemble": null,
+  "ts": 1791058547.977485
+ },
+ {
+  "date": "2026-10-03T20:15:53.830451+00:00",
+  "kernel": "girishbose/probe-r1-coat5",
+  "version": 1,
+  "fingerprint": "c39f2dd27e567edf",
+  "why": "OWN-ALONE PROBE: 5-fold round-1 CoAt students mean (labels_r1); single-model baseline 0.920",
+  "ref": 56806016,
+  "public_lb": 0.932,
+  "ensemble": null,
+  "ts": 1791058554.914251
+ },
+ {
+  "date": "2026-10-03T20:48:49.142875+00:00",
+  "kernel": "girishbose/probe-r0-coat5",
+  "version": 1,
+  "fingerprint": "993b018be023c110",
+  "why": "OWN-ALONE CONTROL: 5-fold round-0 CoAt teachers mean (report labels) - isolates ensembling from the label effect of probe-r1-coat5",
+  "ref": 56806452,
+  "public_lb": 0.929,
+  "ensemble": null,
+  "ts": 1791060531.165396
+ },
+ {
+  "date": "2026-10-04T01:03:22.148082+00:00",
+  "kernel": "girishbose/probe-r1-c224x5",
+  "version": 1,
+  "fingerprint": "3048ec9e18ba8de7",
+  "why": "OWN-ALONE PROBE: 5-fold CoAtNet@224 k16 students (labels_r1); CoAt-384 students 0.932, holdout-29 0.941 vs 0.934",
+  "ref": 56810671,
+  "public_lb": 0.933,
+  "ensemble": null,
+  "ts": 1791075803.244642
+ },
+ {
+  "date": "2026-10-04T05:08:09.040135+00:00",
+  "kernel": "girishbose/coat-up15-c224-w20",
+  "version": 1,
+  "fingerprint": "448e486ee10f3ae9",
+  "why": "FINAL-LEVEL BLEND: best 0.945 stack (coat-up15-b4) + own c224x5 leg (alone 0.933, never saw v5) rank w=0.2",
+  "ref": 56814815,
+  "public_lb": 0.943,
+  "ensemble": {
+   "base": "rsna-knee-fast-2xt4-inference.ipynb",
+   "members": [
+    "r1-c224-f0:r1c2240",
+    "r1-c224-f1:r1c2241",
+    "r1-c224-f2:r1c2242",
+    "r1-c224-f3:r1c2243",
+    "r1-c224-f4:r1c2244"
+   ],
+   "weights": [
+    "raptor_ft_r1c2240.pt",
+    "raptor_ft_r1c2241.pt",
+    "raptor_ft_r1c2242.pt",
+    "raptor_ft_r1c2243.pt",
+    "raptor_ft_r1c2244.pt"
+   ],
+   "w": 0.2,
+   "swap_v5": "soupbestof4",
+   "swap_arms": {},
+   "coat_shift": 0.15,
+   "rad_heads": {},
+   "dino": null,
+   "dino_extra": null,
+   "rad_exclude": null,
+   "tails": {
+    "ACL": [
+     [
+      "r1-c224-f0:r1c2240",
+      "r1-c224-f1:r1c2241",
+      "r1-c224-f2:r1c2242",
+      "r1-c224-f3:r1c2243",
+      "r1-c224-f4:r1c2244"
+     ],
+     0.2
+    ],
+    "MCL": [
+     [
+      "r1-c224-f0:r1c2240",
+      "r1-c224-f1:r1c2241",
+      "r1-c224-f2:r1c2242",
+      "r1-c224-f3:r1c2243",
+      "r1-c224-f4:r1c2244"
+     ],
+     0.2
+    ],
+    "Medial Meniscus": [
+     [
+      "r1-c224-f0:r1c2240",
+      "r1-c224-f1:r1c2241",
+      "r1-c224-f2:r1c2242",
+      "r1-c224-f3:r1c2243",
+      "r1-c224-f4:r1c2244"
+     ],
+     0.2
+    ],
+    "Lateral Meniscus": [
+     [
+      "r1-c224-f0:r1c2240",
+      "r1-c224-f1:r1c2241",
+      "r1-c224-f2:r1c2242",
+      "r1-c224-f3:r1c2243",
+      "r1-c224-f4:r1c2244"
+     ],
+     0.2
+    ],
+    "Medial OA": [
+     [
+      "r1-c224-f0:r1c2240",
+      "r1-c224-f1:r1c2241",
+      "r1-c224-f2:r1c2242",
+      "r1-c224-f3:r1c2243",
+      "r1-c224-f4:r1c2244"
+     ],
+     0.2
+    ],
+    "Lateral OA": [
+     [
+      "r1-c224-f0:r1c2240",
+      "r1-c224-f1:r1c2241",
+      "r1-c224-f2:r1c2242",
+      "r1-c224-f3:r1c2243",
+      "r1-c224-f4:r1c2244"
+     ],
+     0.2
+    ],
+    "PF OA": [
+     [
+      "r1-c224-f0:r1c2240",
+      "r1-c224-f1:r1c2241",
+      "r1-c224-f2:r1c2242",
+      "r1-c224-f3:r1c2243",
+      "r1-c224-f4:r1c2244"
+     ],
+     0.2
+    ],
+    "Effusion": [
+     [
+      "r1-c224-f0:r1c2240",
+      "r1-c224-f1:r1c2241",
+      "r1-c224-f2:r1c2242",
+      "r1-c224-f3:r1c2243",
+      "r1-c224-f4:r1c2244"
+     ],
+     0.2
+    ],
+    "Synovitis": [
+     [
+      "r1-c224-f0:r1c2240",
+      "r1-c224-f1:r1c2241",
+      "r1-c224-f2:r1c2242",
+      "r1-c224-f3:r1c2243",
+      "r1-c224-f4:r1c2244"
+     ],
+     0.2
+    ],
+    "Baker's": [
+     [
+      "r1-c224-f0:r1c2240",
+      "r1-c224-f1:r1c2241",
+      "r1-c224-f2:r1c2242",
+      "r1-c224-f3:r1c2243",
+      "r1-c224-f4:r1c2244"
+     ],
+     0.2
+    ],
+    "Contusion": [
+     [
+      "r1-c224-f0:r1c2240",
+      "r1-c224-f1:r1c2241",
+      "r1-c224-f2:r1c2242",
+      "r1-c224-f3:r1c2243",
+      "r1-c224-f4:r1c2244"
+     ],
+     0.2
+    ],
+    "Fracture": [
+     [
+      "r1-c224-f0:r1c2240",
+      "r1-c224-f1:r1c2241",
+      "r1-c224-f2:r1c2242",
+      "r1-c224-f3:r1c2243",
+      "r1-c224-f4:r1c2244"
+     ],
+     0.2
+    ]
+   }
+  },
+  "ts": 1791090491.935979
+ },
+ {
+  "date": "2026-10-04T05:08:41.509394+00:00",
+  "kernel": "girishbose/coat-up15-c224-w30",
+  "version": 1,
+  "fingerprint": "1b50acc1a2922823",
+  "why": "FINAL-LEVEL BLEND: best 0.945 stack (coat-up15-b4) + own c224x5 leg (alone 0.933, never saw v5) rank w=0.3",
+  "ref": 56814822,
+  "public_lb": 0.944,
+  "ensemble": {
+   "base": "rsna-knee-fast-2xt4-inference.ipynb",
+   "members": [
+    "r1-c224-f0:r1c2240",
+    "r1-c224-f1:r1c2241",
+    "r1-c224-f2:r1c2242",
+    "r1-c224-f3:r1c2243",
+    "r1-c224-f4:r1c2244"
+   ],
+   "weights": [
+    "raptor_ft_r1c2240.pt",
+    "raptor_ft_r1c2241.pt",
+    "raptor_ft_r1c2242.pt",
+    "raptor_ft_r1c2243.pt",
+    "raptor_ft_r1c2244.pt"
+   ],
+   "w": 0.3,
+   "swap_v5": "soupbestof4",
+   "swap_arms": {},
+   "coat_shift": 0.15,
+   "rad_heads": {},
+   "dino": null,
+   "dino_extra": null,
+   "rad_exclude": null,
+   "tails": {
+    "ACL": [
+     [
+      "r1-c224-f0:r1c2240",
+      "r1-c224-f1:r1c2241",
+      "r1-c224-f2:r1c2242",
+      "r1-c224-f3:r1c2243",
+      "r1-c224-f4:r1c2244"
+     ],
+     0.3
+    ],
+    "MCL": [
+     [
+      "r1-c224-f0:r1c2240",
+      "r1-c224-f1:r1c2241",
+      "r1-c224-f2:r1c2242",
+      "r1-c224-f3:r1c2243",
+      "r1-c224-f4:r1c2244"
+     ],
+     0.3
+    ],
+    "Medial Meniscus": [
+     [
+      "r1-c224-f0:r1c2240",
+      "r1-c224-f1:r1c2241",
+      "r1-c224-f2:r1c2242",
+      "r1-c224-f3:r1c2243",
+      "r1-c224-f4:r1c2244"
+     ],
+     0.3
+    ],
+    "Lateral Meniscus": [
+     [
+      "r1-c224-f0:r1c2240",
+      "r1-c224-f1:r1c2241",
+      "r1-c224-f2:r1c2242",
+      "r1-c224-f3:r1c2243",
+      "r1-c224-f4:r1c2244"
+     ],
+     0.3
+    ],
+    "Medial OA": [
+     [
+      "r1-c224-f0:r1c2240",
+      "r1-c224-f1:r1c2241",
+      "r1-c224-f2:r1c2242",
+      "r1-c224-f3:r1c2243",
+      "r1-c224-f4:r1c2244"
+     ],
+     0.3
+    ],
+    "Lateral OA": [
+     [
+      "r1-c224-f0:r1c2240",
+      "r1-c224-f1:r1c2241",
+      "r1-c224-f2:r1c2242",
+      "r1-c224-f3:r1c2243",
+      "r1-c224-f4:r1c2244"
+     ],
+     0.3
+    ],
+    "PF OA": [
+     [
+      "r1-c224-f0:r1c2240",
+      "r1-c224-f1:r1c2241",
+      "r1-c224-f2:r1c2242",
+      "r1-c224-f3:r1c2243",
+      "r1-c224-f4:r1c2244"
+     ],
+     0.3
+    ],
+    "Effusion": [
+     [
+      "r1-c224-f0:r1c2240",
+      "r1-c224-f1:r1c2241",
+      "r1-c224-f2:r1c2242",
+      "r1-c224-f3:r1c2243",
+      "r1-c224-f4:r1c2244"
+     ],
+     0.3
+    ],
+    "Synovitis": [
+     [
+      "r1-c224-f0:r1c2240",
+      "r1-c224-f1:r1c2241",
+      "r1-c224-f2:r1c2242",
+      "r1-c224-f3:r1c2243",
+      "r1-c224-f4:r1c2244"
+     ],
+     0.3
+    ],
+    "Baker's": [
+     [
+      "r1-c224-f0:r1c2240",
+      "r1-c224-f1:r1c2241",
+      "r1-c224-f2:r1c2242",
+      "r1-c224-f3:r1c2243",
+      "r1-c224-f4:r1c2244"
+     ],
+     0.3
+    ],
+    "Contusion": [
+     [
+      "r1-c224-f0:r1c2240",
+      "r1-c224-f1:r1c2241",
+      "r1-c224-f2:r1c2242",
+      "r1-c224-f3:r1c2243",
+      "r1-c224-f4:r1c2244"
+     ],
+     0.3
+    ],
+    "Fracture": [
+     [
+      "r1-c224-f0:r1c2240",
+      "r1-c224-f1:r1c2241",
+      "r1-c224-f2:r1c2242",
+      "r1-c224-f3:r1c2243",
+      "r1-c224-f4:r1c2244"
+     ],
+     0.3
+    ]
+   }
+  },
+  "ts": 1791090522.669299
+ },
+ {
+  "date": "2026-10-04T05:41:25.342327+00:00",
+  "kernel": "girishbose/probe-neg-synov",
+  "version": 1,
+  "fingerprint": "33e73ad3ea5824ef",
+  "why": "LEARNING per-finding probe: best stack coat-up15-b4 (0.945) with the Synovitis column reversed; AUC_f = (1 + 12*(0.945 - LB))/2",
+  "ref": 56815408,
+  "public_lb": 0.876,
+  "ensemble": {
+   "base": "rsna-knee-fast-2xt4-inference.ipynb",
+   "members": [],
+   "weights": [],
+   "w": 0.0,
+   "swap_v5": "soupbestof4",
+   "swap_arms": {},
+   "coat_shift": 0.15,
+   "rad_heads": {},
+   "dino": null,
+   "dino_extra": null,
+   "rad_exclude": null,
+   "negate": [
+    "Synovitis"
+   ],
+   "tails": {}
+  },
+  "ts": 1791092486.481687
+ },
+ {
+  "date": "2026-10-04T05:41:32.404162+00:00",
+  "kernel": "girishbose/probe-neg-latmen",
+  "version": 1,
+  "fingerprint": "7914a1a77855dbed",
+  "why": "LEARNING per-finding probe: best stack coat-up15-b4 (0.945) with the Lateral Meniscus column reversed; AUC_f = (1 + 12*(0.945 - LB))/2",
+  "ref": 56815410,
+  "public_lb": 0.87,
+  "ensemble": {
+   "base": "rsna-knee-fast-2xt4-inference.ipynb",
+   "members": [],
+   "weights": [],
+   "w": 0.0,
+   "swap_v5": "soupbestof4",
+   "swap_arms": {},
+   "coat_shift": 0.15,
+   "rad_heads": {},
+   "dino": null,
+   "dino_extra": null,
+   "rad_exclude": null,
+   "negate": [
+    "Lateral Meniscus"
+   ],
+   "tails": {}
+  },
+  "ts": 1791092493.535285
  }
 ]
