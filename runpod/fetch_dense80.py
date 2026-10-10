@@ -20,7 +20,7 @@ import requests
 USER = "girishbose"
 NAME = os.environ.get("DENSE_NAME", "dense80")
 N_SHARDS = int(os.environ.get("DENSE_SHARDS", "4"))
-PAR = int(os.environ.get("DENSE_PAR", "1" if NAME == "dense80" else "3"))
+PAR = int(os.environ.get("DENSE_PAR", "4" if NAME == "dense80" else "3"))   # all four dense80 shards at once
 EXTRA = [] if NAME == "dense80" else ["geom_s{s}.npy", "series_s{s}.json"]
 OUT = Path(os.environ.get("DENSE80_DIR", f"/workspace/input/{NAME}"))
 TOKEN = os.environ.get("KAGGLE_API_TOKEN") or os.environ.get("KAGGLE_KEY")

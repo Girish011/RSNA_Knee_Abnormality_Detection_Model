@@ -133,6 +133,15 @@ class _TwoPartVols(_MultiPartVols):
         self.a, self.b, self.n_a = a, b, a.shape[0]
 
 
+def _ext_parts(kind):
+    """Sorted <kind>_e<k>.npy files of the external cache (env KNEE_EXT_DIR, set by --ext_dir), or []."""
+    d = os.environ.get("KNEE_EXT_DIR", "")
+    if not d or not os.path.isdir(d):
+        return []
+    fs = [f for f in os.listdir(d) if f.startswith(kind + "_e") and f.endswith(".npy")]
+    return [os.path.join(d, f) for f in sorted(fs, key=lambda f: int(f[len(kind) + 2:-4]))]
+
+
 def _open_corpus():
     """Return (vols, masks), from local file, dense80 shards, or the public two-part corpus."""
     local_v = os.path.join(HERE, "all_vols.npy")
@@ -143,8 +152,8 @@ def _open_corpus():
     shard_vs = [_find(f"vols_s{i}.npy") for i in range(4)]
     shard_ms = [_find(f"masks_s{i}.npy") for i in range(4)]
     if all(shard_vs) and all(shard_ms):
-        vols = _MultiPartVols([np.load(p, mmap_mode="r") for p in shard_vs])
-        masks = np.concatenate([np.load(p) for p in shard_ms], axis=0)
+        vols = _MultiPartVols([np.load(p, mmap_mode="r") for p in shard_vs + _ext_parts("vols")])
+        masks = np.concatenate([np.load(p) for p in shard_ms + _ext_parts("masks")], axis=0)
         return vols, masks
     av, bv = _find("all_vols.npy"), _find("extra_vols.npy")
     am, bm = _find("all_masks.npy"), _find("extra_masks.npy")
@@ -164,7 +173,7 @@ def _open_ids():
         return np.load(local, allow_pickle=True).astype(str)
     shard_ids = [_find(f"ids_s{i}.npy") for i in range(4)]
     if all(shard_ids):
-        return np.concatenate([np.load(p, allow_pickle=True).astype(str) for p in shard_ids])
+        return np.concatenate([np.load(p, allow_pickle=True).astype(str) for p in shard_ids + _ext_parts("ids")])
     a, b = _find("all_ids.npy"), _find("extra_ids.npy")
     if not (a and b):
         raise SystemExit("Could not find all_ids.npy / extra_ids.npy - attach both corpus parts "
@@ -197,14 +206,19 @@ class StudyWindows(Dataset):
     Each window = 3 physically-consecutive slices -> RGB, resized to `res`, in [0,1]
     (matches the SSL input pipeline: ToTensor, no ImageNet norm)."""
     def __init__(self, root, ids, id2row, labels, res, k, train, aug=True, norm="none", aug_geo=0.0,
-                 roi=False, roi_mode="tight", roi_pad=0.06, roi_overlap=0.12,
-                 roi_sbox=None, roi_cen=None, eval_phase=0.0):
+                 aug_flip=0.0, aug_erase=0.0, ext_weight=1.0, roi=False, roi_mode="tight", roi_pad=0.06, roi_overlap=0.12,
+                 roi_sbox=None, roi_cen=None, eval_phase=0.0, sample="rand", sides=None):
         self.root = root
+        self.sides = sides                # uid -> True for a left knee: shown mirrored, so every knee reads as a right knee
+        self.sample = sample              # "rand" = any slot of the volume; "strat" = ordered windows from every series
         self.ids = ids
         self.id2row = id2row
         self.labels = labels              # dict uid -> np.float32[12]
         self.res, self.k, self.train, self.aug = res, k, train, aug
         self.aug_geo = float(aug_geo)     # 0 = off; 1 = +-12 deg, +-12 % scale, +-7 % shift per window, gamma per study
+        self.aug_flip = float(aug_flip)   # probability of a left-right mirror of the whole study (dense80 only)
+        self.aug_erase = float(aug_erase) # per-window probability of blanking one random rectangle
+        self.ext_weight = float(ext_weight)   # loss weight of external studies (ids starting with "fm_")
         self.norm = norm                  # "none"=[0,1] (Raptor SSL); "imagenet"=DINOv2 stats
         self._mean = torch.tensor([0.485, 0.456, 0.406]).view(3, 1, 1)
         self._std = torch.tensor([0.229, 0.224, 0.225]).view(3, 1, 1)
@@ -241,6 +255,27 @@ class StudyWindows(Dataset):
         idx = np.round(frac * (len(cs) - 1)).astype(int)
         return [cs[i] for i in idx]
 
+    def _centers_strat(self, m, count):
+        """Series-aware window centres: every filled series block gets its share of the windows, spread in slice
+        order over the block (jittered when training), and no window straddles two series."""
+        spans = []
+        for s, e in BLOCKS:
+            v = np.where(m[s:e] > 0)[0]
+            if len(v) == 0:
+                continue
+            lo, hi = s + int(v.min()) + 1, s + int(v.max()) - 1
+            if hi < lo:
+                lo = hi = max(s + 1, min(s + int(v[len(v) // 2]), e - 2))
+            spans.append((lo, hi))
+        if not spans:
+            return [1] * count
+        cs = []
+        for (lo, hi), n in zip(spans, _alloc([hi - lo + 1 for lo, hi in spans], count)):
+            for j in range(n):
+                u = (j + random.random()) / n if self.train else ((j + 0.5 + self.eval_phase) / n) % 1.0
+                cs.append(lo + int(round(u * (hi - lo))))
+        return cs
+
     def _resize(self, tri):
         """tri: (3,h,w) float32 [0,1] -> (3,res,res) float32."""
         t = torch.from_numpy(np.ascontiguousarray(tri))
@@ -259,7 +294,8 @@ class StudyWindows(Dataset):
         # compartment mode emits 2 crops/center -> sample ceil(k/2) centers to keep #windows==k
         compart = self.roi and self.roi_mode == "compartment"
         n_centers = (self.k + 1) // 2 if compart else self.k
-        cs = self._centers(valid, n_centers)
+        strat = self.sample == "strat" and self._D == 80 and not self.roi
+        cs = self._centers_strat(m, n_centers) if strat else self._centers(valid, n_centers)
         vol = self.vols[row]  # (D,H,W) u8  (single study read)
         tiles = []            # list of (3,res,res) float32
         for c in cs:
@@ -286,16 +322,27 @@ class StudyWindows(Dataset):
             tiles = tiles[:self.k]
         wins = np.stack(tiles, 0)          # (K,3,res,res)
         x = torch.from_numpy(wins)
+        pos = _slot_pos(cs[:len(tiles)], self._D)   # (K,2): series block, position inside the block (0..1)
+        if self.sides is not None and self.sides.get(uid, False) and self._D == 80 and not self.roi:
+            x = _mirror(x, cs)                  # canonical side, train and eval alike (use with --aug_flip 0)
+            sag = pos[:, 0] < 2
+            pos[sag, 1] = 1.0 - pos[sag, 1]
         if self.train and self.aug:
             # light medical-safe aug: NO flips (laterality is signal); mild intensity jitter
             g = 1.0 + (random.random() - 0.5) * 0.20
             x = (x * g).clamp(0, 1)
+            if self.aug_flip > 0 and not self.roi and self._D == 80 and random.random() < self.aug_flip:
+                x = _mirror(x, cs)
+                sag = pos[:, 0] < 2             # a mirrored knee runs through its sagittal slices the other way
+                pos[sag, 1] = 1.0 - pos[sag, 1]
             if self.aug_geo > 0:
                 x = _geo_aug(x, self.aug_geo)
+            if self.aug_erase > 0:
+                x = _erase(x, self.aug_erase)
         if self.norm == "imagenet":        # each backbone at its correct input distribution
             x = (x - self._mean) / self._std
         y = torch.from_numpy(self.labels[uid])
-        return x, y
+        return x, y, (self.ext_weight if uid.startswith("fm_") else 1.0), pos
 
 
 def _geo_aug(x, s):
@@ -314,10 +361,67 @@ def _geo_aug(x, s):
     return x.clamp(0, 1) ** gam
 
 
+SAG_SLOTS = 40   # dense80 layout: slots 0-39 sagittal (22 fluid + 18 non-fluid), 40-64 coronal, 65-79 axial
+BLOCKS = [(0, 22), (22, 40), (40, 55), (55, 65), (65, 80)]   # sag fluid, sag other, cor fluid, cor other, axial
+
+
+def _alloc(sizes, count):
+    """Split `count` windows over blocks in proportion to their sizes (largest remainder; every block >= 1 if it can)."""
+    tot = float(sum(sizes)) or 1.0
+    raw = [count * z / tot for z in sizes]
+    n = [int(r) for r in raw]
+    for i in sorted(range(len(sizes)), key=lambda i: raw[i] - n[i], reverse=True)[:count - sum(n)]:
+        n[i] += 1
+    for i in range(len(n)):
+        if n[i] == 0 and max(n) > 1:
+            n[n.index(max(n))] -= 1; n[i] = 1
+    return n
+
+
+def _slot_pos(cs, D):
+    """(K,2) float32 per window: index of its series block and its position inside that block in [0,1]."""
+    out = np.zeros((len(cs), 2), np.float32)
+    for i, c in enumerate(cs):
+        if D != 80:
+            out[i] = (0.0, c / max(D - 1, 1)); continue
+        for b, (s, e) in enumerate(BLOCKS):
+            if s <= c < e:
+                out[i] = (b, (c - s) / (e - s - 1.0)); break
+    return torch.from_numpy(out)
+
+
+def _fourier(rel):
+    """(...,) position in [0,1] -> (...,12) sin / cos features at six frequencies."""
+    f = rel[..., None] * (math.pi * (2.0 ** torch.arange(6, device=rel.device, dtype=rel.dtype)))
+    return torch.cat([torch.sin(f), torch.cos(f)], -1)
+
+
+def _mirror(x, cs):
+    """Left-right mirror of the whole knee = a valid opposite-side knee with the same medial / lateral labels.
+    Coronal and axial windows flip in-plane; sagittal windows reverse their slice (= channel) order."""
+    out = x.clone()
+    for i, c in enumerate(cs[:x.shape[0]]):
+        out[i] = x[i].flip(0) if c < SAG_SLOTS else x[i].flip(-1)
+    return out
+
+
+def _erase(x, p):
+    """Coarse dropout: with probability p per window, blank one rectangle of 10-30 % of each side."""
+    K, _, H, W = x.shape
+    for i in range(K):
+        if random.random() < p:
+            h, w = int(H * random.uniform(0.1, 0.3)), int(W * random.uniform(0.1, 0.3))
+            y0, x0 = random.randint(0, H - h), random.randint(0, W - w)
+            x[i, :, y0:y0 + h, x0:x0 + w] = 0
+    return x
+
+
 def collate(batch):
     xs = torch.stack([b[0] for b in batch])   # (B,K,3,res,res)
     ys = torch.stack([b[1] for b in batch])   # (B,12)
-    return xs, ys
+    ws = torch.tensor([b[2] for b in batch], dtype=torch.float32)   # (B,) per-study loss weight
+    ps = torch.stack([b[3] for b in batch])   # (B,K,2) slot info per window
+    return xs, ys, ws, ps
 
 
 # ------------------------------- model ---------------------------------------
@@ -376,8 +480,67 @@ class RaptorClassifier(nn.Module):
         logits = (pooled * self.clsW).sum(-1) + self.clsb
         return logits
 
-    def forward(self, x):
+    def forward(self, x, pos=None):
         return self.head(self.encode(x))
+
+
+class SeqClassifier(nn.Module):
+    """RaptorClassifier that knows where each window comes from. Every added part is gated at zero, so training starts
+    from the plain attention-MIL head and only moves away from it where that lowers the loss:
+      slot : series block + position inside it, added to the input of the per-finding attention (always on);
+      tr   : a small transformer over the study's windows (with slot embeddings), added to the window features -
+             lets a window be read in the context of the others (which side of the knee, which sequence);
+      sp   : per-finding spatial attention over the backbone's feature map instead of its global average."""
+    def __init__(self, backbone, F_dim=384, n=12, drop=0.2, use_tr=True, use_sp=False, D=384, layers=2, heads=6):
+        super().__init__()
+        self.backbone = backbone
+        self.norm = nn.LayerNorm(F_dim)
+        self.att = nn.Sequential(nn.Linear(F_dim, 256), nn.Tanh(), nn.Dropout(drop),
+                                 nn.Linear(256, n))
+        self.clsW = nn.Parameter(torch.zeros(n, F_dim))
+        self.clsb = nn.Parameter(torch.zeros(n))
+        nn.init.trunc_normal_(self.clsW, std=0.02)
+        self.n, self.use_tr, self.use_sp = n, bool(use_tr), bool(use_sp)
+        self.blk_att = nn.Embedding(len(BLOCKS), F_dim)
+        self.pos_att = nn.Linear(12, F_dim)
+        for t in (self.blk_att.weight, self.pos_att.weight, self.pos_att.bias):
+            nn.init.zeros_(t)
+        if self.use_tr:
+            self.proj_in = nn.Linear(F_dim, D)
+            self.blk_tr = nn.Embedding(len(BLOCKS), D)
+            self.pos_tr = nn.Linear(12, D)
+            layer = nn.TransformerEncoderLayer(D, heads, 2 * D, dropout=0.1, batch_first=True, norm_first=True)
+            self.tr = nn.TransformerEncoder(layer, layers, enable_nested_tensor=False)
+            self.proj_out = nn.Linear(D, F_dim)
+            self.gamma = nn.Parameter(torch.zeros(1))
+        if self.use_sp:
+            self.sp_norm = nn.LayerNorm(F_dim)
+            self.sp = nn.Linear(F_dim, n)
+            nn.init.zeros_(self.sp.weight); nn.init.zeros_(self.sp.bias)
+
+    def forward(self, x, pos=None):
+        B, K = x.shape[:2]
+        if self.use_sp:
+            fm = self.backbone.forward_features(x.flatten(0, 1))          # (BK,C,h,w)
+            t = fm.flatten(2).transpose(1, 2)                              # (BK,hw,C)
+            s = torch.softmax(self.sp(self.sp_norm(t)).float(), dim=1).to(t.dtype)   # (BK,hw,n); zero init = uniform
+            g = torch.einsum("thn,thc->tnc", s, t)                         # (BK,n,C) one pooled vector per finding
+            f = self.backbone.forward_head(g.reshape(-1, g.shape[-1], 1, 1)).view(B, K, self.n, -1)
+        else:
+            f = self.backbone(x.flatten(0, 1)).view(B, K, 1, -1)
+        e_att = 0.0
+        if pos is not None:
+            blk, ff = pos[..., 0].long(), _fourier(pos[..., 1].float())
+            e_att = (self.blk_att(blk) + self.pos_att(ff))[:, :, None, :]
+            if self.use_tr:
+                z = self.proj_in(self.norm(f.mean(2))) + self.blk_tr(blk) + self.pos_tr(ff)
+                f = f + self.gamma * self.proj_out(self.tr(z))[:, :, None, :]
+        h = self.norm(f)                                                   # (B,K,n or 1,F)
+        a = self.att(h + e_att)                                            # (B,K,n or 1,n)
+        a = torch.diagonal(a, dim1=2, dim2=3) if self.use_sp else a[:, :, 0]
+        a = torch.softmax(a.float(), dim=1).to(h.dtype)                    # (B,K,n) over the windows
+        pooled = torch.einsum("bkn,bknf->bnf", a, h.expand(-1, -1, self.n, -1))
+        return (pooled * self.clsW).sum(-1) + self.clsb
 
 
 # ------------------------------- train ---------------------------------------
@@ -432,6 +595,10 @@ def main():
     ap.add_argument("--aug_geo", type=float, default=0.0,
                     help="strength of the per-window random affine + gamma augmentation (0 = off, the base recipe)")
     ap.add_argument("--drop_path", type=float, default=0.0, help="stochastic-depth rate of the backbone (0 = off)")
+    ap.add_argument("--aug_flip", type=float, default=0.0,
+                    help="probability of mirroring the whole study left-right during training (0 = off; dense80 only)")
+    ap.add_argument("--aug_erase", type=float, default=0.0,
+                    help="per-window probability of blanking one random rectangle during training (0 = off)")
     ap.add_argument("--pos_weight_cap", type=float, default=10.0,
                     help="upper clip of the per-finding positive weight (1-prev)/prev in the BCE; 1 = no "
                          "up-weighting of positives (report YES is the noisy side). Default 10 = the base recipe")
@@ -447,7 +614,30 @@ def main():
     # ---- expert holdout: these gold studies are neither trained on nor used for epoch selection;
     # they are predicted once at the end with the selected weights (raptor_holdout_<tag>.npz).
     ap.add_argument("--holdout", default=None, help="json list of expert StudyInstanceUIDs")
+    # ---- external studies (fastMRI cache built on the pod): extra training rows, never held out or evaluated
+    ap.add_argument("--ext_dir", default=None,
+                    help="directory with vols_e<k>.npy / masks_e<k>.npy / ids_e<k>.npy (ids start with fm_); their "
+                         "pseudo-labels must be rows of --labels")
+    ap.add_argument("--ext_weight", type=float, default=1.0, help="loss weight of external studies (1 = like the rest)")
+    # ---- slot-aware head (default "mil" = the base head; checkpoints of the base recipe are unchanged)
+    ap.add_argument("--head", default="mil", choices=["mil", "seq", "tok", "seqtok"],
+                    help="mil = attention-MIL over unordered windows; seq = + slot embeddings and a transformer over the "
+                         "windows; tok = + slot embeddings and per-finding spatial attention; seqtok = both")
+    ap.add_argument("--bb_file", default=None,
+                    help="file name (searched under /kaggle/input) or path of a timm state dict for --arch, saved from "
+                         "create_model(arch, pretrained=True, num_classes=0): the ImageNet weights without internet")
+    ap.add_argument("--canon", default=None,
+                    help="json {StudyInstanceUID: 'L' | 'R'} (file name searched under /kaggle/input, or a path): left "
+                         "knees are mirrored at train and eval, so medial / lateral sit on the same image side and at "
+                         "the same end of the sagittal stack in every study. Use with --aug_flip 0")
+    ap.add_argument("--amp", default="bf16", choices=["bf16", "fp16"],
+                    help="autocast precision: bf16 (A40 / 4090 pods, the base recipe) or fp16 with a gradient scaler "
+                         "(Kaggle T4, which has no native bfloat16)")
+    ap.add_argument("--sample", default="rand", choices=["rand", "strat"],
+                    help="rand = window centres anywhere in the volume; strat = ordered windows from every series")
     a = ap.parse_args()
+    if a.ext_dir:                       # read by _open_corpus / _open_ids, also in the DataLoader workers
+        os.environ["KNEE_EXT_DIR"] = a.ext_dir
     random.seed(a.seed); np.random.seed(a.seed); torch.manual_seed(a.seed)
     dev = "cuda" if torch.cuda.is_available() else "cpu"
     if a.smoke:
@@ -498,10 +688,13 @@ def main():
     labels = {u: soft.loc[u, LAB].values.astype(np.float32) for u in train_ids}
     for u in oof_ids: labels[u] = soft.loc[u, LAB].values.astype(np.float32)
     for u in gold_ids + holdout_ids: labels[u] = gold_df.loc[u, LAB].values.astype(np.float32)
+    n_ext = sum(u.startswith("fm_") for u in train_ids)
     print(f"train {len(train_ids)} | gold-val {len(gold_ids)}"
-          + (f" | oof {len(oof_ids)}" if oof_ids else ""), flush=True)
+          + (f" | oof {len(oof_ids)}" if oof_ids else "")
+          + (f" | external {n_ext} (loss weight {a.ext_weight})" if n_ext else ""), flush=True)
 
-    prev = np.clip(np.stack([labels[u] for u in train_ids]).mean(0), 0.03, 0.7)
+    # positive weights from the competition studies only: the external population has its own prevalence
+    prev = np.clip(np.stack([labels[u] for u in train_ids if not u.startswith("fm_")]).mean(0), 0.03, 0.7)
     pw = torch.tensor(np.clip((1 - prev) / prev, 1, max(1.0, a.pos_weight_cap)), dtype=torch.float32, device=dev)
     if a.pos_weight_cap != 10.0:
         print(f"[loss] pos_weight cap {a.pos_weight_cap:g}: " + ", ".join(f"{n} {w:.1f}" for n, w in zip(LAB, pw.tolist())),
@@ -526,14 +719,33 @@ def main():
     _roi_kw = dict(roi=a.roi, roi_mode=a.roi_mode, roi_pad=a.roi_pad, roi_overlap=a.roi_overlap,
                    roi_sbox=roi_sbox, roi_cen=roi_cen)
 
-    tds = StudyWindows(HERE, train_ids, id2row, labels, a.res, a.k, train=True, norm=a.norm, aug_geo=a.aug_geo, **_roi_kw)
+    sides = None
+    if a.canon:
+        _cf = a.canon if os.path.exists(a.canon) else _find(os.path.basename(a.canon))
+        if not _cf:
+            raise SystemExit(f"--canon {a.canon} not found")
+        sides = {u: v == "L" for u, v in json.load(open(_cf)).items()}
+        _n = [sides.get(u) for u in train_ids]
+        print(f"[canon] {os.path.basename(_cf)}: train left {sum(v is True for v in _n)} | right {sum(v is False for v in _n)} "
+              f"| unknown (kept as is) {sum(v is None for v in _n)}", flush=True)
+        if a.aug_flip > 0:
+            print("[canon] WARNING: --aug_flip > 0 undoes the canonical side for part of the training studies", flush=True)
+    tds = StudyWindows(HERE, train_ids, id2row, labels, a.res, a.k, train=True, norm=a.norm, aug_geo=a.aug_geo,
+                       aug_flip=a.aug_flip, aug_erase=a.aug_erase, ext_weight=a.ext_weight, sample=a.sample, sides=sides, **_roi_kw)
     tl = DataLoader(tds, batch_size=a.bs, shuffle=True, num_workers=a.workers, drop_last=True,
                     collate_fn=collate, pin_memory=True, persistent_workers=a.workers > 0)
 
     use_timm = a.ckpt in ("timm", "pretrained")
-    bb = build_backbone(a.arch, pretrained=use_timm, drop_path=a.drop_path)
-    if a.aug_geo or a.drop_path:
-        print(f"[reg] aug_geo {a.aug_geo} | drop_path {a.drop_path}", flush=True)
+    bb = build_backbone(a.arch, pretrained=use_timm and not a.bb_file, drop_path=a.drop_path)
+    if a.bb_file:
+        _bf = a.bb_file if os.path.exists(a.bb_file) else _find(os.path.basename(a.bb_file))
+        if not _bf:
+            raise SystemExit(f"--bb_file {a.bb_file} not found")
+        bb.load_state_dict(torch.load(_bf, map_location="cpu"), strict=True)
+        print(f"[raptor] backbone weights from {_bf}", flush=True)
+    if a.aug_geo or a.drop_path or a.aug_flip or a.aug_erase:
+        print(f"[reg] aug_geo {a.aug_geo} | drop_path {a.drop_path} | aug_flip {a.aug_flip} | aug_erase {a.aug_erase}",
+              flush=True)
     src = load_raptor(bb, a.ckpt)
     if use_timm: print(f"[raptor] timm-pretrained backbone: {a.arch}", flush=True)
     F_dim = bb.num_features
@@ -542,7 +754,13 @@ def main():
             bb.set_grad_checkpointing(True); print("[raptor] gradient checkpointing ON", flush=True)
         except Exception as e:
             print(f"[raptor] grad_ckpt unsupported for {a.arch}: {e}", flush=True)
-    model = RaptorClassifier(bb, F_dim=F_dim)
+    META = {"head": a.head, "sample": a.sample, "k_eval": a.k_eval, "canon": bool(a.canon)}   # what the scoring code needs to rebuild the model
+    if a.head == "mil":
+        model = RaptorClassifier(bb, F_dim=F_dim)
+    else:
+        model = SeqClassifier(bb, F_dim=F_dim, use_tr=a.head in ("seq", "seqtok"), use_sp=a.head in ("tok", "seqtok"))
+        print(f"[head] {a.head} | sample {a.sample} | head parameters "
+              f"{sum(p.numel() for n_, p in model.named_parameters() if not n_.startswith('backbone.')) / 1e6:.2f}M", flush=True)
     if a.init_model:
         _ck = torch.load(a.init_model, map_location="cpu", weights_only=False)
         _st = _ck.get("model", _ck) if isinstance(_ck, dict) else _ck
@@ -587,7 +805,9 @@ def main():
         lw = lw / lw.mean()
         print("[loss] label weights " + ", ".join(f"{n} {w:.2f}" for n, w in zip(LAB, lw)), flush=True)
         lw = torch.tensor(lw, device=dev)
-    lossf = nn.BCEWithLogitsLoss(pos_weight=pw, weight=lw)
+    lossf = nn.BCEWithLogitsLoss(pos_weight=pw, weight=lw, reduction="none")
+    amp_dtype = torch.float16 if a.amp == "fp16" else torch.bfloat16
+    scaler = torch.amp.GradScaler("cuda") if (a.amp == "fp16" and dev == "cuda") else None
 
     # ---- TTA inference helper: average sigmoid over shifted eval-window grids ----
     def _predict_ids(ids_sub, k_win, passes=None):
@@ -597,14 +817,14 @@ def main():
         for p in range(npass):
             phase = 0.0 if npass == 1 else p / float(npass)
             ds = StudyWindows(HERE, ids_sub, id2row, labels, a.res, k_win, train=False,
-                              norm=a.norm, eval_phase=phase, **_roi_kw)
+                              norm=a.norm, eval_phase=phase, sample=a.sample, sides=sides, **_roi_kw)
             dl = DataLoader(ds, batch_size=max(2, a.bs // 2), shuffle=False,
                             num_workers=a.workers, collate_fn=collate, persistent_workers=False)
             Ps = []
             with torch.no_grad():
-                for x, y in dl:
-                    with torch.autocast(dev, dtype=torch.bfloat16, enabled=dev == "cuda"):
-                        Ps.append(torch.sigmoid(model(x.to(dev)).float()).cpu().numpy())
+                for x, _y, _w, pos in dl:
+                    with torch.autocast(dev, dtype=amp_dtype, enabled=dev == "cuda"):
+                        Ps.append(torch.sigmoid(model(x.to(dev), pos.to(dev)).float()).cpu().numpy())
             P = np.concatenate(Ps)
             acc = P if acc is None else acc + P
         model.eval()
@@ -656,15 +876,23 @@ def main():
     TOPK = max(1, a.topk); topk = []
     for ep in range(a.epochs):
         model.train(); tot = 0.0
-        for x, y in tl:
-            x, y = x.to(dev, non_blocking=True), y.to(dev, non_blocking=True)
+        for x, y, w, pos in tl:
+            x, y, w = x.to(dev, non_blocking=True), y.to(dev, non_blocking=True), w.to(dev, non_blocking=True)
             opt.zero_grad()
-            with torch.autocast(dev, dtype=torch.bfloat16, enabled=dev == "cuda"):
-                logits = model(x)
-                loss = lossf(logits.float(), y)
-            loss.backward()
-            torch.nn.utils.clip_grad_norm_(model.parameters(), 3.0)
-            opt.step(); sched.step(); tot += loss.item()
+            with torch.autocast(dev, dtype=amp_dtype, enabled=dev == "cuda"):
+                logits = model(x, pos.to(dev, non_blocking=True))
+                # per-study mean over findings, weighted mean over the batch (all weights 1 = the old loss)
+                loss = (lossf(logits.float(), y).mean(1) * w).sum() / w.sum()
+            if scaler is None:
+                loss.backward()
+                torch.nn.utils.clip_grad_norm_(model.parameters(), 3.0)
+                opt.step()
+            else:
+                scaler.scale(loss).backward()
+                scaler.unscale_(opt)
+                torch.nn.utils.clip_grad_norm_(model.parameters(), 3.0)
+                scaler.step(opt); scaler.update()
+            sched.step(); tot += loss.item()
             if ema is not None:
                 with torch.no_grad():
                     for k, v in model.state_dict().items():
@@ -676,7 +904,7 @@ def main():
             best = au; best_P = P
             best_state = {"model": {k: v.detach().cpu() for k, v in model.state_dict().items()},
                           "gold_auc": au, "aucs": aucs, "src": src, "res": a.res,
-                          "arch": a.arch, "lab": LAB, "epoch": ep}
+                          "arch": a.arch, "lab": LAB, "epoch": ep, **META}
         if au >= best and best_state is not None:
             _tmp = os.path.join(HERE, f"raptor_ft_{a.tag}.pt.tmp")
             torch.save(best_state, _tmp)
@@ -695,7 +923,7 @@ def main():
         if len(topk) < TOPK or au > min(t["gold_auc"] for t in topk):
             topk.append({"model": {k: v.detach().cpu().clone() for k, v in model.state_dict().items()},
                          "gold_auc": au, "aucs": aucs, "src": src, "res": a.res,
-                         "arch": a.arch, "lab": LAB, "epoch": ep, "P": P})
+                         "arch": a.arch, "lab": LAB, "epoch": ep, "P": P, **META})
             topk.sort(key=lambda t: -t["gold_auc"])
             del topk[TOPK:]
         print(f"ep{ep} loss {tot/len(tl):.3f} | GOLD macro-AUC {au:.4f} (best {best:.4f}) | {time.time()-t0:.0f}s",
@@ -785,7 +1013,7 @@ def main():
                 avg[k] = v0.clone()          # e.g. num_batches_tracked
         swa_state = {"model": avg, "gold_auc": None, "aucs": {}, "src": src, "res": a.res,
                      "arch": a.arch, "lab": LAB, "epoch": [int(t["epoch"]) for t in topk],
-                     "swa_over": [int(t["epoch"]) for t in topk]}
+                     "swa_over": [int(t["epoch"]) for t in topk], **META}
         model.load_state_dict(avg); model.eval()
         au_swa, aucs_swa, P_swa, Y_swa = evaluate()
         swa_state["gold_auc"] = au_swa; swa_state["aucs"] = aucs_swa
@@ -810,7 +1038,7 @@ def main():
         gold_ema = au_ema
         ema_state = {"model": {k: v.detach().cpu().clone() for k, v in model.state_dict().items()},
                      "gold_auc": au_ema, "aucs": aucs_ema, "src": src, "res": a.res,
-                     "arch": a.arch, "lab": LAB, "epoch": a.epochs - 1, "ema_decay": a.ema}
+                     "arch": a.arch, "lab": LAB, "epoch": a.epochs - 1, "ema_decay": a.ema, **META}
         torch.save(ema_state, os.path.join(HERE, f"raptor_ft_{a.tag}_ema.pt"))
         np.savez(os.path.join(HERE, f"raptor_gold_{a.tag}_ema.npz"),
                  pred=P_ema, truth=Y_ema, ids=np.array(gold_ids))
@@ -831,6 +1059,8 @@ def main():
                    "n_train": len(train_ids), "n_gold": len(gold_ids), "roi": a.roi,
                    "roi_mode": a.roi_mode, "ema": a.ema, "eval_passes": a.eval_passes,
                    "aug_geo": a.aug_geo, "drop_path": a.drop_path, "pos_weight_cap": a.pos_weight_cap,
+                   "aug_flip": a.aug_flip, "aug_erase": a.aug_erase, "ext_weight": a.ext_weight, "n_ext": n_ext,
+                   "head": a.head, "sample": a.sample, "k": a.k, "k_eval": a.k_eval, "canon": bool(a.canon),
                    "oof_members": sorted(oof_comp), "partial": False, "epochs_done": a.epochs},
                   open(os.path.join(HERE, f"raptor_ft_{a.tag}.json"), "w"), indent=1)
         model.load_state_dict(best_state["model"]); model.eval()

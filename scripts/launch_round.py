@@ -81,6 +81,172 @@ RECIPES = {
                 "args": "--arch coatnet_rmlp_2_rw_224.sw_in12k_ft_in1k --res 224 --epochs 20 --bs 8 --k 16 --k_eval 24 "
                         "--bb_lr 3e-05 --head_lr 0.001 --wd 0.02 --freeze_blocks 0 --grad_ckpt --norm imagenet "
                         f"--pos_weight_cap 1 --seed 42 --folds 5 --fold {{fold}} {PROTO} --workers 8"},
+    # 2026-10-04 night: forum topic 743148 (teams at 0.94 single fold / 5-fold): "heavy augmentation and regularization",
+    # 50 epochs with the best epoch at 28. Our aug A/B stopped at 20 epochs. c224hvy40 = c224reg40 + left-right mirror
+    # + coarse dropout + drop-path 0.2.
+    "c224hvy40": {"trainer": "train_knee.py", "hours": 6.5, "epochs": 40,
+                  "note": "dense80, 224 px, k16, affine + mirror + erase + drop-path 0.2, 40 epochs",
+                  "name": "CoAtNet @224 + heavy aug, 40 epochs",
+                  "args": "--arch coatnet_rmlp_2_rw_224.sw_in12k_ft_in1k --res 224 --epochs 40 --bs 8 --k 16 --k_eval 24 "
+                          "--bb_lr 3e-05 --head_lr 0.001 --wd 0.02 --freeze_blocks 0 --grad_ckpt --norm imagenet "
+                          "--aug_geo 1.0 --aug_flip 0.5 --aug_erase 0.25 --drop_path 0.2 "
+                          f"--seed 42 --folds 5 --fold {{fold}} {PROTO} --workers 8"},
+    # Forum topic 745214 (SpeedSci, #122): the same team's EffNet / ResNet50 score 0.940 on LB at ~0.89 on gold-58, their
+    # CoAtNet 0.926 at 0.915 on gold - gold-58 overrates the public CoAt recipe. CNNs at the cache's native 336 px with
+    # the heavy-aug 40-epoch recipe; judged by oof_ruler.py and an own-alone LB probe, never by gold.
+    "effv2s336": {"trainer": "train_knee.py", "hours": 5.0, "epochs": 40,
+                  "note": "dense80, 336 px, k16, EfficientNetV2-S in21k, heavy aug, 40 epochs",
+                  "name": "EffNetV2-S 2.5D @336 + heavy aug",
+                  "args": "--arch tf_efficientnetv2_s.in21k_ft_in1k --res 336 --epochs 40 --bs 8 --k 16 --k_eval 24 "
+                          "--bb_lr 1e-04 --head_lr 0.001 --wd 0.02 --freeze_blocks 0 --grad_ckpt --norm imagenet "
+                          "--aug_geo 1.0 --aug_flip 0.5 --aug_erase 0.25 --drop_path 0.2 "
+                          f"--seed 42 --folds 5 --fold {{fold}} {PROTO} --workers 8"},
+    "effb0336": {"trainer": "train_knee.py", "hours": 4.0, "epochs": 40,
+                 "note": "dense80, 336 px, k16, EfficientNet-B0 noisy-student, heavy aug, 40 epochs",
+                 "name": "EffNet-B0 2.5D @336 + heavy aug",
+                 "args": "--arch tf_efficientnet_b0.ns_jft_in1k --res 336 --epochs 40 --bs 8 --k 16 --k_eval 24 "
+                         "--bb_lr 1e-04 --head_lr 0.001 --wd 0.02 --freeze_blocks 0 --grad_ckpt --norm imagenet "
+                         "--aug_geo 1.0 --aug_flip 0.5 --aug_erase 0.25 --drop_path 0.1 "
+                         f"--seed 42 --folds 5 --fold {{fold}} {PROTO} --workers 8"},
+    # Self-supervised backbone family (forum: SpeedSci's DINOv2 0.942 on LB; Md Kishor's DINOv2 ViT-S at 336 px fully
+    # fine-tuned). Our Aug-Sep DINOv2 work kept the backbone frozen or unfroze it at a head-sized lr (-0.114); this is a
+    # full fine-tune at 2e-5 inside the current pipeline with the heavy-aug recipe.
+    "dinos336": {"trainer": "train_knee.py", "hours": 6.0, "epochs": 40,
+                 "note": "dense80, 336 px, k16, DINOv2 ViT-S/14 full fine-tune, heavy aug, 40 epochs",
+                 "name": "DINOv2 ViT-S 2.5D @336 + heavy aug",
+                 "args": "--arch vit_small_patch14_dinov2.lvd142m --res 336 --epochs 40 --bs 8 --k 16 --k_eval 24 "
+                         "--bb_lr 2e-05 --head_lr 0.001 --wd 0.05 --freeze_blocks 0 --grad_ckpt --norm imagenet "
+                         "--aug_geo 1.0 --aug_flip 0.5 --aug_erase 0.25 --drop_path 0.1 "
+                         f"--seed 42 --folds 5 --fold {{fold}} {PROTO} --workers 8"},
+    # 2026-10-05 (user: run wide, find the best system): more backbone families in the heavy-aug 40-epoch recipe, as
+    # ensemble members. Fold 0 first; a family goes to 5 folds when it is at par with c224 on the ruler.
+    "sex50336": {"trainer": "train_knee.py", "hours": 5.0, "epochs": 40,
+                 "note": "dense80, 336 px, k16, SE-ResNeXt50, heavy aug, 40 epochs",
+                 "name": "SE-ResNeXt50 2.5D @336 + heavy aug",
+                 "args": "--arch seresnext50_32x4d.racm_in1k --res 336 --epochs 40 --bs 8 --k 16 --k_eval 24 "
+                         "--bb_lr 1e-04 --head_lr 0.001 --wd 0.02 --freeze_blocks 0 --grad_ckpt --norm imagenet "
+                         "--aug_geo 1.0 --aug_flip 0.5 --aug_erase 0.25 --drop_path 0.2 "
+                         f"--seed 42 --folds 5 --fold {{fold}} {PROTO} --workers 8"},
+    "swint224": {"trainer": "train_knee.py", "hours": 5.0, "epochs": 40,
+                 "note": "dense80, 224 px, k16, Swin-T in22k, heavy aug, 40 epochs",
+                 "name": "Swin-T 2.5D @224 + heavy aug",
+                 "args": "--arch swin_tiny_patch4_window7_224.ms_in22k_ft_in1k --res 224 --epochs 40 --bs 8 --k 16 --k_eval 24 "
+                         "--bb_lr 5e-05 --head_lr 0.001 --wd 0.02 --freeze_blocks 0 --grad_ckpt --norm imagenet "
+                         "--aug_geo 1.0 --aug_flip 0.5 --aug_erase 0.25 --drop_path 0.2 "
+                         f"--seed 42 --folds 5 --fold {{fold}} {PROTO} --workers 8"},
+    "cnxs336": {"trainer": "train_knee.py", "hours": 6.0, "epochs": 40,
+                 "note": "dense80, 336 px, k16, ConvNeXt-S in12k, heavy aug, 40 epochs",
+                 "name": "ConvNeXt-S 2.5D @336 + heavy aug",
+                 "args": "--arch convnext_small.in12k_ft_in1k --res 336 --epochs 40 --bs 8 --k 16 --k_eval 24 "
+                         "--bb_lr 1e-04 --head_lr 0.001 --wd 0.02 --freeze_blocks 0 --grad_ckpt --norm imagenet "
+                         "--aug_geo 1.0 --aug_flip 0.5 --aug_erase 0.25 --drop_path 0.2 "
+                         f"--seed 42 --folds 5 --fold {{fold}} {PROTO} --workers 8"},
+    # 2026-10-05: ConvNeXt-S in12k is the best single arm (fold 0 said +0.0070). Same recipe on larger and on
+    # masked-autoencoder-pretrained (ConvNeXtV2 fcmae) variants; fold 0 first.
+    "cnxv2t336": {"trainer": "train_knee.py", "hours": 6.0, "epochs": 40,
+                 "note": "dense80, 336 px, k16, ConvNeXtV2-T fcmae in22k, heavy aug, 40 epochs",
+                 "name": "ConvNeXtV2-T (fcmae) 2.5D @336 + heavy aug",
+                 "args": "--arch convnextv2_tiny.fcmae_ft_in22k_in1k --res 336 --epochs 40 --bs 8 --k 16 --k_eval 24 "
+                         "--bb_lr 1e-04 --head_lr 0.001 --wd 0.02 --freeze_blocks 0 --grad_ckpt --norm imagenet "
+                         "--aug_geo 1.0 --aug_flip 0.5 --aug_erase 0.25 --drop_path 0.2 "
+                         f"--seed 42 --folds 5 --fold {{fold}} {PROTO} --workers 8"},
+    "cnxb336": {"trainer": "train_knee.py", "hours": 14.0, "epochs": 40,
+                 "note": "dense80, 336 px, k16, ConvNeXt-B in22k, heavy aug, 40 epochs",
+                 "name": "ConvNeXt-B 2.5D @336 + heavy aug",
+                 "args": "--arch convnext_base.fb_in22k_ft_in1k --res 336 --epochs 40 --bs 8 --k 16 --k_eval 24 "
+                         "--bb_lr 1e-04 --head_lr 0.001 --wd 0.02 --freeze_blocks 0 --grad_ckpt --norm imagenet "
+                         "--aug_geo 1.0 --aug_flip 0.5 --aug_erase 0.25 --drop_path 0.3 "
+                         f"--seed 42 --folds 5 --fold {{fold}} {PROTO} --workers 8"},
+    "cnxv2b336": {"trainer": "train_knee.py", "hours": 14.0, "epochs": 40,
+                 "note": "dense80, 336 px, k16, ConvNeXtV2-B fcmae in22k, heavy aug, 40 epochs",
+                 "name": "ConvNeXtV2-B (fcmae) 2.5D @336 + heavy aug",
+                 "args": "--arch convnextv2_base.fcmae_ft_in22k_in1k --res 336 --epochs 40 --bs 8 --k 16 --k_eval 24 "
+                         "--bb_lr 5e-05 --head_lr 0.001 --wd 0.02 --freeze_blocks 0 --grad_ckpt --norm imagenet "
+                         "--aug_geo 1.0 --aug_flip 0.5 --aug_erase 0.25 --drop_path 0.3 "
+                         f"--seed 42 --folds 5 --fold {{fold}} {PROTO} --workers 8"},
+    # Stage 3 (queue pod only: the fastMRI cache lives on its volume): competition studies with labels_r3 + ~10k
+    # fastMRI studies with teacher targets (labels_r3x). An epoch is ~3.9x longer, so 12-14 epochs give about the
+    # same number of updates as 40 epochs on the competition studies alone.
+    "c224hvyx": {"trainer": "train_knee.py", "hours": 8.0, "epochs": 12,
+                 "note": "dense80 + fastMRI cache, 224 px, k16, CoAtNet, heavy aug, 12 epochs, ext weight 0.5",
+                 "name": "CoAtNet @224 heavy + fastMRI",
+                 "args": "--arch coatnet_rmlp_2_rw_224.sw_in12k_ft_in1k --res 224 --epochs 12 --bs 8 --k 16 --k_eval 24 "
+                         "--bb_lr 3e-05 --head_lr 0.001 --wd 0.02 --freeze_blocks 0 --grad_ckpt --norm imagenet "
+                         "--aug_geo 1.0 --aug_flip 0.5 --aug_erase 0.25 --drop_path 0.2 "
+                         "--ext_dir /workspace/fastmri/dense80 --ext_weight 0.5 "
+                         f"--seed 42 --folds 5 --fold {{fold}} {PROTO} --workers 8"},
+    "effv2sx": {"trainer": "train_knee.py", "hours": 8.0, "epochs": 14,
+                 "note": "dense80 + fastMRI cache, 336 px, k16, EfficientNetV2-S, heavy aug, 14 epochs, ext weight 0.5",
+                 "name": "EffNetV2-S @336 heavy + fastMRI",
+                 "args": "--arch tf_efficientnetv2_s.in21k_ft_in1k --res 336 --epochs 14 --bs 8 --k 16 --k_eval 24 "
+                         "--bb_lr 1e-04 --head_lr 0.001 --wd 0.02 --freeze_blocks 0 --grad_ckpt --norm imagenet "
+                         "--aug_geo 1.0 --aug_flip 0.5 --aug_erase 0.25 --drop_path 0.2 "
+                         "--ext_dir /workspace/fastmri/dense80 --ext_weight 0.5 "
+                         f"--seed 42 --folds 5 --fold {{fold}} {PROTO} --workers 8"},
+    "cnxsx": {"trainer": "train_knee.py", "hours": 8.0, "epochs": 12,
+                 "note": "dense80 + fastMRI cache, 336 px, k16, ConvNeXt-S, heavy aug, 12 epochs, ext weight 0.5",
+                 "name": "ConvNeXt-S @336 heavy + fastMRI",
+                 "args": "--arch convnext_small.in12k_ft_in1k --res 336 --epochs 12 --bs 8 --k 16 --k_eval 24 "
+                         "--bb_lr 1e-04 --head_lr 0.001 --wd 0.02 --freeze_blocks 0 --grad_ckpt --norm imagenet "
+                         "--aug_geo 1.0 --aug_flip 0.5 --aug_erase 0.25 --drop_path 0.2 "
+                         "--ext_dir /workspace/fastmri/dense80 --ext_weight 0.5 "
+                         f"--seed 42 --folds 5 --fold {{fold}} {PROTO} --workers 8"},
+    "cnxsx1": {"trainer": "train_knee.py", "hours": 8.0, "epochs": 12,
+                 "note": "dense80 + fastMRI cache, 336 px, k16, ConvNeXt-S, heavy aug, 12 epochs, ext weight 1.0",
+                 "name": "ConvNeXt-S @336 heavy + fastMRI (ext weight 1)",
+                 "args": "--arch convnext_small.in12k_ft_in1k --res 336 --epochs 12 --bs 8 --k 16 --k_eval 24 "
+                         "--bb_lr 1e-04 --head_lr 0.001 --wd 0.02 --freeze_blocks 0 --grad_ckpt --norm imagenet "
+                         "--aug_geo 1.0 --aug_flip 0.5 --aug_erase 0.25 --drop_path 0.2 "
+                         "--ext_dir /workspace/fastmri/dense80 --ext_weight 1.0 "
+                         f"--seed 42 --folds 5 --fold {{fold}} {PROTO} --workers 8"},
+    # 2026-10-06: every model so far reads a study as an unordered bag of windows drawn anywhere in the 80-slot volume
+    # (no plane / sequence / position information, ~10 % of the windows straddle two series). These arms keep the
+    # ConvNeXt-S heavy recipe and add series-aware ordered sampling plus a slot-aware head (train_knee.py --head /
+    # --sample); every new part starts at zero, i.e. from the plain head. Twin: r4-cnxs336-f0 (labels_r4).
+    "cnxsseq": {"trainer": "train_knee.py", "hours": 6.0, "epochs": 40,
+                 "note": "dense80, 336 px, k16, ConvNeXt-S, heavy aug, 40 epochs, slot embeddings + transformer over the windows",
+                 "name": "ConvNeXt-S @336 seq head",
+                 "args": "--arch convnext_small.in12k_ft_in1k --res 336 --epochs 40 --bs 8 --k 16 --k_eval 24 --bb_lr 1e-04 --head_lr 0.001 --wd 0.02 --freeze_blocks 0 --grad_ckpt --norm imagenet --aug_geo 1.0 --aug_flip 0.5 --aug_erase 0.25 --drop_path 0.2 --head seq --sample strat "
+                         f"--seed 42 --folds 5 --fold {{fold}} {PROTO} --workers 8"},
+    "cnxstok": {"trainer": "train_knee.py", "hours": 6.0, "epochs": 40,
+                 "note": "dense80, 336 px, k16, ConvNeXt-S, heavy aug, 40 epochs, slot embeddings + per-finding spatial attention",
+                 "name": "ConvNeXt-S @336 tok head",
+                 "args": "--arch convnext_small.in12k_ft_in1k --res 336 --epochs 40 --bs 8 --k 16 --k_eval 24 --bb_lr 1e-04 --head_lr 0.001 --wd 0.02 --freeze_blocks 0 --grad_ckpt --norm imagenet --aug_geo 1.0 --aug_flip 0.5 --aug_erase 0.25 --drop_path 0.2 --head tok --sample strat "
+                         f"--seed 42 --folds 5 --fold {{fold}} {PROTO} --workers 8"},
+    "cnxsst": {"trainer": "train_knee.py", "hours": 6.0, "epochs": 40,
+                 "note": "dense80, 336 px, k16, ConvNeXt-S, heavy aug, 40 epochs, slot embeddings + transformer + spatial attention",
+                 "name": "ConvNeXt-S @336 seqtok head",
+                 "args": "--arch convnext_small.in12k_ft_in1k --res 336 --epochs 40 --bs 8 --k 16 --k_eval 24 --bb_lr 1e-04 --head_lr 0.001 --wd 0.02 --freeze_blocks 0 --grad_ckpt --norm imagenet --aug_geo 1.0 --aug_flip 0.5 --aug_erase 0.25 --drop_path 0.2 --head seqtok --sample strat "
+                         f"--seed 42 --folds 5 --fold {{fold}} {PROTO} --workers 8"},
+    "cnxsseq224": {"trainer": "train_knee.py", "hours": 6.0, "epochs": 40,
+                 "note": "dense80, 224 px, k26, ConvNeXt-S, heavy aug, 40 epochs, 224 px, every slot each step (k26), transformer head",
+                 "name": "ConvNeXt-S @224 seq head",
+                 "args": "--arch convnext_small.in12k_ft_in1k --res 224 --epochs 40 --bs 8 --k 26 --k_eval 40 --bb_lr 1e-04 --head_lr 0.001 --wd 0.02 --freeze_blocks 0 --grad_ckpt --norm imagenet --aug_geo 1.0 --aug_flip 0.5 --aug_erase 0.25 --drop_path 0.2 --head seq --sample strat "
+                         f"--seed 42 --folds 5 --fold {{fold}} {PROTO} --workers 8"},
+    # 2026-10-06: canonical side. Orientation is uniform in the DICOMs (geom dump: every sagittal / coronal / axial
+    # series has the same row, column and normal direction), so the only left-right nuisance is the knee side: half the
+    # studies are left knees. `--canon` mirrors left knees (side from the stack's x position, agent/protocol/
+    # knee_sides.json), which puts medial / lateral on one image side and one end of the sagittal stack. No mirror aug.
+    "cnxsseqc": {"trainer": "train_knee.py", "hours": 6.0, "epochs": 40,
+                 "note": "dense80, 336 px, k16, ConvNeXt-S, heavy aug without mirror, 40 epochs, seq head, canonical side",
+                 "name": "ConvNeXt-S @336 seq head, canonical side",
+                 "args": "--arch convnext_small.in12k_ft_in1k --res 336 --epochs 40 --bs 8 --k 16 --k_eval 24 --bb_lr 1e-04 --head_lr 0.001 --wd 0.02 --freeze_blocks 0 --grad_ckpt --norm imagenet --aug_geo 1.0 --aug_flip 0 --aug_erase 0.25 --drop_path 0.2 --head seq --sample strat --canon /workspace/bundle/knee_sides.json "
+                         f"--seed 42 --folds 5 --fold {{fold}} {PROTO} --workers 8"},
+    "cnxstokc": {"trainer": "train_knee.py", "hours": 6.0, "epochs": 40,
+                 "note": "dense80, 336 px, k16, ConvNeXt-S, heavy aug without mirror, 40 epochs, tok head, canonical side",
+                 "name": "ConvNeXt-S @336 tok head, canonical side",
+                 "args": "--arch convnext_small.in12k_ft_in1k --res 336 --epochs 40 --bs 8 --k 16 --k_eval 24 --bb_lr 1e-04 --head_lr 0.001 --wd 0.02 --freeze_blocks 0 --grad_ckpt --norm imagenet --aug_geo 1.0 --aug_flip 0 --aug_erase 0.25 --drop_path 0.2 --head tok --sample strat --canon /workspace/bundle/knee_sides.json "
+                         f"--seed 42 --folds 5 --fold {{fold}} {PROTO} --workers 8"},
+    "cnxsstc": {"trainer": "train_knee.py", "hours": 6.0, "epochs": 40,
+                 "note": "dense80, 336 px, k16, ConvNeXt-S, heavy aug without mirror, 40 epochs, seqtok head, canonical side",
+                 "name": "ConvNeXt-S @336 seqtok head, canonical side",
+                 "args": "--arch convnext_small.in12k_ft_in1k --res 336 --epochs 40 --bs 8 --k 16 --k_eval 24 --bb_lr 1e-04 --head_lr 0.001 --wd 0.02 --freeze_blocks 0 --grad_ckpt --norm imagenet --aug_geo 1.0 --aug_flip 0 --aug_erase 0.25 --drop_path 0.2 --head seqtok --sample strat --canon /workspace/bundle/knee_sides.json "
+                         f"--seed 42 --folds 5 --fold {{fold}} {PROTO} --workers 8"},
+    "cnxsseq224c": {"trainer": "train_knee.py", "hours": 6.0, "epochs": 40,
+                 "note": "dense80, 224 px, k26, ConvNeXt-S, heavy aug without mirror, 40 epochs, seq head, canonical side",
+                 "name": "ConvNeXt-S @224 seq head, canonical side",
+                 "args": "--arch convnext_small.in12k_ft_in1k --res 224 --epochs 40 --bs 8 --k 26 --k_eval 40 --bb_lr 1e-04 --head_lr 0.001 --wd 0.02 --freeze_blocks 0 --grad_ckpt --norm imagenet --aug_geo 1.0 --aug_flip 0 --aug_erase 0.25 --drop_path 0.2 --head seq --sample strat --canon /workspace/bundle/knee_sides.json "
+                         f"--seed 42 --folds 5 --fold {{fold}} {PROTO} --workers 8"},
     # NOT runnable: coatnet_rmlp_2_rw_224 has fixed-size relative position bias — any --res other than 224 dies at
     # the first step (r1-c288-f0/f0b, 2026-10-04). A 288 px CoAtNet needs a backbone built with img_size=288.
     "fa": {"trainer": "family_a.py", "hours": 4.0, "epochs": 16, "note": "dense80, region tiles",

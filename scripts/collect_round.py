@@ -42,7 +42,8 @@ def collect(j: dict) -> str:
     if all((d / f).exists() and (d / f).stat().st_size > 0 for f in files(j)):
         return "collected"
     base = f"https://{j['pod']}-8000.proxy.runpod.net"
-    status = (get(f"{base}/STATUS") or b"").decode("utf-8", "replace").strip()
+    # Arms of the multi-GPU queue pod (scripts/mega.py) have no pod of their own: results come from the dataset only.
+    status = "" if j.get("mega") else (get(f"{base}/STATUS") or b"").decode("utf-8", "replace").strip()
     if status and not status.startswith(("done", "uploading")):
         return "failed: " + status if "fail" in status.lower() else "running"
     d.mkdir(parents=True, exist_ok=True)
@@ -51,14 +52,17 @@ def collect(j: dict) -> str:
         if b:
             (d / f).write_bytes(b)
             continue
-        subprocess.run([KAGGLE, "datasets", "download", f"girishbose/rsna-knee-rp-{j['job']}-out", "-f", f"{j['tag']}/{f}",
-                        "-p", str(d), "-q"], capture_output=True, text=True, timeout=600)
-        z = d / (f + ".zip")
-        if z.exists():
-            subprocess.run(["unzip", "-o", "-q", str(z), "-d", str(d)]); z.unlink()
+        for path in (f"{j['tag']}/{f}", f):   # a dataset holding one folder only is flattened by Kaggle
+            subprocess.run([KAGGLE, "datasets", "download", f"girishbose/rsna-knee-rp-{j['job']}-out", "-f", path,
+                            "-p", str(d), "-q"], capture_output=True, text=True, timeout=600)
+            z = d / (f + ".zip")
+            if z.exists():
+                subprocess.run(["unzip", "-o", "-q", str(z), "-d", str(d)]); z.unlink()
+            if (d / f).exists() and (d / f).stat().st_size > 0:
+                break
     if all((d / f).exists() and (d / f).stat().st_size > 0 for f in files(j)):
         return "collected"
-    return "running" if status else "vanished"
+    return "running" if status or j.get("mega") else "vanished"
 
 
 def main() -> None:

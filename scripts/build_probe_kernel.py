@@ -36,10 +36,15 @@ def main() -> None:
     s = rep(s, "    wp = find_weight_file(WEIGHT_NAME)\n    model, res = load_model(wp, dev)\n"
                '    print(f"loaded {wp} | res {res} | {time.time() - t0:.0f}s", flush=True)\n',
             "    models = []\n    for wn in WEIGHT_NAMES:\n        wp = find_weight_file(wn)\n"
-            "        model, res = load_model(wp, dev)\n        models.append(model)\n"
+            "        model, res = load_model(wp, dev)\n        models.append((model, res))\n"
             '        print(f"loaded {wp} | res {res} | {time.time() - t0:.0f}s", flush=True)\n')
-    s = rep(s, "                acc.append(infer_probs(model, xw, dev))\n",
-            "                acc.extend(infer_probs(m, xw, dev) for m in models)\n")
+    # each checkpoint is scored at its own training resolution (families at 224 and 336 px can share one probe)
+    s = rep(s, "                xw = eval_windows(vol, mask, k=K_EVAL, res=res, phase=ph, norm=NORM)\n"
+               "                acc.append(infer_probs(model, xw, dev))\n                del xw\n",
+            "                for r_ in sorted({r for _, r in models}):\n"
+            "                    xw = eval_windows(vol, mask, k=K_EVAL, res=r_, phase=ph, norm=NORM)\n"
+            "                    acc.extend(infer_probs(m, xw, dev) for m, mr in models if mr == r_)\n"
+            "                    del xw\n")
     s = rep(s, "    del model\n", "    del models\n")
     d = REPO / "outputs" / "kernels" / a.name
     d.mkdir(parents=True, exist_ok=True)

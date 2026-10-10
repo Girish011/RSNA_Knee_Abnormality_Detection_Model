@@ -26,7 +26,9 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
 BASE = REPO / "outputs" / "kernels" / "_base_d4"
-LEG = REPO / "outputs" / "kernels" / "_ours_leg" / "ours_leg.py"
+LEGS = {"v1": REPO / "outputs" / "kernels" / "_ours_leg" / "ours_leg.py",
+        # v2 = same outputs (tests/test_ours_leg_v2.py), studies built by workers, every GPU used
+        "v2": REPO / "outputs" / "kernels" / "_ours_leg" / "ours_leg_v2.py"}
 MEMBERS = REPO / "agent" / "runs" / "members.json"
 USER = "girishbose"
 DOCKER = ("gcr.io/kaggle-private-byod/python@sha256:"
@@ -61,7 +63,7 @@ open(_ENS_LEG, "w").write(__LEG_SRC__)
 _ens_t0 = globals().get("_ENS_START") or _ens_time.time()
 _ens_deadline = float(_ens_t0) + __RUNTIME_S__ - __MARGIN_S__
 _ens_env = dict(_ens_os.environ, OURS_MEMBERS=_ens_json.dumps(__MEMBER_FILES__),
-                OURS_OUT=_ENS_OURS, OURS_DEADLINE=str(_ens_deadline))
+                OURS_OUT=_ENS_OURS, OURS_DEADLINE=str(_ens_deadline), **__LEG_ENV__)
 print(f"[ours 2/3] leg start; {(_ens_deadline - _ens_time.time()) / 60:.0f} min before deadline", flush=True)
 _ens_rc = _ens_sp.call([_ens_sys.executable, _ENS_LEG], env=_ens_env)
 print(f"[ours 2/3] leg exit {_ens_rc}", flush=True)
@@ -398,12 +400,49 @@ def shift_coat_weight(nb: dict, shift: float) -> dict:
     return nb
 
 
+DECOR = '''# ==== OURS: finding specificity - subtract a share of the correlated partner finding(s) ====
+# Our columns for paired findings move together far more than the experts' labels do (model Spearman Medial / Lateral
+# OA 0.83, Effusion / Synovitis 0.94; experts phi 0.32 / 0.40). target <- z(target) - alpha * mean z(partners), on
+# normal scores of the ranks, every target computed from the ORIGINAL columns. Any problem leaves the file as it is.
+try:
+    import numpy as _dc_np, pandas as _dc_pd
+    from scipy.stats import norm as _dc_norm
+    _DC = __SPEC__   # [(target, [partners], alpha)]
+    _dc = _dc_pd.read_csv("/kaggle/working/submission.csv", dtype={"StudyInstanceUID": str})
+    _dc_n = len(_dc)
+    _dc_z = {c: _dc_norm.ppf((_dc[c].rank(method="average").to_numpy() - 0.5) / _dc_n) for c in _dc.columns[1:]}
+    _dc_out = _dc.copy()
+    for _t, _ps, _a in _DC:
+        _v = _dc_z[_t] - _a * _dc_np.mean([_dc_z[_p] for _p in _ps], axis=0)
+        _dc_out[_t] = _dc_pd.Series(_v).rank(method="average", pct=True).to_numpy()
+        print(f"[ours] decor {_t} - {_a} x {_ps} | spearman with the original column "
+              f"{_dc_pd.Series(_v).corr(_dc[_t], method='spearman'):.3f}", flush=True)
+    assert _dc_out.notna().all().all() and _dc_out.columns.tolist() == _dc.columns.tolist() and len(_dc_out) == _dc_n
+    _dc_out.to_csv("/kaggle/working/submission.csv", index=False)
+    print("[ours] decorrelated", len(_DC), "columns; submission.csv", _dc_out.shape, flush=True)
+except Exception as _dc_e:
+    print("[ours] DECOR FAILED, submission.csv unchanged:", repr(_dc_e), flush=True)
+'''
+
+
+def parse_decor(spec: str) -> tuple[str, list[str], float]:
+    """'Lateral OA|Medial OA|0.3' or 'PF OA|Medial OA;Lateral OA|0.3' -> (target, partners, alpha)."""
+    t, ps, a = spec.split("|")
+    partners = [x.strip() for x in ps.split(";") if x.strip()]
+    if bad := [f for f in [t.strip(), *partners] if f not in TARGETS]:
+        raise SystemExit(f"--decor {spec!r}: unknown findings {bad}; use {TARGETS}")
+    if t.strip() in partners or not 0.0 < float(a) < 1.0:
+        raise SystemExit(f"--decor {spec!r}: partners must differ from the target and 0 < alpha < 1")
+    return t.strip(), partners, float(a)
+
+
 def build(name: str, member_ids: list[str], w: float, out_root: Path | None = None,
           swap: str | None = None, tails: list[tuple[list[str], list[str], float]] | None = None,
           arms: dict[str, str] | None = None, coat_shift: float = 0.0,
           rad_heads: dict[str, tuple[str, str]] | None = None, dino: str | None = None,
           dino_extra: tuple[str, float] | None = None, rad_exclude: tuple[str, ...] | None = None,
-          negate: list[str] | None = None) -> Path:
+          negate: list[str] | None = None, leg: str = "v1", leg_env: dict[str, str] | None = None,
+          decor: list[tuple[str, list[str], float]] | None = None) -> Path:
     """Global mode: every finding blends all ``member_ids`` at ``w``. Tail mode: each finding gets
     its own member subset and weight; findings with no tail keep the public stack's values."""
     if tails:
@@ -443,7 +482,9 @@ def build(name: str, member_ids: list[str], w: float, out_root: Path | None = No
     files = [f for _, f in members]
     if len(set(files)) != len(files):
         raise SystemExit("duplicate member weight names")
-    run_leg = (RUN_LEG.replace("__LEG_SRC__", repr(LEG.read_text()))
+    if leg_env and leg == "v1":
+        raise SystemExit("leg options (mirror pass) need --leg v2")
+    run_leg = (RUN_LEG.replace("__LEG_SRC__", repr(LEGS[leg].read_text())).replace("__LEG_ENV__", repr(leg_env or {}))
                .replace("__RUNTIME_S__", str(RUNTIME_S)).replace("__MARGIN_S__", str(LEG_MARGIN_S))
                .replace("__MEMBER_FILES__", repr(files)))
     nb2 = copy.deepcopy(nb)
@@ -457,6 +498,8 @@ def build(name: str, member_ids: list[str], w: float, out_root: Path | None = No
         if bad := [f for f in negate if f not in TARGETS]:
             raise SystemExit(f"unknown findings {bad}; use {TARGETS}")
         tail.append(code_cell(NEGATE.replace("__COLS__", repr(list(negate)))))
+    if decor:   # after the blend (and after any probe cell): acts on whatever submission.csv holds
+        tail.append(code_cell(DECOR.replace("__SPEC__", repr([list(x) for x in decor]))))
     nb2["cells"] = [start] + nb["cells"] + tail
     d = (out_root or REPO / "outputs" / "kernels") / name
     d.mkdir(parents=True, exist_ok=True)
@@ -473,7 +516,8 @@ def build(name: str, member_ids: list[str], w: float, out_root: Path | None = No
     (d / "kernel-metadata.json").write_text(json.dumps(meta2, indent=1))
     (d / "ENSEMBLE.json").write_text(json.dumps(
         {"base": nb_path.name, "members": member_ids if members else [], "weights": files, "w": w,
-         "swap_v5": swap, "swap_arms": arms or {}, "coat_shift": coat_shift, "rad_heads": rad_heads or {}, "dino": dino, "dino_extra": list(dino_extra) if dino_extra else None, "rad_exclude": list(rad_exclude) if rad_exclude is not None else None, "negate": list(negate) if negate else None, "tails": {f: [[member_ids[j] for j in ix], tw] for f, (ix, tw) in tail_map.items()}},
+         "leg": leg, "leg_env": leg_env or {},
+         "swap_v5": swap, "swap_arms": arms or {}, "coat_shift": coat_shift, "rad_heads": rad_heads or {}, "dino": dino, "dino_extra": list(dino_extra) if dino_extra else None, "rad_exclude": list(rad_exclude) if rad_exclude is not None else None, "negate": list(negate) if negate else None, "decor": [list(x) for x in decor] if decor else None, "tails": {f: [[member_ids[j] for j in ix], tw] for f, (ix, tw) in tail_map.items()}},
         indent=1))
     return d
 
@@ -500,8 +544,16 @@ def main() -> None:
                     help="'owner/slug:beta' - our DINO package blended AFTER the calibrator at weight beta")
     ap.add_argument("--rad-exclude", default=None,
                     help="';'-separated findings the cell-25 Rad blend skips (base: Baker's;Fracture)")
+    ap.add_argument("--base", default=None, help="folder with another base notebook + kernel-metadata.json (default: the "
+                                                 "D4 stack); only --members / --w / --tail / --leg options apply to it")
     ap.add_argument("--negate", default=None,
                     help="';'-separated findings whose final column order is reversed (per-finding LB AUC probe)")
+    ap.add_argument("--decor", action="append", default=[],
+                    help="repeatable: 'target|partner[;partner]|alpha' - final column <- target minus alpha x the mean "
+                         "partner (normal scores of ranks), e.g. 'Lateral OA|Medial OA|0.3'")
+    ap.add_argument("--leg", choices=sorted(LEGS), default="v1", help="our leg's inference script")
+    ap.add_argument("--leg-flip", action="store_true",
+                    help="v2 only: the second eval pass sees the left-right mirrored study (models trained with --aug_flip)")
     a = ap.parse_args()
     rad = {k: tuple(v.rsplit(":", 1)) for k, v in (x.split("=", 1) for x in a.rad_heads)}
     if bad := set(rad) - set(RAD_HEADS):
@@ -509,12 +561,17 @@ def main() -> None:
     arms = dict(x.split("=", 1) for x in a.swap_arm)
     if bad := set(arms) - set(ARM_FILES):
         raise SystemExit(f"--swap-arm keys must be in {sorted(ARM_FILES)}, got {sorted(bad)}")
+    if a.base:
+        global BASE
+        BASE = Path(a.base).resolve()
     d = build(a.name, [m for m in a.members.split(",") if m], a.w, swap=a.swap_v5,
               tails=[parse_tail(t) for t in a.tail] or None, arms=arms or None, coat_shift=a.coat_shift,
               rad_heads=rad or None, dino=a.dino_weights,
               dino_extra=(lambda d, b: (d, float(b)))(*a.dino_extra.rsplit(":", 1)) if a.dino_extra else None,
               rad_exclude=tuple(x for x in a.rad_exclude.split(";") if x) if a.rad_exclude is not None else None,
-              negate=[x for x in a.negate.split(";") if x] if a.negate else None)
+              negate=[x for x in a.negate.split(";") if x] if a.negate else None,
+              leg=a.leg, leg_env={"OURS_FLIP": "1"} if a.leg_flip else None,
+              decor=[parse_decor(x) for x in a.decor] or None)
     print(f"built {d}\npush (user-approved): kaggle kernels push -p {d}")
 
 

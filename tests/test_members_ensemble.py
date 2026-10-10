@@ -75,8 +75,8 @@ def _run_tail(kdir, work, leg_src, pub):
     for c in nb["cells"][:1] + nb["cells"][-3:]:
         src = "".join(c["source"])
         if "OURS 2/3" in src:
-            assert repr(BEK.LEG.read_text()) in src
-            src = src.replace(repr(BEK.LEG.read_text()), repr(leg_src))
+            assert repr(BEK.LEGS["v1"].read_text()) in src
+            src = src.replace(repr(BEK.LEGS["v1"].read_text()), repr(leg_src))
         src = src.replace("/kaggle/working", str(work))
         exec(compile(src, "cell", "exec"), ns)
     return pd.read_csv(work / "submission.csv", dtype={"StudyInstanceUID": str})
