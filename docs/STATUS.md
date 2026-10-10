@@ -1857,3 +1857,34 @@ No pods, no LB submits (5 of 5 used until 05:30 IST). One free Kaggle CPU kernel
   without the external set; two folds = two sessions; (5) own-alone leaderboard probes of the two pairs.
   Stated odds: ~1 in 5 that it lifts our own models by >= 0.003; even then they would sit near 0.940, not above
   the public 0.950.
+
+## 19:56 IST (10 Oct) — Track 2b chosen (user): sequence-fused "colour" windows, blended into the 0.950 notebook
+- **Idea (user):** let the model see the knee the way a radiologist compares sequences. Each window's RGB is today 3
+  adjacent slices of ONE series; sequences only meet after pooling (6 Oct diagnosis: Effusion ~ Synovitis 0.97,
+  OA columns 0.82-0.83). New `--chan seqfuse` = [fluid-sensitive slice, non-fluid slice at the same relative
+  position of the same plane, 0.5 + (fluid - non-fluid) / 2]: bright on FS / dark on PD-T1 = fluid, edema, contusion.
+  Axial slots and slots whose partner series is missing keep the adjacent triplet. Never tested (the slot-aware
+  head only tagged sequences). No `--aug_flip` / `--canon` / `--roi` with it (channels are not slices).
+- **Code:** `runpod/train_knee.py` (`_seqfuse_tri`, `--chan`, `"chan"` in META + checkpoint header);
+  `outputs/kernels/_ours_leg/ours_leg_v2.py` (same function verbatim, chosen per member from the checkpoint; old
+  members = `adj`; seqfuse members skip the mirror pass); `tests/test_seqfuse.py`.
+- **Runs (Kaggle T4 x 2, both kernels at once, ~8.5 h each, ~17 of the 30 GPU-hours):** ConvNeXt-T in12k @224, k26,
+  heavy recipe without mirror aug, labels_r1, folds 0 and 1 (one per T4):
+  `ktrain-seqfuse` (`--chan seqfuse`) and `ktrain-adjtwin` (identical, default channels = the paired control).
+- **Probes after collect (pre-registered; odds ~1 in 4 each):** P3 = `pub/rsna-versia-5` (0.950) + seqfuse leg rank
+  w 0.15 (all findings); P1 = seqfuse alone; P2 = adjtwin alone; P4 = w 0.15 on Effusion / Synovitis / Contusion /
+  Baker's / Fracture only. Reading: seqfuse >= adjtwin + 0.003 alone -> folds 2-3 next; P3 / P4 > 0.950 -> new best.
+- **Run on the Mac (this cloud session has no Kaggle token):**
+  ```
+  git pull && export PATH="$PWD/.venv/bin:$PATH"
+  python -m pytest -q tests/test_seqfuse.py tests/test_ours_leg_v2.py
+  python scripts/mega.py push            # queue dataset gets the new train_knee.py
+  A="--arch convnext_tiny.in12k_ft_in1k --res 224 --epochs 40 --bs 8 --k 26 --k_eval 24 --bb_lr 1e-04 --head_lr 0.001 --wd 0.02 --freeze_blocks 0 --grad_ckpt --norm imagenet --aug_geo 1.0 --aug_flip 0 --aug_erase 0.25 --drop_path 0.2 --seed 42 --folds 5"
+  python scripts/build_kaggle_train.py --name ktrain-seqfuse --labels labels_r1.parquet \
+    --arm "r1-ksf-f0|r1ksf0|$A --fold 0 --chan seqfuse" --arm "r1-ksf-f1|r1ksf1|$A --fold 1 --chan seqfuse"
+  python scripts/build_kaggle_train.py --name ktrain-adjtwin --labels labels_r1.parquet \
+    --arm "r1-kadj-f0|r1kadj0|$A --fold 0" --arm "r1-kadj-f1|r1kadj1|$A --fold 1"
+  kaggle kernels push -p outputs/kernels/ktrain-seqfuse && kaggle kernels push -p outputs/kernels/ktrain-adjtwin
+  ```
+  Collect (~9 h later): `python scripts/build_kaggle_train.py --name ktrain-seqfuse --collect` (and `-adjtwin`); then
+  the P1-P4 kernels with `scripts/build_ensemble_kernel.py --base outputs/kernels/pub/rsna-versia-5 --leg v2`.

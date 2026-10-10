@@ -162,7 +162,7 @@ class SeqClassifier(nn.Module):
 
 
 def load_model(pt_path, device):
-    """-> (model, cfg); cfg = (res, sample, k_eval, canon) = the windows this member was trained and evaluated on
+    """-> (model, cfg); cfg = (res, sample, k_eval, canon, chan) = the windows this member was trained and evaluated on
     (canon: left knees are shown mirrored, train_knee --canon)."""
     ck = torch.load(pt_path, map_location="cpu", weights_only=False)
     arch = ck.get("arch", ARCH_DEFAULT)
@@ -175,7 +175,8 @@ def load_model(pt_path, device):
         model = SeqClassifier(bb, F_dim=bb.num_features, use_tr=head in ("seq", "seqtok"), use_sp=head in ("tok", "seqtok"))
     model.load_state_dict(ck["model"], strict=True)
     model.eval().to(device)
-    cfg = (res, ck.get("sample", "rand"), int(os.environ.get("OURS_K_EVAL") or ck.get("k_eval", K_EVAL)), bool(ck.get("canon", False)))
+    cfg = (res, ck.get("sample", "rand"), int(os.environ.get("OURS_K_EVAL") or ck.get("k_eval", K_EVAL)), bool(ck.get("canon", False)),
+           ck.get("chan", "adj"))
     del ck
     gc.collect()
     return model, cfg
@@ -238,19 +239,48 @@ def _slot_pos(cs, D):
     return torch.from_numpy(out)
 
 
-def eval_windows(vol, mask, k, res, phase=0.0, norm=NORM, flip=False, sample="rand"):
-    return eval_windows_pos(vol, mask, k, res, phase=phase, norm=norm, flip=flip, sample=sample)[0]
+SEQ_PAIRS = {0: 1, 1: 0, 2: 3, 3: 2}   # BLOCKS index -> same-plane partner (fluid <-> non-fluid)
 
 
-def eval_windows_pos(vol, mask, k, res, phase=0.0, norm=NORM, flip=False, sample="rand"):
-    """-> (x (K,3,res,res), pos (K,2) = series block and position inside it of every window)."""
+def _seqfuse_tri(vol, mask, c):
+    """--chan seqfuse window at centre slot c: [fluid, non-fluid at the same relative position, 0.5 + (fluid -
+    non-fluid) / 2] in [0,1], so fluid / edema stands out pixel by pixel. Axial slots, slots whose partner is empty
+    and non-dense80 volumes keep the adjacent triplet. Copied verbatim into ours_leg_v2.py (a test checks it)."""
+    D = vol.shape[0]
+    c = max(1, min(c, D - 2))
+    if D == 80:
+        b = next(i for i, (s, e) in enumerate(BLOCKS) if s <= c < e)
+        if b in SEQ_PAIRS:
+            s, e = BLOCKS[b]
+            s2, e2 = BLOCKS[SEQ_PAIRS[b]]
+            p = s2 + int(round((c - s) / (e - s - 1.0) * (e2 - s2 - 1)))
+            if mask[c] > 0 and mask[p] > 0:
+                fl, nf = (c, p) if b % 2 == 0 else (p, c)
+                f = vol[fl].astype(np.float32) / 255.0
+                n = vol[nf].astype(np.float32) / 255.0
+                return np.stack([f, n, np.clip(0.5 + (f - n) / 2.0, 0.0, 1.0)], 0)
+    return np.stack([vol[c - 1], vol[c], vol[c + 1]], 0).astype(np.float32) / 255.0
+
+
+def eval_windows(vol, mask, k, res, phase=0.0, norm=NORM, flip=False, sample="rand", chan="adj"):
+    return eval_windows_pos(vol, mask, k, res, phase=phase, norm=norm, flip=flip, sample=sample, chan=chan)[0]
+
+
+def eval_windows_pos(vol, mask, k, res, phase=0.0, norm=NORM, flip=False, sample="rand", chan="adj"):
+    """-> (x (K,3,res,res), pos (K,2) = series block and position inside it of every window).
+    chan="seqfuse": channels are fluid / non-fluid / difference (train_knee --chan seqfuse); no mirror pass."""
+    if chan == "seqfuse":
+        flip = False
     D = vol.shape[0]
     cs = _eval_centers_strat(mask, k, phase=phase) if sample == "strat" and D == 80 else _eval_centers(mask, D, k, phase=phase)
     pos = _slot_pos([max(1, min(c, D - 2)) for c in cs], D)
     wins = np.empty((len(cs), 3, res, res), np.float32)
     for j, c in enumerate(cs):
         c = max(1, min(c, D - 2))
-        tri = np.stack([vol[c - 1], vol[c], vol[c + 1]], 0).astype(np.float32) / 255.0
+        if chan == "seqfuse":
+            tri = _seqfuse_tri(vol, mask, c)
+        else:
+            tri = np.stack([vol[c - 1], vol[c], vol[c + 1]], 0).astype(np.float32) / 255.0
         t = torch.from_numpy(tri)
         if t.shape[-1] != res or t.shape[-2] != res:
             t = F.interpolate(t[None], size=(res, res), mode="bilinear", align_corners=False)[0]
@@ -521,14 +551,14 @@ def main():
 
     it = loader(None, workers)
 
-    per_dev = [[] for _ in devs]   # per device: [(model, (res, sample, k_eval, canon))] in member order
+    per_dev = [[] for _ in devs]   # per device: [(model, (res, sample, k_eval, canon, chan))] in member order
     for fname in members:
         wp = find_weight_file(fname)
         m, cfg = load_model(wp, devs[0])
         per_dev[0].append((m, cfg))
         for g in range(1, len(devs)):
             per_dev[g].append((copy.deepcopy(m).to(devs[g]).eval(), cfg))
-        print(f"loaded {wp} | res {cfg[0]} | {type(m).__name__} {cfg[1]} k{cfg[2]}{' canon' if cfg[3] else ''} | {time.time() - t0:.0f}s", flush=True)
+        print(f"loaded {wp} | res {cfg[0]} | {type(m).__name__} {cfg[1]} k{cfg[2]}{' canon' if cfg[3] else ''}{' ' + cfg[4] if cfg[4] != 'adj' else ''} | {time.time() - t0:.0f}s", flush=True)
 
     N, M = len(test_ids), len(members)
     probs = np.full((M, N, len(LAB)), np.nan, np.float32)
@@ -561,9 +591,9 @@ def main():
                 xs = {}
                 for j, (model, cfg) in enumerate(per_dev[g]):
                     if cfg not in xs:   # members that share resolution and window plan share the tensors
-                        res, sample, k_eval, canon = cfg   # canon members see a left knee mirrored (= as a right knee)
+                        res, sample, k_eval, canon, chan = cfg   # canon members see a left knee mirrored (= as a right knee)
                         wp_ = [eval_windows_pos(vol, mask, k=k_eval, res=res, phase=ph, norm=NORM,
-                                                flip=fl != (canon and bool(left)), sample=sample)
+                                                flip=fl != (canon and bool(left)), sample=sample, chan=chan)
                                for ph, fl in passes]
                         xs[cfg] = (torch.stack([w[0] for w in wp_]).to(dev), torch.stack([w[1] for w in wp_]).to(dev))
                     tj = time.time()

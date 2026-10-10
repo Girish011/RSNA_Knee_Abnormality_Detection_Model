@@ -177,7 +177,7 @@ def test_v2_slot_aware_member_matches_trainer(head, tmp_path):
     pt = tmp_path / f"raptor_ft_{head}.pt"
     torch.save({"model": m.state_dict(), "arch": "convnext_atto", "res": 48, "head": head, "sample": "strat", "k_eval": 10}, pt)
     lm, cfg = v2.load_model(str(pt), "cpu")
-    assert cfg == (48, "strat", 10, False) and type(lm).__name__ == "SeqClassifier"
+    assert cfg == (48, "strat", 10, False, "adj") and type(lm).__name__ == "SeqClassifier"
     ids = ["a", "b"]
     for i, u in enumerate(ids):
         want = []
@@ -222,7 +222,7 @@ def test_v2_canonical_side(tmp_path):
     torch.save({"model": m.state_dict(), "arch": "convnext_atto", "res": 48, "head": "seqtok", "sample": "strat", "k_eval": 10,
                 "canon": True}, pt)
     lm, cfg = v2.load_model(str(pt), "cpu")
-    assert cfg == (48, "strat", 10, True)
+    assert cfg == (48, "strat", 10, True, "adj")
     for left in (True, False):
         want = []
         for ph in (0.0, 0.5):

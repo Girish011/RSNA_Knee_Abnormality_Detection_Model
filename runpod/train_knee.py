@@ -207,8 +207,9 @@ class StudyWindows(Dataset):
     (matches the SSL input pipeline: ToTensor, no ImageNet norm)."""
     def __init__(self, root, ids, id2row, labels, res, k, train, aug=True, norm="none", aug_geo=0.0,
                  aug_flip=0.0, aug_erase=0.0, ext_weight=1.0, roi=False, roi_mode="tight", roi_pad=0.06, roi_overlap=0.12,
-                 roi_sbox=None, roi_cen=None, eval_phase=0.0, sample="rand", sides=None):
+                 roi_sbox=None, roi_cen=None, eval_phase=0.0, sample="rand", sides=None, chan="adj"):
         self.root = root
+        self.chan = chan                  # "adj" = 3 adjacent slices; "seqfuse" = fluid / non-fluid / difference
         self.sides = sides                # uid -> True for a left knee: shown mirrored, so every knee reads as a right knee
         self.sample = sample              # "rand" = any slot of the volume; "strat" = ordered windows from every series
         self.ids = ids
@@ -300,7 +301,10 @@ class StudyWindows(Dataset):
         tiles = []            # list of (3,res,res) float32
         for c in cs:
             c = max(1, min(c, self._D - 2))
-            tri = np.stack([vol[c - 1], vol[c], vol[c + 1]], 0).astype(np.float32) / 255.0  # (3,H,W)
+            if self.chan == "seqfuse":
+                tri = _seqfuse_tri(vol, m, c)
+            else:
+                tri = np.stack([vol[c - 1], vol[c], vol[c + 1]], 0).astype(np.float32) / 255.0  # (3,H,W)
             H, W = tri.shape[-2], tri.shape[-1]
             if not self.roi:
                 tiles.append(self._resize(tri))
@@ -363,6 +367,29 @@ def _geo_aug(x, s):
 
 SAG_SLOTS = 40   # dense80 layout: slots 0-39 sagittal (22 fluid + 18 non-fluid), 40-64 coronal, 65-79 axial
 BLOCKS = [(0, 22), (22, 40), (40, 55), (55, 65), (65, 80)]   # sag fluid, sag other, cor fluid, cor other, axial
+
+
+SEQ_PAIRS = {0: 1, 1: 0, 2: 3, 3: 2}   # BLOCKS index -> same-plane partner (fluid <-> non-fluid)
+
+
+def _seqfuse_tri(vol, mask, c):
+    """--chan seqfuse window at centre slot c: [fluid, non-fluid at the same relative position, 0.5 + (fluid -
+    non-fluid) / 2] in [0,1], so fluid / edema stands out pixel by pixel. Axial slots, slots whose partner is empty
+    and non-dense80 volumes keep the adjacent triplet. Copied verbatim into ours_leg_v2.py (a test checks it)."""
+    D = vol.shape[0]
+    c = max(1, min(c, D - 2))
+    if D == 80:
+        b = next(i for i, (s, e) in enumerate(BLOCKS) if s <= c < e)
+        if b in SEQ_PAIRS:
+            s, e = BLOCKS[b]
+            s2, e2 = BLOCKS[SEQ_PAIRS[b]]
+            p = s2 + int(round((c - s) / (e - s - 1.0) * (e2 - s2 - 1)))
+            if mask[c] > 0 and mask[p] > 0:
+                fl, nf = (c, p) if b % 2 == 0 else (p, c)
+                f = vol[fl].astype(np.float32) / 255.0
+                n = vol[nf].astype(np.float32) / 255.0
+                return np.stack([f, n, np.clip(0.5 + (f - n) / 2.0, 0.0, 1.0)], 0)
+    return np.stack([vol[c - 1], vol[c], vol[c + 1]], 0).astype(np.float32) / 255.0
 
 
 def _alloc(sizes, count):
@@ -626,6 +653,8 @@ def main():
     ap.add_argument("--bb_file", default=None,
                     help="file name (searched under /kaggle/input) or path of a timm state dict for --arch, saved from "
                          "create_model(arch, pretrained=True, num_classes=0): the ImageNet weights without internet")
+    ap.add_argument("--chan", default="adj", choices=["adj", "seqfuse"],
+                    help="window channels: adj = 3 adjacent slices; seqfuse = fluid, non-fluid, difference (dense80)")
     ap.add_argument("--canon", default=None,
                     help="json {StudyInstanceUID: 'L' | 'R'} (file name searched under /kaggle/input, or a path): left "
                          "knees are mirrored at train and eval, so medial / lateral sit on the same image side and at "
@@ -636,6 +665,8 @@ def main():
     ap.add_argument("--sample", default="rand", choices=["rand", "strat"],
                     help="rand = window centres anywhere in the volume; strat = ordered windows from every series")
     a = ap.parse_args()
+    if a.chan == "seqfuse" and (a.aug_flip > 0 or a.canon or a.roi):
+        raise SystemExit("--chan seqfuse: channels are sequences, not slices -> no --aug_flip / --canon / --roi")
     if a.ext_dir:                       # read by _open_corpus / _open_ids, also in the DataLoader workers
         os.environ["KNEE_EXT_DIR"] = a.ext_dir
     random.seed(a.seed); np.random.seed(a.seed); torch.manual_seed(a.seed)
@@ -731,7 +762,7 @@ def main():
         if a.aug_flip > 0:
             print("[canon] WARNING: --aug_flip > 0 undoes the canonical side for part of the training studies", flush=True)
     tds = StudyWindows(HERE, train_ids, id2row, labels, a.res, a.k, train=True, norm=a.norm, aug_geo=a.aug_geo,
-                       aug_flip=a.aug_flip, aug_erase=a.aug_erase, ext_weight=a.ext_weight, sample=a.sample, sides=sides, **_roi_kw)
+                       aug_flip=a.aug_flip, aug_erase=a.aug_erase, ext_weight=a.ext_weight, sample=a.sample, sides=sides, chan=a.chan, **_roi_kw)
     tl = DataLoader(tds, batch_size=a.bs, shuffle=True, num_workers=a.workers, drop_last=True,
                     collate_fn=collate, pin_memory=True, persistent_workers=a.workers > 0)
 
@@ -754,7 +785,7 @@ def main():
             bb.set_grad_checkpointing(True); print("[raptor] gradient checkpointing ON", flush=True)
         except Exception as e:
             print(f"[raptor] grad_ckpt unsupported for {a.arch}: {e}", flush=True)
-    META = {"head": a.head, "sample": a.sample, "k_eval": a.k_eval, "canon": bool(a.canon)}   # what the scoring code needs to rebuild the model
+    META = {"head": a.head, "sample": a.sample, "k_eval": a.k_eval, "canon": bool(a.canon), "chan": a.chan}   # what the scoring code needs to rebuild the model
     if a.head == "mil":
         model = RaptorClassifier(bb, F_dim=F_dim)
     else:
@@ -817,7 +848,7 @@ def main():
         for p in range(npass):
             phase = 0.0 if npass == 1 else p / float(npass)
             ds = StudyWindows(HERE, ids_sub, id2row, labels, a.res, k_win, train=False,
-                              norm=a.norm, eval_phase=phase, sample=a.sample, sides=sides, **_roi_kw)
+                              norm=a.norm, eval_phase=phase, sample=a.sample, sides=sides, chan=a.chan, **_roi_kw)
             dl = DataLoader(ds, batch_size=max(2, a.bs // 2), shuffle=False,
                             num_workers=a.workers, collate_fn=collate, persistent_workers=False)
             Ps = []
@@ -1060,7 +1091,7 @@ def main():
                    "roi_mode": a.roi_mode, "ema": a.ema, "eval_passes": a.eval_passes,
                    "aug_geo": a.aug_geo, "drop_path": a.drop_path, "pos_weight_cap": a.pos_weight_cap,
                    "aug_flip": a.aug_flip, "aug_erase": a.aug_erase, "ext_weight": a.ext_weight, "n_ext": n_ext,
-                   "head": a.head, "sample": a.sample, "k": a.k, "k_eval": a.k_eval, "canon": bool(a.canon),
+                   "head": a.head, "sample": a.sample, "k": a.k, "k_eval": a.k_eval, "canon": bool(a.canon), "chan": a.chan,
                    "oof_members": sorted(oof_comp), "partial": False, "epochs_done": a.epochs},
                   open(os.path.join(HERE, f"raptor_ft_{a.tag}.json"), "w"), indent=1)
         model.load_state_dict(best_state["model"]); model.eval()
