@@ -149,18 +149,24 @@ def quote(gpu: str, cloud: str) -> dict:
             "quoted_at": time.time(), "ceiling_all_in_hr": RATE_CEILING}
 
 
-def preflight(gpu: str, cloud: str, cap: float) -> dict:
+def preflight(gpu: str, cloud: str, cap: float, campaign_state: dict | None = None) -> dict:
     art = artifact_check()
     pods = runpod.list_pods()
-    # Refuse even stopped unrelated pods: storage charges make account-based verification ambiguous.
-    if pods:
-        raise RuntimeError("account has pods; inspect/resolve before isolated paid pilot")
+    # The account is shared with unrelated projects. Only this ledger's pod IDs
+    # and unique job names belong to this campaign; never manage foreign pods.
+    if campaign_state is None:
+        campaign_state = json.loads(STATE.read_text()) if STATE.exists() else {"jobs": []}
+    own_ids = {j["pod"] for j in campaign_state["jobs"] if j.get("pod")}
+    own_names = {name for j in campaign_state["jobs"] for name in (j.get("job"), j.get("pod_name")) if name}
+    if any(p.get("id") in own_ids or p.get("name") in own_names for p in pods):
+        raise RuntimeError("campaign has a pod; inspect/resolve before another paid pilot")
     bal = runpod.balance()
     balance = float(bal["clientBalance"])
-    spend = float(bal["currentSpendPerHr"])
-    if not all(math.isfinite(v) for v in (balance, spend)) or spend > .001 or balance < cap + .25:
-        raise RuntimeError("unknown/live account spend or balance below reserved cap plus $0.25")
-    return {**art, **quote(gpu, cloud), "balance_usd": balance}
+    if not math.isfinite(balance) or balance < cap + .25:
+        raise RuntimeError("unknown account balance or balance below reserved cap plus $0.25")
+    return {**art, **quote(gpu, cloud), "balance_usd": balance,
+            "balance_note": "Shared account liquidity only; balance changes and global spend are not campaign cost.",
+            "unrelated_pods_ignored": len(pods)}
 
 
 def bundle(job: dict, modes: list[str], epochs: int, resume_from: Path | None = None) -> Path:
@@ -291,7 +297,7 @@ def launch(args):
                 raise RuntimeError("prepared job must match exactly one ledger entry")
             j = matches[0]
             d = verify_prepared_bundle(j, args.modes.split(","), args.epochs, args.resume_from)
-        pf = preflight(args.gpu, args.cloud, args.cap)
+        pf = preflight(args.gpu, args.cloud, args.cap, campaign_state=st)
         j = reserve_prepared(st, j, args.cap, pf) if prepared else reserve(st, args.cap, **pf)
         atomic_json(STATE, st)
         try:
@@ -439,7 +445,7 @@ def main():
         print(json.dumps({"campaign_usd": LIMIT, "pilot_cap_usd": a.cap, "gpu_hr_ceiling": MAX_GPU_HR,
                           "storage_hr_reserve": STORAGE_HR, "max_wall_seconds": j["max_wall_seconds"],
                           "modes": a.modes, "epochs": a.epochs, "corpus": "dense512", "max_active_pods": 1,
-                          "note": "No launch. Paid launch requires valid artifacts, current quote, zero other pods and sufficient balance."}, indent=2))
+                          "note": "No launch. Paid launch requires valid artifacts, current quote, no unresolved campaign pod and sufficient shared-account liquidity; unrelated pods are ignored."}, indent=2))
     elif a.command == "preflight": print(json.dumps(preflight(a.gpu, a.cloud, a.cap), indent=2))
     elif a.command == "launch": launch(a)
     elif a.command == "status": status()

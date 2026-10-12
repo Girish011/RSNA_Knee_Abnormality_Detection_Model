@@ -230,3 +230,45 @@ def test_supervisor_pod_api_has_accepted_user_agent_and_safe_error(monkeypatch):
     assert J.error_details(caught.value) == {"error": "OperationalError", "code": "pod_api_http", "method": "GET", "http_status": 403}
     assert "sensitive" not in str(caught.value) and "secret" not in str(caught.value)
     assert len(calls) == 1
+
+
+def test_preflight_ignores_foreign_pods_and_global_spend_but_reservation_blocks_own_active(monkeypatch):
+    monkeypatch.setattr(C, "artifact_check", lambda: {"labels_sha256": "verified"})
+    monkeypatch.setattr(C.runpod, "list_pods", lambda: [{"id": "foreign", "name": "another-project", "desiredStatus": "RUNNING"}])
+    monkeypatch.setattr(C.runpod, "balance", lambda: {"clientBalance": 60, "currentSpendPerHr": 8.75})
+    monkeypatch.setattr(C, "quote", lambda *a: {"quoted_gpu_hr": .34})
+    st = {"jobs": []}
+    result = C.preflight("4090", "COMMUNITY", 3, st)
+    assert result["unrelated_pods_ignored"] == 1 and result["balance_usd"] == 60
+    assert "currentSpendPerHr" not in result
+    C.reserve(st, 3, **result)
+    # An unknown campaign launch stays blocked even when provider listing shows
+    # only the foreign project; unrelated usage never relaxes our own ledger.
+    with pytest.raises(RuntimeError, match="unresolved"):
+        C.reserve(st, 3, **result)
+
+
+@pytest.mark.parametrize("pod", [{"id": "own-id", "name": "renamed"}, {"id": "recovered-id", "name": "def-owned"}])
+def test_preflight_blocks_only_known_campaign_ids_or_names(monkeypatch, pod):
+    monkeypatch.setattr(C, "artifact_check", lambda: {})
+    monkeypatch.setattr(C.runpod, "list_pods", lambda: [pod])
+    st = {"jobs": [{"job": "def-owned", "pod": "own-id", "status": "terminated", "reserved_usd": 3}]}
+    with pytest.raises(RuntimeError, match="campaign has a pod"):
+        C.preflight("4090", "COMMUNITY", 3, st)
+
+
+def test_status_never_terminates_or_attributes_foreign_pod(tmp_path, monkeypatch):
+    monkeypatch.setattr(C, "STATE", tmp_path / "ledger.json")
+    with C.ledger() as st:
+        job = C.reserve(st, 3)
+        job.update(pod="own-id", pod_name=job["job"], status="running", deadline=time.time()-1, launch_ts=time.time()-60)
+        name = job["job"]
+    monkeypatch.setattr(C.runpod, "list_pods", lambda: [
+        {"id": "foreign", "name": "another-project", "desiredStatus": "RUNNING", "costPerHr": 99},
+        {"id": "own-id", "name": name, "desiredStatus": "RUNNING", "costPerHr": .34}])
+    stopped = []
+    monkeypatch.setattr(C.runpod, "terminate_pod", stopped.append)
+    C.status()
+    assert stopped == ["own-id"]
+    st = json.loads(C.STATE.read_text())
+    assert len(st["jobs"]) == 1 and st["jobs"][0]["observed_gpu_hr"] == .34
