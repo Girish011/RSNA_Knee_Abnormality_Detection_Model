@@ -8,6 +8,7 @@ Historic campaign costs are not mixed into this authorized $30 ledger.
 from __future__ import annotations
 
 import argparse
+import base64
 from datetime import datetime, timezone
 from contextlib import contextmanager
 import fcntl
@@ -16,6 +17,7 @@ import json
 import math
 import os
 from pathlib import Path
+import re
 import secrets
 import shutil
 import subprocess
@@ -24,6 +26,7 @@ import tempfile
 import time
 import uuid
 import zipfile
+import zlib
 
 import requests
 from rsna_knee.agent import runpod
@@ -265,6 +268,94 @@ def wait_bundle_ready(job: dict, directory: Path, max_seconds: float = 180) -> s
     raise RuntimeError("bundle readiness/manifest verification timed out; GPU not created")
 
 
+def compact_startup(source: str) -> tuple[list[str], dict]:
+    """Transport exact supervisor bytes with a stdlib-only integrity check."""
+    raw = source.encode("utf-8")
+    digest = hashlib.sha256(raw).hexdigest()
+    encoded = base64.b64encode(zlib.compress(raw, level=9)).decode("ascii")
+    wrapper = ("import base64,zlib,hashlib;"
+               f"_s=zlib.decompress(base64.b64decode({encoded!r}));"
+               f"assert hashlib.sha256(_s).hexdigest()=={digest!r},'supervisor source checksum mismatch';"
+               "exec(compile(_s,'<definition-supervisor>','exec'),{'__name__':'__main__'})")
+    return ["python", "-u", "-c", wrapper], {
+        "encoding": "zlib9-base64", "source_sha256": digest, "source_bytes": len(raw),
+        "wrapper_sha256": hashlib.sha256(wrapper.encode()).hexdigest(), "wrapper_bytes": len(wrapper.encode())}
+
+
+class PodCreationError(RuntimeError):
+    """Only the allowlisted receipt is safe to surface; never stringify raw replies."""
+    def __init__(self, receipt: dict):
+        self.receipt = receipt
+        super().__init__("pod creation " + receipt["outcome"] + "; " + json.dumps(receipt, sort_keys=True))
+
+
+_PROVIDER_CODES = frozenset({
+    "GRAPHQL_PARSE_FAILED", "GRAPHQL_VALIDATION_FAILED", "BAD_USER_INPUT", "UNAUTHENTICATED",
+    "FORBIDDEN", "NOT_FOUND", "INTERNAL_SERVER_ERROR", "INSUFFICIENT_FUNDS", "GPU_UNAVAILABLE",
+    "RESOURCE_EXHAUSTED", "TOO_MANY_REQUESTS"})
+_PROVIDER_MESSAGES = (
+    (r"cannot query field|unknown argument|unknown type|field .+ is not defined by type|variable .+ got invalid value|required type .+ was not provided|syntax error",
+     "graphql_schema_or_input_validation"),
+    (r"dockerargs.{0,100}(?:length|long|limit|max)|(?:length|long|limit|max).{0,100}dockerargs|payload too large|request entity too large",
+     "request_or_startup_argument_size_limit"),
+    (r"no (?:longer any )?(?:instances|gpus|resources).{0,100}available|insufficient capacity|out of stock|not enough capacity",
+     "requested_capacity_unavailable"),
+    (r"insufficient (?:funds|balance|credits)|not enough (?:funds|credits)|balance.{0,40}(?:low|insufficient)",
+     "insufficient_account_balance"),
+    (r"unauthorized|unauthenticated|invalid api key|invalid token|authentication", "authentication_rejected"),
+    (r"forbidden|permission denied|access denied", "access_denied"),
+    (r"rate limit|too many requests", "rate_limited"),
+)
+
+
+def provider_creation_receipt(response, payload, env_values=()) -> dict:
+    """Canonical categories only: provider messages may echo credentials or inputs.
+
+    Only GraphQL parse/schema validation with no resolver path and no data proves
+    preexecution rejection. HTTP errors, capacity messages and missing IDs alone
+    do not prove whether the mutation allocated a resource.
+    """
+    status = getattr(response, "status_code", None)
+    receipt = {"outcome": "unknown", "http_status": status if isinstance(status, int) else None}
+    errors = payload.get("errors", []) if isinstance(payload, dict) else []
+    errors = errors if isinstance(errors, list) else []
+    safe, definite = [], bool(errors) and not payload.get("data")
+    for item in errors:
+        item = item if isinstance(item, dict) else {}
+        extensions = item.get("extensions")
+        code = extensions.get("code") if isinstance(extensions, dict) else None
+        code = code if isinstance(code, str) and code in _PROVIDER_CODES else "UNRECOGNIZED"
+        # Redact known environment values before classification; never emit the
+        # resulting message itself, including unknown tokens or signed URLs.
+        message = item.get("message", "")
+        message = message if isinstance(message, str) else ""
+        for value in sorted((str(v) for v in env_values if v), key=len, reverse=True):
+            message = message.replace(value, "[redacted]")
+        categories = [label for pattern, label in _PROVIDER_MESSAGES if re.search(pattern, message, re.I)]
+        safe.append({"code": code, "messages": categories or ["provider_message_withheld"]})
+        definite = definite and code in {"GRAPHQL_PARSE_FAILED", "GRAPHQL_VALIDATION_FAILED"} and not item.get("path")
+    if definite:
+        receipt["outcome"] = "definite_preexecution_rejection"
+    receipt["graphql_errors"] = safe
+    if response is not None:
+        # Preserve complete evidence locally, never in the ledger or user output.
+        raw = getattr(response, "content", None)
+        if not isinstance(raw, bytes):
+            raw = json.dumps(payload, ensure_ascii=False).encode() if payload is not None else b""
+        receipt["response_sha256"] = hashlib.sha256(raw).hexdigest()
+        private = REPO / "work/definition_private/provider_responses"
+        try:
+            private.mkdir(parents=True, exist_ok=True, mode=0o700); private.chmod(0o700)
+            path = private / (uuid.uuid4().hex + ".response")
+            fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+            with os.fdopen(fd, "wb") as f:
+                f.write(raw)
+            receipt["private_response_file"] = str(path)
+        except OSError:
+            receipt["private_response_saved"] = False
+    return receipt
+
+
 def create_deadline_pod(spec: dict, deadline: float) -> dict:
     """Provider-side expiry survives host failure. Never retry this mutation automatically."""
     expiry = datetime.fromtimestamp(deadline, timezone.utc).isoformat().replace("+00:00", "Z")
@@ -280,12 +371,21 @@ def create_deadline_pod(spec: dict, deadline: float) -> dict:
     # Live Pod output does not expose terminateAfter. Input was schema-validated;
     # do not request a nonexistent output field (that rejects creation entirely).
     q = "mutation($input: PodFindAndDeployOnDemandInput!) { podFindAndDeployOnDemand(input: $input) { id costPerHr desiredStatus } }"
-    r = requests.post(runpod.GRAPHQL, headers=runpod._h(), json={"query": q, "variables": {"input": inp}}, timeout=60)
-    if not r.ok:
-        raise RuntimeError("pod creation outcome unknown")
-    p = (r.json().get("data") or {}).get("podFindAndDeployOnDemand")
-    if not p or not p.get("id"):
-        raise RuntimeError("pod creation failed/unknown; inspect provider")
+    try:
+        r = requests.post(runpod.GRAPHQL, headers=runpod._h(), json={"query": q, "variables": {"input": inp}}, timeout=60)
+    except requests.RequestException:
+        # Transport exception text can include request headers or URLs.
+        raise PodCreationError({"outcome": "unknown", "http_status": None,
+                                "transport_error": "provider_request_failed"}) from None
+    try:
+        payload = r.json()
+    except ValueError:
+        payload = None
+    data = payload.get("data") if isinstance(payload, dict) else None
+    p = data.get("podFindAndDeployOnDemand") if isinstance(data, dict) else None
+    if not r.ok or not isinstance(p, dict) or not p.get("id"):
+        raise PodCreationError(provider_creation_receipt(r, payload, spec["env"].values())) from None
+    p["_creation_receipt"] = {"outcome": "acknowledged", "http_status": getattr(r, "status_code", None)}
     return p
 
 
@@ -325,13 +425,16 @@ def launch(args):
                "DEF_RUNPOD_API_KEY": runpod.secret("RUNPOD_API_KEY"), "DEF_BUNDLE": f"{USER}/{j['job']}-bundle",
                "DEF_RESULT": j["result"], "DEF_DEADLINE": str(j["deadline"]), "DEF_MAX_GPU_HR": str(j["accepted_gpu_hr_ceiling"]),
                "DEF_STATUS_TOKEN": status_token}
+        startup, j["startup_transport"] = compact_startup((d / "definition_job.py").read_text())
+        atomic_json(STATE, st)
         spec = {"name": j["pod_name"], "imageName": IMAGE, "computeType": "GPU", "gpuCount": 1,
                 "cloudType": args.cloud, "gpuTypeIds": [args.gpu], "interruptible": False,
                 "containerDiskInGb": DISK_GB, "volumeInGb": VOLUME_GB, "volumeMountPath": "/workspace",
                 "ports": ["8000/http"], "minRAMPerGPU": 32, "minVCPUPerGPU": 8,
-                "env": env, "dockerStartCmd": ["python", "-u", "-c", (d / "definition_job.py").read_text()]}
+                "env": env, "dockerStartCmd": startup}
         try:
             p = create_deadline_pod(spec, j["deadline"])  # exactly once
+            j["provider_creation_receipt"] = p.pop("_creation_receipt", {"outcome": "acknowledged"})
             j["pod"] = p["id"]; j["status"] = "running"
             atomic_json(STATE, st)  # persist id before inspecting anything else
             j["provider_deadline_requested"] = datetime.fromtimestamp(j["deadline"], timezone.utc).isoformat()
@@ -351,7 +454,9 @@ def launch(args):
             j["observed_gpu_hr"] = price
             if not math.isfinite(price) or not 0 < price <= j["accepted_gpu_hr_ceiling"]:
                 raise RuntimeError("observed pod rate exceeds cap or is unknown")
-        except Exception:
+        except Exception as exc:
+            if isinstance(exc, PodCreationError):
+                j["provider_creation_receipt"] = exc.receipt
             if j.get("pod"):
                 j["status"] = "terminate_pending"
                 try:
@@ -360,7 +465,8 @@ def launch(args):
                     pass
             else:
                 j["status"] = "unknown"
-            raise RuntimeError("launch uncertain/rejected; reservation retained; run status, never blindly relaunch") from None
+            diagnostic = json.dumps(j["provider_creation_receipt"], sort_keys=True) if isinstance(exc, PodCreationError) else "provider diagnostic unavailable"
+            raise RuntimeError("launch uncertain/rejected; reservation retained; run status, never blindly relaunch; " + diagnostic) from None
         print(json.dumps({k: j[k] for k in ("job", "pod", "deadline", "reserved_usd", "observed_gpu_hr", "result")}, indent=2))
 
 
@@ -369,13 +475,20 @@ def status():
     now = time.time()
     with ledger() as st:
         for j in st["jobs"]:
-            if j["status"] not in ACTIVE:
+            if j["status"] not in ACTIVE and j["status"] != "reconciled_absent":
                 continue
             matches = [p for p in pods if p["id"] == j.get("pod") or p.get("name") == j.get("pod_name")]
             if len(matches) > 1:
                 raise RuntimeError("multiple matching pods; inspect immediately")
             if matches:
                 p = matches[0]; j["pod"] = p["id"]
+                if j["status"] == "reconciled_absent":
+                    # A manually reviewed absence permits a new reservation, but
+                    # never permits an old delayed create to keep billing.
+                    j["status"] = "terminate_pending"
+                    j["reappeared_after_absence_review"] = now
+                    runpod.terminate_pod(j["pod"])
+                    continue
                 price = p.get("costPerHr")
                 if price is not None:
                     j["observed_gpu_hr"] = float(price)
@@ -391,6 +504,8 @@ def status():
                 if now >= j.get("deadline", now + 1):
                     runpod.terminate_pod(j["pod"])
                     j["status"] = "terminate_pending"
+            elif j["status"] == "reconciled_absent":
+                continue  # Preserve the manual review and its retained reservation.
             elif j.get("pod"):
                 j["status"] = "terminated"; j["last_seen_gone"] = now
             else:
