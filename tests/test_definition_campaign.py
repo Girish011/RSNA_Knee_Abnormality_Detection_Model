@@ -151,3 +151,63 @@ def test_status_network_failure_never_releases_reservation(tmp_path, monkeypatch
     monkeypatch.setattr(C.runpod, "list_pods", fail)
     with pytest.raises(OSError): C.status()
     assert p.read_bytes() == before
+
+
+def test_bundle_readiness_retries_transient_errors_and_verifies_remote(tmp_path, monkeypatch):
+    manifest = tmp_path / "bundle_manifest.json"; manifest.write_text('{"sha256": {}}')
+    calls = []
+    def kaggle(args, timeout):
+        calls.append(args)
+        if len(calls) == 1:
+            raise RuntimeError("processing")
+        if args[1] == "download":
+            (Path(args[args.index("-p")+1]) / "bundle_manifest.json").write_bytes(manifest.read_bytes())
+        return type("Result", (), {"stdout": "ready"})()
+    monkeypatch.setattr(C, "kaggle", kaggle)
+    monkeypatch.setattr(C.time, "sleep", lambda *_: None)
+    assert C.wait_bundle_ready({"job": "test"}, tmp_path) == C.sha(manifest)
+    assert [a[1] for a in calls] == ["status", "status", "download"]
+
+
+def test_bundle_readiness_rejects_remote_mismatch(tmp_path, monkeypatch):
+    (tmp_path / "bundle_manifest.json").write_text('{"sha256": {}}')
+    def kaggle(args, timeout):
+        if args[1] == "download":
+            (Path(args[args.index("-p")+1]) / "bundle_manifest.json").write_text("stale")
+        return type("Result", (), {"stdout": "ready"})()
+    monkeypatch.setattr(C, "kaggle", kaggle)
+    with pytest.raises(ValueError, match="remote bundle manifest differs"):
+        C.wait_bundle_ready({"job": "test"}, tmp_path)
+
+
+def test_prepared_bundle_checks_sources_and_never_retries_uncertain_create(tmp_path, monkeypatch):
+    monkeypatch.setattr(C, "REPO", tmp_path)
+    sources = ["runpod/definition_reader.py", "data/processed/definition_v1.npz"]
+    monkeypatch.setattr(C, "BUNDLE_SOURCES", sources)
+    job = {"job": "existing", "status": "precreate_failed", "reserved_usd": 0, "created": 123}
+    d = tmp_path / "work/definition_bundles/existing"; d.mkdir(parents=True)
+    for source in sources:
+        p = tmp_path / source; p.parent.mkdir(parents=True, exist_ok=True); p.write_text(source)
+        (d / p.name).write_bytes(p.read_bytes())
+    C.atomic_json(d / "job.json", {"job": "existing", "modes": ["control"], "epochs": 6,
+                                   "labels_sha256": C.sha(tmp_path / sources[1])})
+    C.atomic_json(d / "bundle_manifest.json", {"sha256": {p.name: C.sha(p) for p in d.iterdir()}})
+    assert C.verify_prepared_bundle(job, ["control"], 6, None) == d
+    job["launch_ts"] = 123
+    with pytest.raises(RuntimeError, match="unlaunched"):
+        C.verify_prepared_bundle(job, ["control"], 6, None)
+    del job["launch_ts"]
+    (tmp_path / sources[0]).write_text("fixed reader")
+    with pytest.raises(RuntimeError, match="stale"):
+        C.verify_prepared_bundle(job, ["control"], 6, None)
+
+
+def test_prepared_reservation_reuses_identity_and_rechecks_budget():
+    job = {"job": "existing", "status": "precreate_failed", "reserved_usd": 0, "created": 123}
+    st = {"jobs": [job]}
+    assert C.reserve_prepared(st, job, 3, {"quoted_gpu_hr": .34}) is job
+    assert len(st["jobs"]) == 1 and job["job"] == "existing" and job["created"] == 123
+    assert job["reserved_usd"] == 3 and job["precreate_retries"] == 1
+    assert job["max_wall_seconds"] == 14400
+    with pytest.raises(RuntimeError, match="unresolved"):
+        C.reserve_prepared(st, job, 3, {"quoted_gpu_hr": .34})

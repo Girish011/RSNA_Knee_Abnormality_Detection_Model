@@ -62,6 +62,20 @@ def test_loss_masks_unknowns_and_aux_does_not_change_primary_schema():
     assert z.shape == (2, 12) and grades.shape == (2, 12, 3)
 
 
+def test_single_weak_label_confidence_scales_gradient_absolutely():
+    target = torch.tensor([[1., 0.], [0., 0.]])
+    mask = torch.tensor([[1., 0.], [0., 0.]])
+    strong = torch.zeros((2, 2), requires_grad=True)
+    weak = torch.zeros((2, 2), requires_grad=True)
+    strong_loss = dr.masked_loss(strong, target, mask, torch.ones_like(mask))
+    weak_loss = dr.masked_loss(weak, target, mask, torch.full_like(mask, .2))
+    strong_loss.backward(); weak_loss.backward()
+    assert torch.allclose(weak_loss, strong_loss * .2)
+    assert torch.allclose(weak.grad, strong.grad * .2)
+    assert weak.grad[0, 0] != 0
+    assert torch.count_nonzero(weak.grad) == 1
+
+
 def test_gold_in_label_bundle_is_rejected(tmp_path):
     root = dr.synthetic(tmp_path)
     tr = pd.read_csv(root / "train.csv")

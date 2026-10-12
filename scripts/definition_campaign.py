@@ -20,6 +20,7 @@ import secrets
 import shutil
 import subprocess
 import sys
+import tempfile
 import time
 import uuid
 import zipfile
@@ -41,6 +42,12 @@ RESERVE_MARGIN = .20  # API termination delay / rounded billing; never trained a
 USER = "girishbose"
 IMAGE = "runpod/pytorch:2.4.0-py3.11-cuda12.4.1-devel-ubuntu22.04"
 ACTIVE = {"reserved", "creating", "unknown", "running", "stopped", "terminate_pending"}
+BUNDLE_SOURCES = (
+    "runpod/definition_reader.py", "runpod/definition_geometry.py", "runpod/definition_job.py",
+    "runpod/definition_job.sh", "runpod/fetch_dense80.py", "data/raw/train.csv", "data/raw/train_series.csv",
+    "data/processed/definition_v1.npz", "data/processed/definition_v1.manifest.json",
+    "work/definition_init/convnext_tiny.fb_in1k.pt", "work/definition_init/convnext_tiny.fb_in1k.provenance.json",
+)
 
 
 def atomic_json(path: Path, value: dict) -> None:
@@ -159,10 +166,7 @@ def preflight(gpu: str, cloud: str, cap: float) -> dict:
 def bundle(job: dict, modes: list[str], epochs: int, resume_from: Path | None = None) -> Path:
     d = REPO / "work/definition_bundles" / job["job"]
     d.mkdir(parents=True, exist_ok=False)
-    for f in ["runpod/definition_reader.py", "runpod/definition_geometry.py", "runpod/definition_job.py",
-              "runpod/definition_job.sh", "runpod/fetch_dense80.py", "data/raw/train.csv", "data/raw/train_series.csv",
-              "data/processed/definition_v1.npz", "data/processed/definition_v1.manifest.json",
-              "work/definition_init/convnext_tiny.fb_in1k.pt", "work/definition_init/convnext_tiny.fb_in1k.provenance.json"]:
+    for f in BUNDLE_SOURCES:
         shutil.copy2(REPO / f, d / Path(f).name)
     if resume_from:
         for mode in modes:
@@ -192,13 +196,75 @@ def kaggle(args: list[str], timeout=600):
     return r
 
 
+def verify_prepared_bundle(job: dict, modes: list[str], epochs: int, resume_from: Path | None) -> Path:
+    """Only reuse a failed *pre-create* attempt; uncertain paid creates cannot retry."""
+    if (job["status"] != "precreate_failed" or float(job["reserved_usd"]) != 0
+            or any(job.get(k) is not None for k in ("pod", "launch_ts", "pod_name", "deadline"))):
+        raise RuntimeError("prepared job is not an unlaunched precreate failure")
+    d = REPO / "work/definition_bundles" / job["job"]
+    receipt = json.loads((d / "bundle_manifest.json").read_text())["sha256"]
+    for name, digest in receipt.items():
+        p = d / name
+        if not p.resolve().is_relative_to(d.resolve()) or sha(p) != digest:
+            raise RuntimeError("prepared bundle receipt mismatch")
+    for source in BUNDLE_SOURCES:
+        name = Path(source).name
+        if receipt.get(name) != sha(REPO / source):
+            raise RuntimeError(f"prepared bundle is stale: {name}; rebuild/version it before launch")
+    config = json.loads((d / "job.json").read_text())
+    if config != {"job": job["job"], "modes": modes, "epochs": epochs,
+                  "labels_sha256": sha(REPO / "data/processed/definition_v1.npz")}:
+        raise RuntimeError("prepared bundle job configuration differs")
+    for mode in modes:
+        name = f"resume_{mode}.pt"
+        expected = sha(resume_from / mode / f"definition_{mode}_resume.pt") if resume_from else None
+        if receipt.get(name) != expected:
+            raise RuntimeError("prepared bundle resume inputs differ")
+    return d
+
+
+def reserve_prepared(state: dict, job: dict, cap: float, details: dict) -> dict:
+    # Reuse the identity only after reserve() has checked every campaign constraint.
+    fresh = reserve(state, cap, **details)
+    state["jobs"].pop()
+    identity = {"job": job["job"], "created": job["created"]}
+    retries = job.get("precreate_retries", 0) + 1
+    job.clear(); job.update(fresh); job.update(identity)
+    job["precreate_retries"] = retries
+    return job
+
+
+def wait_bundle_ready(job: dict, directory: Path, max_seconds: float = 180) -> str:
+    """Kaggle can return errors while processing a newly created/versioned dataset."""
+    slug = f"{USER}/{job['job']}-bundle"
+    expected = sha(directory / "bundle_manifest.json")
+    deadline = time.monotonic() + max_seconds
+    with tempfile.TemporaryDirectory(prefix="definition-bundle-check-") as tmp:
+        while time.monotonic() < deadline:
+            try:
+                r = kaggle(["datasets", "status", slug], timeout=min(30, max(1, deadline-time.monotonic())))
+                if "ready" in r.stdout.lower():
+                    kaggle(["datasets", "download", slug, "-f", "bundle_manifest.json", "-p", tmp, "--force", "-q"],
+                           timeout=min(30, max(1, deadline-time.monotonic())))
+                    remote = Path(tmp) / "bundle_manifest.json"
+                    if remote.is_file():
+                        if sha(remote) != expected:
+                            raise ValueError("remote bundle manifest differs; GPU not created")
+                        return expected
+            except (RuntimeError, subprocess.TimeoutExpired):
+                pass  # Read-only retry, bounded by the wall-clock deadline.
+            time.sleep(min(5, max(0, deadline-time.monotonic())))
+    raise RuntimeError("bundle readiness/manifest verification timed out; GPU not created")
+
+
 def create_deadline_pod(spec: dict, deadline: float) -> dict:
     """Provider-side expiry survives host failure. Never retry this mutation automatically."""
     expiry = datetime.fromtimestamp(deadline, timezone.utc).isoformat().replace("+00:00", "Z")
     inp = {"name": spec["name"], "imageName": spec["imageName"], "cloudType": spec["cloudType"],
            "gpuTypeId": spec["gpuTypeIds"][0], "gpuCount": 1, "volumeInGb": VOLUME_GB,
            "containerDiskInGb": DISK_GB, "volumeMountPath": "/workspace", "ports": "8000/http",
-           "minVcpuCount": 8, "minMemoryInGb": 32, "terminateAfter": expiry,
+           "minVcpuCount": 8, "minMemoryInGb": 32, "minDownload": 500, "minUpload": 100,
+           "terminateAfter": expiry,
            "env": [{"key": k, "value": v} for k, v in spec["env"].items()]}
     # GraphQL dockerArgs is parsed as shell arguments; shlex.quote preserves embedded source.
     import shlex
@@ -218,21 +284,22 @@ def create_deadline_pod(spec: dict, deadline: float) -> dict:
 def launch(args):
     # Keep lock across provider creation; persist reservation BEFORE any external mutation.
     with ledger() as st:
+        prepared = getattr(args, "prepared_job", None)
+        if prepared:
+            matches = [j for j in st["jobs"] if j["job"] == prepared]
+            if len(matches) != 1:
+                raise RuntimeError("prepared job must match exactly one ledger entry")
+            j = matches[0]
+            d = verify_prepared_bundle(j, args.modes.split(","), args.epochs, args.resume_from)
         pf = preflight(args.gpu, args.cloud, args.cap)
-        j = reserve(st, args.cap, **pf)
+        j = reserve_prepared(st, j, args.cap, pf) if prepared else reserve(st, args.cap, **pf)
         atomic_json(STATE, st)
         try:
-            d = bundle(j, args.modes.split(","), args.epochs, args.resume_from)
-            kaggle(["datasets", "create", "-p", str(d), "-q"])
+            if not prepared:
+                d = bundle(j, args.modes.split(","), args.epochs, args.resume_from)
+                kaggle(["datasets", "create", "-p", str(d), "-q"])
             # Wait for bundle to be usable BEFORE allocating a GPU.
-            ready = False
-            for _ in range(12):
-                r = kaggle(["datasets", "status", f"{USER}/{j['job']}-bundle"], timeout=60)
-                if "ready" in r.stdout.lower():
-                    ready = True; break
-                time.sleep(5)
-            if not ready:
-                raise RuntimeError("bundle not ready; GPU not created")
+            j["bundle_manifest_sha256"] = wait_bundle_ready(j, d)
         except Exception:
             j["status"] = "precreate_failed"; j["reserved_usd"] = 0.0
             raise
@@ -254,7 +321,7 @@ def launch(args):
                 "cloudType": args.cloud, "gpuTypeIds": [args.gpu], "interruptible": False,
                 "containerDiskInGb": DISK_GB, "volumeInGb": VOLUME_GB, "volumeMountPath": "/workspace",
                 "ports": ["8000/http"], "minRAMPerGPU": 32, "minVCPUPerGPU": 8,
-                "env": env, "dockerStartCmd": ["python", "-u", "-c", (REPO / "runpod/definition_job.py").read_text()]}
+                "env": env, "dockerStartCmd": ["python", "-u", "-c", (d / "definition_job.py").read_text()]}
         try:
             p = create_deadline_pod(spec, j["deadline"])  # exactly once
             j["pod"] = p["id"]; j["status"] = "running"
@@ -364,6 +431,7 @@ def main():
     ap.add_argument("--modes", choices=["control", "definition", "control,definition"], default="control,definition")
     ap.add_argument("--epochs", type=int, default=6)
     ap.add_argument("--job")
+    ap.add_argument("--prepared-job", help="reuse an already uploaded bundle after a precreate failure; never re-creates its dataset")
     ap.add_argument("--resume-from", type=Path, help="verified collected result directory containing mode/resume.pt files")
     a = ap.parse_args()
     if a.command in ("plan", "dry-run"):

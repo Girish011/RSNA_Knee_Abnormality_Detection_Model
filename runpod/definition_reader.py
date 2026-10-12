@@ -291,9 +291,11 @@ class Reader(nn.Module):
 def masked_loss(logits, targets, mask, confidence=None):
     weight = mask.float() if confidence is None else mask.float() * confidence
     # Each finding contributes equally among those with supervision in this batch.
+    # Confidence reduces absolute evidence strength, even for a lone weak label.
+    # Normalizing by confidence-weighted counts would cancel that reduction.
     loss = F.binary_cross_entropy_with_logits(logits.float(), targets.float(), reduction="none")
     dims = (0,)
-    den = weight.sum(dims)
+    den = mask.float().sum(dims)
     keep = den > 0
     return ((loss * weight).sum(dims)[keep] / den[keep]).mean() if keep.any() else logits.sum() * 0.
 

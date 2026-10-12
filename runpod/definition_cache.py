@@ -133,5 +133,3 @@ def build_study(args):
         err = f"{type(e).__name__}: {e}"
     mask = (vol.reshape(MAXS, -1).sum(1) > 0).astype(np.uint8)
     return vol, mask, geom, infos, err
-
-
