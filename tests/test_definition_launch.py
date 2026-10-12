@@ -134,3 +134,22 @@ def test_reviewed_absence_stays_reviewed_when_only_foreign_pod_exists(tmp_path, 
     monkeypatch.setattr(C.runpod, "terminate_pod", lambda pod: terminated.append(pod))
     C.status()
     assert not terminated and json.loads(C.STATE.read_text())["jobs"][0] == job
+
+
+def test_late_pod_delete_failure_stays_pending_and_next_observation_retries(tmp_path, monkeypatch):
+    monkeypatch.setattr(C, "STATE", tmp_path / "ledger.json")
+    job = {"job": "own", "pod_name": "own", "status": "reconciled_absent", "reserved_usd": 3.0}
+    C.atomic_json(C.STATE, {"limit_usd": 30., "jobs": [job]})
+    monkeypatch.setattr(C.runpod, "list_pods", lambda: [{"id": "delayed-own", "name": "own"}])
+    calls = []
+    def delete(pod):
+        calls.append(pod)
+        if len(calls) == 1:
+            raise C.requests.Timeout("temporary provider failure")
+    monkeypatch.setattr(C.runpod, "terminate_pod", delete)
+    with pytest.raises(C.requests.Timeout):
+        C.status()
+    assert json.loads(C.STATE.read_text())["jobs"][0]["status"] == "terminate_pending"
+    C.status()
+    assert calls == ["delayed-own", "delayed-own"]
+    assert json.loads(C.STATE.read_text())["jobs"][0]["status"] == "terminate_pending"

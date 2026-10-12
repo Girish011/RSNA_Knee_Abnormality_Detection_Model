@@ -482,11 +482,11 @@ def status():
                 raise RuntimeError("multiple matching pods; inspect immediately")
             if matches:
                 p = matches[0]; j["pod"] = p["id"]
-                if j["status"] == "reconciled_absent":
+                if j["status"] == "reconciled_absent" or j.get("reappeared_after_absence_review") is not None:
                     # A manually reviewed absence permits a new reservation, but
                     # never permits an old delayed create to keep billing.
                     j["status"] = "terminate_pending"
-                    j["reappeared_after_absence_review"] = now
+                    j.setdefault("reappeared_after_absence_review", now)
                     runpod.terminate_pod(j["pod"])
                     continue
                 price = p.get("costPerHr")
