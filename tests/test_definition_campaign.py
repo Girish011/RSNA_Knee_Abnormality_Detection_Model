@@ -18,6 +18,7 @@ def module(rel, name):
 
 C = module("scripts/definition_campaign.py", "definition_campaign_ops")
 F = module("runpod/fetch_dense80.py", "safe_cache_fetch")
+J = module("runpod/definition_job.py", "definition_supervisor")
 
 
 def test_reservation_enforces_campaign_and_one_pod():
@@ -126,6 +127,8 @@ def test_creation_has_provider_deadline_and_is_single_mutation(monkeypatch):
                                 "gpuTypeIds": ["A40"], "env": {}, "dockerStartCmd": ["python", "-c", "print('ok')"]}, time.time()+3600)
     assert out["id"] == "p1" and len(sent) == 1
     assert sent[0]["variables"]["input"]["terminateAfter"].endswith("Z")
+    assert sent[0]["variables"]["input"]["minDownload"] == 500
+    assert sent[0]["variables"]["input"]["minUpload"] == 100
     assert "desiredStatus terminateAfter" not in sent[0]["query"]  # live Pod has no deadline output field
 
 
@@ -211,3 +214,19 @@ def test_prepared_reservation_reuses_identity_and_rechecks_budget():
     assert job["max_wall_seconds"] == 14400
     with pytest.raises(RuntimeError, match="unresolved"):
         C.reserve_prepared(st, job, 3, {"quoted_gpu_hr": .34})
+
+
+def test_supervisor_pod_api_has_accepted_user_agent_and_safe_error(monkeypatch):
+    monkeypatch.setenv("RUNPOD_POD_ID", "fake")
+    monkeypatch.setenv("RUNPOD_API_KEY", "sensitive-never-logged")
+    calls = []
+    def urlopen(req, timeout):
+        calls.append(req)
+        assert req.get_header("User-agent") == "definition-campaign/1.0"
+        raise J.urllib.error.HTTPError(req.full_url, 403, "secret response text", {}, None)
+    monkeypatch.setattr(J.urllib.request, "urlopen", urlopen)
+    with pytest.raises(J.OperationalError) as caught:
+        J.pod_api()
+    assert J.error_details(caught.value) == {"error": "OperationalError", "code": "pod_api_http", "method": "GET", "http_status": 403}
+    assert "sensitive" not in str(caught.value) and "secret" not in str(caught.value)
+    assert len(calls) == 1

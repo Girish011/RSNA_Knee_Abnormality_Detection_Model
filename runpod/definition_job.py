@@ -31,6 +31,17 @@ REST = "https://rest.runpod.io/v1/pods/"
 UPLOAD_MARGIN = 12 * 60
 
 
+class OperationalError(RuntimeError):
+    """Only explicit, nonsecret fields may be written to status/logs."""
+    def __init__(self, code, **details):
+        self.safe_details = {"error": type(self).__name__, "code": code, **details}
+        super().__init__(code)
+
+
+def error_details(exc):
+    return exc.safe_details if isinstance(exc, OperationalError) else {"error": type(exc).__name__}
+
+
 def atomic(path, value):
     temp = path.with_name(path.name + f".{os.getpid()}.{threading.get_ident()}.tmp")
     temp.write_text(json.dumps(value, indent=2)); os.replace(temp, path)
@@ -43,7 +54,8 @@ def state(phase, **kw):
 
 def pod_api(method="GET", suffix=""):
     req = urllib.request.Request(REST + os.environ["RUNPOD_POD_ID"] + suffix, method=method,
-                                 headers={"Authorization": "Bearer " + os.environ["RUNPOD_API_KEY"]})
+                                 headers={"Authorization": "Bearer " + os.environ["RUNPOD_API_KEY"],
+                                          "User-Agent": "definition-campaign/1.0", "Accept": "application/json"})
     try:
         with urllib.request.urlopen(req, timeout=15) as r:
             data = r.read()
@@ -51,7 +63,9 @@ def pod_api(method="GET", suffix=""):
     except urllib.error.HTTPError as e:
         if e.code == 404:
             return {"deleted": True}
-        raise RuntimeError(f"pod API {method} HTTP {e.code}") from None
+        raise OperationalError("pod_api_http", method=method, http_status=e.code) from None
+    except urllib.error.URLError:
+        raise OperationalError("pod_api_transport", method=method) from None
 
 
 def terminate():
@@ -173,10 +187,16 @@ def main():
     threading.Thread(target=httpd.serve_forever, daemon=True).start()
     lock = threading.Lock(); upload_thread = None; uploaded_once = False
     try:
+        state("checking_quote")
         p = pod_api()
-        price = float(p.get("costPerHr", 0))
-        if not 0 < price <= float(os.environ["DEF_MAX_GPU_HR"]):
-            raise RuntimeError("unknown/over-limit pod quote")
+        try:
+            price = float(p.get("costPerHr", 0))
+            ceiling = float(os.environ["DEF_MAX_GPU_HR"])
+        except (TypeError, ValueError):
+            raise OperationalError("pod_quote_invalid") from None
+        if not math.isfinite(price) or not 0 < price <= ceiling:
+            raise OperationalError("pod_quote_outside_cap", observed_gpu_hr=price if math.isfinite(price) else None,
+                                   ceiling_gpu_hr=ceiling if math.isfinite(ceiling) else None)
         state("installing", gpu_hr=price)
         kagdir = Path.home() / ".kaggle"; kagdir.mkdir(exist_ok=True)
         token = kagdir / "access_token"; token.write_text(os.environ["KAGGLE_API_TOKEN"]); token.chmod(0o600)
@@ -209,7 +229,7 @@ def main():
         last_publish = 0.0
         def snapshot(reason):
             try: publish(reason, lock)
-            except Exception as e: state("snapshot_failed", error=type(e).__name__)
+            except Exception as e: state("snapshot_failed", **error_details(e))
         for i, mode in enumerate(cfg["modes"]):
             folder = OUT / mode; folder.mkdir(exist_ok=True)
             # Reserve up to 5min report-fold eval + 5min gold diagnostic per arm.
@@ -268,7 +288,7 @@ def main():
                  "--workers", "4", "--bs", "2", "--eval-max-seconds", "260"], 300, logname=f"{mode}/expert_predict.log")
         state("arms_returned", note="Check per-arm reports for completed epochs vs bounded early stop; expert58 is reused diagnostic, not fresh validation")
     except Exception as e:
-        state("failed", error=type(e).__name__)  # no URLs, env or credential-containing exception repr
+        state("failed", **error_details(e))  # no URLs, env or credential-containing exception repr
     finally:
         if upload_thread is not None:
             upload_thread.join(timeout=max(0, min(360, DEADLINE - time.time() - 120)))
@@ -277,7 +297,7 @@ def main():
                 publish("final", lock)
                 state("final_uploaded")
             except Exception as e:
-                state("final_upload_failed", error=type(e).__name__)
+                state("final_upload_failed", **error_details(e))
                 # Preserve volume until hard deadline so host can collect live files;
                 # GPU and storage still fit the original total-wall reservation.
                 while time.time() < DEADLINE - 60:
