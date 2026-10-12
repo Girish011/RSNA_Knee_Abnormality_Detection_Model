@@ -1,0 +1,38 @@
+{
+  "campaign": "definition-reader-30",
+  "authorized_total_usd": 30,
+  "budget_includes": ["GPU", "container disk", "volume", "startup", "download", "upload"],
+  "ledger": "agent/runs/definition_campaign.json",
+  "maximum_active_pods": 1,
+  "maximum_pilot_reservation_usd": 3,
+  "first_comparison": {
+    "modes": ["control", "definition"],
+    "epochs": 6,
+    "fold": 0,
+    "seed": 11,
+    "architecture": "convnext_tiny.fb_in1k",
+    "views": "global-local",
+    "size": 224,
+    "windows_per_sequence": 2,
+    "eval_passes": 2,
+    "aux_weight": 0,
+    "checkpoint": "fixed_ema",
+    "changed_factor": "primary target construction and supervision confidence"
+  },
+  "train_studies": 4349,
+  "excluded_expert_studies": 58,
+  "labels_sha256": "5777d80338081258c5c9ef49e9533a90d0023019be85b62dbb09bdae15839805",
+  "initialization_sha256": "7065d9254d8bad056cc510c9cdff3b09958968405372e827fbb2fbc0ee1fdd06",
+  "evaluation": {
+    "report_fold": "870 frozen study IDs; score both arms against the same report-control targets",
+    "expert58": "adaptively reused development diagnostic; no fresh holdout or patient independence claim",
+    "bootstrap": "paired study IDs, descriptive uncertainty; optional verified patient clustering",
+    "promotion": "Review a complete matched comparison, failure cases, runtime and provenance before another paid job; no automatic promotion from a single small-set score",
+    "submission": "Only complete finite 12-label offline predictions with matching saved EMA protocol; keep current best valid submission"
+  },
+  "forbidden_shortcuts": ["test label extraction", "manual test annotation", "test reports", "unresolved OAI teacher lineage", "untracked paid launches", "publicizing private competition artifacts"],
+  "research_freeze_utc": "2026-10-20T23:59:00Z",
+  "last_paid_launch_utc": "2026-10-21T23:59:00Z",
+  "competition_deadline_utc": "2026-10-22T23:59:00Z",
+  "score_claim": "0.970 and winning are aspirations, not guaranteed outcomes"
+}
