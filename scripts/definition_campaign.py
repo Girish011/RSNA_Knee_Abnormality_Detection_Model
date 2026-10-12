@@ -80,6 +80,8 @@ def committed(state: dict) -> float:
 
 
 def reserve(state: dict, cap: float, **details) -> dict:
+    if state.get("launch_hold"):
+        raise RuntimeError("campaign launch hold active; resolve and document the recorded startup failure before spending")
     if not math.isfinite(cap) or not .5 <= cap <= 3.0:
         raise ValueError("pilot reservation must be $0.50..$3.00")
     if any(j["status"] in ACTIVE for j in state["jobs"]):
@@ -320,7 +322,7 @@ def launch(args):
         j["status_token_file"] = str(token_file)
         atomic_json(STATE, st)
         env = {"KAGGLE_API_TOKEN": Path("~/.kaggle/access_token").expanduser().read_text().strip(),
-               "RUNPOD_API_KEY": runpod.secret("RUNPOD_API_KEY"), "DEF_BUNDLE": f"{USER}/{j['job']}-bundle",
+               "DEF_RUNPOD_API_KEY": runpod.secret("RUNPOD_API_KEY"), "DEF_BUNDLE": f"{USER}/{j['job']}-bundle",
                "DEF_RESULT": j["result"], "DEF_DEADLINE": str(j["deadline"]), "DEF_MAX_GPU_HR": str(j["accepted_gpu_hr_ceiling"]),
                "DEF_STATUS_TOKEN": status_token}
         spec = {"name": j["pod_name"], "imageName": IMAGE, "computeType": "GPU", "gpuCount": 1,
@@ -398,6 +400,7 @@ def status():
             j["elapsed_cost_estimate_usd"] = round(elapsed / 3600 * (j.get("observed_gpu_hr", MAX_GPU_HR) + STORAGE_HR), 4)
         print(json.dumps({"ceiling_usd": LIMIT, "reserved_cumulative_usd": committed(st),
                           "available_to_reserve_usd": round(LIMIT - committed(st), 2),
+                          "launch_hold": st.get("launch_hold"),
                           "cost_note": "Elapsed estimates are not invoices; full reservations remain charged conservatively.",
                           "jobs": st["jobs"]}, indent=2))
 

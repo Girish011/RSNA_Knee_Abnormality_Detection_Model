@@ -3,6 +3,9 @@ import importlib.util
 import json
 from pathlib import Path
 import time
+import threading
+import urllib.request
+import urllib.error
 
 import numpy as np
 import pytest
@@ -218,11 +221,13 @@ def test_prepared_reservation_reuses_identity_and_rechecks_budget():
 
 def test_supervisor_pod_api_has_accepted_user_agent_and_safe_error(monkeypatch):
     monkeypatch.setenv("RUNPOD_POD_ID", "fake")
-    monkeypatch.setenv("RUNPOD_API_KEY", "sensitive-never-logged")
+    monkeypatch.setenv("DEF_RUNPOD_API_KEY", "sensitive-never-logged")
+    monkeypatch.setenv("RUNPOD_API_KEY", "provider-scoped-key")
     calls = []
     def urlopen(req, timeout):
         calls.append(req)
         assert req.get_header("User-agent") == "definition-campaign/1.0"
+        assert req.get_header("Authorization") == "Bearer sensitive-never-logged"
         raise J.urllib.error.HTTPError(req.full_url, 403, "secret response text", {}, None)
     monkeypatch.setattr(J.urllib.request, "urlopen", urlopen)
     with pytest.raises(J.OperationalError) as caught:
@@ -230,6 +235,15 @@ def test_supervisor_pod_api_has_accepted_user_agent_and_safe_error(monkeypatch):
     assert J.error_details(caught.value) == {"error": "OperationalError", "code": "pod_api_http", "method": "GET", "http_status": 403}
     assert "sensitive" not in str(caught.value) and "secret" not in str(caught.value)
     assert len(calls) == 1
+
+
+def test_supervisor_never_falls_back_to_provider_injected_api_key(monkeypatch):
+    monkeypatch.delenv("DEF_RUNPOD_API_KEY", raising=False)
+    monkeypatch.setenv("RUNPOD_API_KEY", "provider-scoped-key")
+    def no_network(*a, **k): raise AssertionError("missing explicit key must not call provider")
+    monkeypatch.setattr(J.urllib.request, "urlopen", no_network)
+    with pytest.raises(J.OperationalError, match="missing_campaign_api_key"):
+        J.pod_api()
 
 
 def test_preflight_ignores_foreign_pods_and_global_spend_but_reservation_blocks_own_active(monkeypatch):
@@ -272,3 +286,79 @@ def test_status_never_terminates_or_attributes_foreign_pod(tmp_path, monkeypatch
     assert stopped == ["own-id"]
     st = json.loads(C.STATE.read_text())
     assert len(st["jobs"]) == 1 and st["jobs"][0]["observed_gpu_hr"] == .34
+
+
+def test_launch_hold_refuses_reservation_without_state_change():
+    st = {"jobs": [], "launch_hold": {"reason": "bootstrap rehearsal required"}}
+    before = json.dumps(st, sort_keys=True)
+    with pytest.raises(RuntimeError, match="hold"):
+        C.reserve(st, 3)
+    assert json.dumps(st, sort_keys=True) == before
+
+
+def test_private_status_auth_is_stable_and_rejects_unauthenticated_reads(tmp_path):
+    (tmp_path / "STATUS.json").write_text('{"phase": "installing_kaggle"}')
+    server = J.http.server.ThreadingHTTPServer(("127.0.0.1", 0), J.private_handler("private-token", tmp_path))
+    t = threading.Thread(target=server.serve_forever, daemon=True); t.start()
+    url = f"http://127.0.0.1:{server.server_port}/STATUS.json"
+    try:
+        with pytest.raises(urllib.error.HTTPError) as unauth:
+            urllib.request.urlopen(url)
+        assert unauth.value.code == 403
+        req = urllib.request.Request(url, headers={"Authorization": "Bearer private-token"})
+        with urllib.request.urlopen(req) as r:
+            assert json.load(r)["phase"] == "installing_kaggle"
+        with urllib.request.urlopen(urllib.request.Request(url, headers={"Authorization": "Bearer private-token"}, method="HEAD")) as r:
+            assert r.status == 200
+    finally:
+        server.shutdown(); server.server_close(); t.join(timeout=2)
+
+
+def test_bootstrap_snapshot_needs_no_bundle_and_excludes_raw_secrets(tmp_path, monkeypatch):
+    out = tmp_path / "out"; out.mkdir()
+    monkeypatch.setattr(J, "OUT", out); monkeypatch.setattr(J, "B", tmp_path / "missing-bundle")
+    monkeypatch.setenv("DEF_RESULT", "girishbose/def-test-out")
+    J.atomic(out / "failure.json", {"failed_phase": "bundle_download", "returncode": 1})
+    (out / "setup.log").write_text("KAGGLE_API_TOKEN=not-for-output https://private-url/?signature=secret HTTP 403 forbidden")
+    (out / "weights.pt").write_bytes(b"private model")
+    categories = J.log_failure_categories(out / "setup.log")
+    assert categories == ["access_denied", "http_403"]
+    up = tmp_path / "upload"
+    J.prepare_upload(up, "bootstrap-failed", diagnostic_only=True)
+    manifest = json.loads((up / "result_manifest.json").read_text())
+    assert manifest["diagnostic_only"] is True
+    assert set(manifest["sha256"]) == {"failure.json", "NOTICE.txt"}
+    assert not (up / "setup.log").exists() and not (up / "weights.pt").exists()
+    assert all("signature=secret" not in p.read_text() for p in up.iterdir())
+
+
+def test_prebundle_failure_preserves_phase_and_publishes_diagnostics(tmp_path, monkeypatch):
+    monkeypatch.setattr(J, "OUT", tmp_path / "out"); monkeypatch.setattr(J, "B", tmp_path / "bundle")
+    monkeypatch.setattr(J, "DEADLINE", time.time()+600)
+    monkeypatch.setattr(J.Path, "home", lambda: tmp_path)
+    monkeypatch.setenv("DEF_STATUS_TOKEN", "private-status")
+    monkeypatch.setenv("DEF_MAX_GPU_HR", ".34")
+    monkeypatch.setenv("KAGGLE_API_TOKEN", "private-kaggle")
+    monkeypatch.setattr(J, "pod_api", lambda: {"costPerHr": .34})
+    class NoThread:
+        def __init__(self, *a, **k): pass
+        def start(self): pass
+    class NoServer:
+        def __init__(self, *a, **k): pass
+        def serve_forever(self): pass
+    monkeypatch.setattr(J.threading, "Thread", NoThread)
+    monkeypatch.setattr(J.http.server, "ThreadingHTTPServer", NoServer)
+    def fail_run(*a, **k):
+        assert k["stage"] == "installing_kaggle"
+        raise J.OperationalError("subprocess_failed", stage=k["stage"], returncode=1)
+    monkeypatch.setattr(J, "run", fail_run)
+    monkeypatch.setattr(J.shutil, "which", lambda name: "/fake/kaggle")
+    published = []
+    monkeypatch.setattr(J, "publish", lambda reason, lock, diagnostic_only: published.append((reason, diagnostic_only)))
+    terminated = []
+    monkeypatch.setattr(J, "terminate", lambda: terminated.append(True))
+    J.main()
+    failure = json.loads((J.OUT / "failure.json").read_text())
+    assert failure["failed_phase"] == "installing_kaggle" and failure["returncode"] == 1
+    assert "private-kaggle" not in json.dumps(failure)
+    assert published == [("bootstrap-failed", True)] and terminated == [True]
