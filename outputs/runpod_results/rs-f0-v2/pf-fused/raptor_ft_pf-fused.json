@@ -1,0 +1,120 @@
+{
+ "tag": "pf-fused",
+ "args": {
+  "labels": "/workspace/bundle/labels_fused_7cdb6e83_full.parquet",
+  "region": "pf",
+  "train_csv": null,
+  "fold_file": "/workspace/bundle/folds_nonexpert_5.json",
+  "holdout": "/workspace/bundle/expert_holdout.json",
+  "side_file": "/workspace/out/side/raptor_side_side.npz",
+  "fold": 0,
+  "arch": "convnext_small.fb_in22k_ft_in1k",
+  "epochs": 10,
+  "bs": 6,
+  "accum": 2,
+  "bb_lr": 6e-05,
+  "head_lr": 0.0006,
+  "wd": 0.05,
+  "warmup": 0.06,
+  "ema": 0.999,
+  "gold_w": 3.0,
+  "eval_passes": 2,
+  "eval_every": 2,
+  "workers": 8,
+  "grad_ckpt": true,
+  "seed": 0,
+  "tag": "pf-fused",
+  "out": "/workspace/out/pf-fused",
+  "data_root": null,
+  "n_shards": 8,
+  "limit": 0,
+  "no_pretrained": false,
+  "smoke": false,
+  "dump": null
+ },
+ "hist": [
+  {
+   "ep": 0,
+   "loss": 0.6257317907699983,
+   "sec": 292
+  },
+  {
+   "ep": 1,
+   "loss": 0.585125392277355,
+   "sec": 581,
+   "oof_ema": {
+    "PF OA": 0.8325
+   }
+  },
+  {
+   "ep": 2,
+   "loss": 0.5582090531514116,
+   "sec": 916
+  },
+  {
+   "ep": 3,
+   "loss": 0.5440938943257071,
+   "sec": 1207,
+   "oof_ema": {
+    "PF OA": 0.8517
+   }
+  },
+  {
+   "ep": 4,
+   "loss": 0.5259290219680087,
+   "sec": 1540
+  },
+  {
+   "ep": 5,
+   "loss": 0.5058658080660317,
+   "sec": 1832,
+   "oof_ema": {
+    "PF OA": 0.8701
+   }
+  },
+  {
+   "ep": 6,
+   "loss": 0.483988602990157,
+   "sec": 2163
+  },
+  {
+   "ep": 7,
+   "loss": 0.4695627233141089,
+   "sec": 2455,
+   "oof_ema": {
+    "PF OA": 0.8748
+   }
+  },
+  {
+   "ep": 8,
+   "loss": 0.4620589715466924,
+   "sec": 2786
+  },
+  {
+   "ep": 9,
+   "loss": 0.4589825501690989,
+   "sec": 3077,
+   "oof_ema": {
+    "PF OA": 0.8734
+   }
+  }
+ ],
+ "n_train": 3508,
+ "n_oof": 870,
+ "n_holdout": 29,
+ "members": [
+  "last",
+  "ema"
+ ],
+ "side_source": {
+  "tag": 2178,
+  "model": 2229,
+  "x": 0
+ },
+ "oof": {
+  "PF OA": 0.8760410032822222
+ },
+ "holdout29": {
+  "PF OA": 0.7941176470588236
+ }
+}

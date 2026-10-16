@@ -133,6 +133,9 @@ def resolve_members(ids: list[str]) -> list[tuple[str, str]]:
             raise SystemExit(f"{i} is an eval record of {done[i]['eval_of']}, not a model")
         if i in done:
             out.append((done[i]["dataset"], done[i]["weights"]))
+        elif i.startswith("k/"):  # Kaggle-trained checkpoint: k/<kernel>:<tag> -> output of that kernel (a kernel source)
+            kern, tag = i[2:].split(":", 1)
+            out.append((f"kernel:{USER}/{kern}", f"raptor_ft_{tag}.pt"))
         elif ":" in i:  # round-student checkpoint: <job>:<tag> -> rsna-knee-rp-<job>-out / raptor_ft_<tag>.pt
             job, tag = i.split(":", 1)
             out.append((f"{USER}/rsna-knee-rp-{job}-out", f"raptor_ft_{tag}.pt"))
@@ -506,12 +509,16 @@ def build(name: str, member_ids: list[str], w: float, out_root: Path | None = No
     code_file = f"{name}.ipynb"
     (d / code_file).write_text(json.dumps(nb2, indent=1))
     datasets = [s for s in meta.get("dataset_sources", []) if s]
+    kernels = [s for s in meta.get("kernel_sources", []) if s]
     for slug in [m[0] for m in members] + swap_dss:
-        if slug not in datasets:
+        if slug.startswith("kernel:"):
+            if slug[7:] not in kernels:
+                kernels.append(slug[7:])
+        elif slug not in datasets:
             datasets.append(slug)
     meta2 = {**{k: v for k, v in meta.items() if k not in ("id_no",)},
              "id": f"{USER}/{name}", "title": name, "code_file": code_file, "is_private": True,
-             "enable_internet": False, "dataset_sources": datasets,
+             "enable_internet": False, "dataset_sources": datasets, "kernel_sources": kernels,
              "docker_image": meta.get("docker_image") or DOCKER}
     (d / "kernel-metadata.json").write_text(json.dumps(meta2, indent=1))
     (d / "ENSEMBLE.json").write_text(json.dumps(

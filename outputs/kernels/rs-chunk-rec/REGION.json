@@ -1,0 +1,31 @@
+{
+ "base": null,
+ "alone": false,
+ "spec": {
+  "side": [
+   "raptor_rs_side_last.pt",
+   "raptor_rs_side.pt"
+  ],
+  "regions": [
+   {
+    "findings": [
+     "Synovitis"
+    ],
+    "rounds": [
+     [
+      "raptor_rs_rs3rec0.pt"
+     ]
+    ]
+   }
+  ],
+  "chunk": 30,
+  "passes": 1,
+  "channels_last": false
+ },
+ "weights": {
+  "Synovitis": 1.0
+ },
+ "parity": "rs3rec0",
+ "limit_h": 8.6,
+ "n_ids": 60
+}

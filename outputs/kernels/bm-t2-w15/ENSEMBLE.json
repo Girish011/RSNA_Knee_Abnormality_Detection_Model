@@ -1,0 +1,109 @@
+{
+ "base": "blend-mine-in-private-lb-luck-to-all-upvoters.ipynb",
+ "members": [
+  "k/ktrain-t2:t2kadj0",
+  "k/ktrain-t2:t2kadj1"
+ ],
+ "weights": [
+  "raptor_ft_t2kadj0.pt",
+  "raptor_ft_t2kadj1.pt"
+ ],
+ "w": 0.15,
+ "leg": "v2",
+ "leg_env": {},
+ "swap_v5": null,
+ "swap_arms": {},
+ "coat_shift": 0.0,
+ "rad_heads": {},
+ "dino": null,
+ "dino_extra": null,
+ "rad_exclude": null,
+ "negate": null,
+ "decor": null,
+ "tails": {
+  "ACL": [
+   [
+    "k/ktrain-t2:t2kadj0",
+    "k/ktrain-t2:t2kadj1"
+   ],
+   0.15
+  ],
+  "MCL": [
+   [
+    "k/ktrain-t2:t2kadj0",
+    "k/ktrain-t2:t2kadj1"
+   ],
+   0.15
+  ],
+  "Medial Meniscus": [
+   [
+    "k/ktrain-t2:t2kadj0",
+    "k/ktrain-t2:t2kadj1"
+   ],
+   0.15
+  ],
+  "Lateral Meniscus": [
+   [
+    "k/ktrain-t2:t2kadj0",
+    "k/ktrain-t2:t2kadj1"
+   ],
+   0.15
+  ],
+  "Medial OA": [
+   [
+    "k/ktrain-t2:t2kadj0",
+    "k/ktrain-t2:t2kadj1"
+   ],
+   0.15
+  ],
+  "Lateral OA": [
+   [
+    "k/ktrain-t2:t2kadj0",
+    "k/ktrain-t2:t2kadj1"
+   ],
+   0.15
+  ],
+  "PF OA": [
+   [
+    "k/ktrain-t2:t2kadj0",
+    "k/ktrain-t2:t2kadj1"
+   ],
+   0.15
+  ],
+  "Effusion": [
+   [
+    "k/ktrain-t2:t2kadj0",
+    "k/ktrain-t2:t2kadj1"
+   ],
+   0.15
+  ],
+  "Synovitis": [
+   [
+    "k/ktrain-t2:t2kadj0",
+    "k/ktrain-t2:t2kadj1"
+   ],
+   0.15
+  ],
+  "Baker's": [
+   [
+    "k/ktrain-t2:t2kadj0",
+    "k/ktrain-t2:t2kadj1"
+   ],
+   0.15
+  ],
+  "Contusion": [
+   [
+    "k/ktrain-t2:t2kadj0",
+    "k/ktrain-t2:t2kadj1"
+   ],
+   0.15
+  ],
+  "Fracture": [
+   [
+    "k/ktrain-t2:t2kadj0",
+    "k/ktrain-t2:t2kadj1"
+   ],
+   0.15
+  ]
+ }
+}

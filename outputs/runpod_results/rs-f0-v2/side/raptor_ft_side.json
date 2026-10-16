@@ -1,0 +1,87 @@
+{
+ "tag": "side",
+ "args": {
+  "labels": "/workspace/bundle/labels_bestof_v1.parquet",
+  "region": "side",
+  "train_csv": null,
+  "fold_file": "/workspace/bundle/folds_nonexpert_5.json",
+  "holdout": "/workspace/bundle/expert_holdout.json",
+  "side_file": null,
+  "fold": 0,
+  "arch": "convnext_tiny.fb_in22k_ft_in1k",
+  "epochs": 4,
+  "bs": 16,
+  "accum": 1,
+  "bb_lr": 6e-05,
+  "head_lr": 0.0006,
+  "wd": 0.05,
+  "warmup": 0.06,
+  "ema": 0.999,
+  "gold_w": 3.0,
+  "eval_passes": 2,
+  "eval_every": 2,
+  "workers": 8,
+  "grad_ckpt": false,
+  "seed": 0,
+  "tag": "side",
+  "out": "/workspace/out/side",
+  "data_root": null,
+  "n_shards": 8,
+  "limit": 0,
+  "no_pretrained": false,
+  "smoke": false,
+  "dump": null
+ },
+ "hist": [
+  {
+   "ep": 0,
+   "loss": 0.36462996475381293,
+   "sec": 15
+  },
+  {
+   "ep": 1,
+   "loss": 0.07967540154802716,
+   "sec": 29,
+   "oof_ema": {
+    "auc": 0.9798,
+    "acc": 0.9844
+   }
+  },
+  {
+   "ep": 2,
+   "loss": 0.07022675034521078,
+   "sec": 48
+  },
+  {
+   "ep": 3,
+   "loss": 0.04459492308605048,
+   "sec": 61,
+   "oof_ema": {
+    "auc": 0.9862,
+    "acc": 0.9844
+   }
+  }
+ ],
+ "n_train": 1728,
+ "n_oof": 450,
+ "n_holdout": 0,
+ "members": [
+  "last",
+  "ema"
+ ],
+ "side_source": {
+  "tag": 2178,
+  "model": 0,
+  "x": 2229
+ },
+ "oof": {
+  "auc": 0.9870768436109346,
+  "acc": 0.9844444444444445
+ },
+ "side_all": {
+  "n": 4407,
+  "frac_left": 0.46834581347855686,
+  "agree_sign_x": 0.9859314726571363,
+  "unsure": 0
+ }
+}

@@ -1,0 +1,290 @@
+{
+ "base": "rsna-knee-fast-2xt4-inference.ipynb",
+ "members": [
+  "r2-c224hvy40-f0b:r2c224hvy400",
+  "r2-c224hvy40-f1:r2c224hvy401",
+  "r2-c224hvy40-f2:r2c224hvy402",
+  "r2-c224hvy40-f3:r2c224hvy403",
+  "r2-c224hvy40-f4:r2c224hvy404",
+  "r2-effv2s336-f0:r2effv2s3360",
+  "r2-effv2s336-f1:r2effv2s3361",
+  "r2-effv2s336-f2:r2effv2s3362",
+  "r2-effv2s336-f3:r2effv2s3363",
+  "r2-effv2s336-f4:r2effv2s3364",
+  "r2-cnxs336-f0:r2cnxs3360",
+  "r2-cnxs336-f1:r2cnxs3361",
+  "r2-cnxs336-f2:r2cnxs3362",
+  "r2-cnxs336-f3:r2cnxs3363",
+  "r2-cnxs336-f4:r2cnxs3364"
+ ],
+ "weights": [
+  "raptor_ft_r2c224hvy400.pt",
+  "raptor_ft_r2c224hvy401.pt",
+  "raptor_ft_r2c224hvy402.pt",
+  "raptor_ft_r2c224hvy403.pt",
+  "raptor_ft_r2c224hvy404.pt",
+  "raptor_ft_r2effv2s3360.pt",
+  "raptor_ft_r2effv2s3361.pt",
+  "raptor_ft_r2effv2s3362.pt",
+  "raptor_ft_r2effv2s3363.pt",
+  "raptor_ft_r2effv2s3364.pt",
+  "raptor_ft_r2cnxs3360.pt",
+  "raptor_ft_r2cnxs3361.pt",
+  "raptor_ft_r2cnxs3362.pt",
+  "raptor_ft_r2cnxs3363.pt",
+  "raptor_ft_r2cnxs3364.pt"
+ ],
+ "w": 0.6,
+ "leg": "v2",
+ "leg_env": {},
+ "swap_v5": "soupbestof4",
+ "swap_arms": {},
+ "coat_shift": 0.15,
+ "rad_heads": {},
+ "dino": null,
+ "dino_extra": null,
+ "rad_exclude": null,
+ "negate": null,
+ "tails": {
+  "ACL": [
+   [
+    "r2-c224hvy40-f0b:r2c224hvy400",
+    "r2-c224hvy40-f1:r2c224hvy401",
+    "r2-c224hvy40-f2:r2c224hvy402",
+    "r2-c224hvy40-f3:r2c224hvy403",
+    "r2-c224hvy40-f4:r2c224hvy404",
+    "r2-effv2s336-f0:r2effv2s3360",
+    "r2-effv2s336-f1:r2effv2s3361",
+    "r2-effv2s336-f2:r2effv2s3362",
+    "r2-effv2s336-f3:r2effv2s3363",
+    "r2-effv2s336-f4:r2effv2s3364",
+    "r2-cnxs336-f0:r2cnxs3360",
+    "r2-cnxs336-f1:r2cnxs3361",
+    "r2-cnxs336-f2:r2cnxs3362",
+    "r2-cnxs336-f3:r2cnxs3363",
+    "r2-cnxs336-f4:r2cnxs3364"
+   ],
+   0.6
+  ],
+  "MCL": [
+   [
+    "r2-c224hvy40-f0b:r2c224hvy400",
+    "r2-c224hvy40-f1:r2c224hvy401",
+    "r2-c224hvy40-f2:r2c224hvy402",
+    "r2-c224hvy40-f3:r2c224hvy403",
+    "r2-c224hvy40-f4:r2c224hvy404",
+    "r2-effv2s336-f0:r2effv2s3360",
+    "r2-effv2s336-f1:r2effv2s3361",
+    "r2-effv2s336-f2:r2effv2s3362",
+    "r2-effv2s336-f3:r2effv2s3363",
+    "r2-effv2s336-f4:r2effv2s3364",
+    "r2-cnxs336-f0:r2cnxs3360",
+    "r2-cnxs336-f1:r2cnxs3361",
+    "r2-cnxs336-f2:r2cnxs3362",
+    "r2-cnxs336-f3:r2cnxs3363",
+    "r2-cnxs336-f4:r2cnxs3364"
+   ],
+   0.6
+  ],
+  "Medial Meniscus": [
+   [
+    "r2-c224hvy40-f0b:r2c224hvy400",
+    "r2-c224hvy40-f1:r2c224hvy401",
+    "r2-c224hvy40-f2:r2c224hvy402",
+    "r2-c224hvy40-f3:r2c224hvy403",
+    "r2-c224hvy40-f4:r2c224hvy404",
+    "r2-effv2s336-f0:r2effv2s3360",
+    "r2-effv2s336-f1:r2effv2s3361",
+    "r2-effv2s336-f2:r2effv2s3362",
+    "r2-effv2s336-f3:r2effv2s3363",
+    "r2-effv2s336-f4:r2effv2s3364",
+    "r2-cnxs336-f0:r2cnxs3360",
+    "r2-cnxs336-f1:r2cnxs3361",
+    "r2-cnxs336-f2:r2cnxs3362",
+    "r2-cnxs336-f3:r2cnxs3363",
+    "r2-cnxs336-f4:r2cnxs3364"
+   ],
+   0.6
+  ],
+  "Lateral Meniscus": [
+   [
+    "r2-c224hvy40-f0b:r2c224hvy400",
+    "r2-c224hvy40-f1:r2c224hvy401",
+    "r2-c224hvy40-f2:r2c224hvy402",
+    "r2-c224hvy40-f3:r2c224hvy403",
+    "r2-c224hvy40-f4:r2c224hvy404",
+    "r2-effv2s336-f0:r2effv2s3360",
+    "r2-effv2s336-f1:r2effv2s3361",
+    "r2-effv2s336-f2:r2effv2s3362",
+    "r2-effv2s336-f3:r2effv2s3363",
+    "r2-effv2s336-f4:r2effv2s3364",
+    "r2-cnxs336-f0:r2cnxs3360",
+    "r2-cnxs336-f1:r2cnxs3361",
+    "r2-cnxs336-f2:r2cnxs3362",
+    "r2-cnxs336-f3:r2cnxs3363",
+    "r2-cnxs336-f4:r2cnxs3364"
+   ],
+   0.6
+  ],
+  "Medial OA": [
+   [
+    "r2-c224hvy40-f0b:r2c224hvy400",
+    "r2-c224hvy40-f1:r2c224hvy401",
+    "r2-c224hvy40-f2:r2c224hvy402",
+    "r2-c224hvy40-f3:r2c224hvy403",
+    "r2-c224hvy40-f4:r2c224hvy404",
+    "r2-effv2s336-f0:r2effv2s3360",
+    "r2-effv2s336-f1:r2effv2s3361",
+    "r2-effv2s336-f2:r2effv2s3362",
+    "r2-effv2s336-f3:r2effv2s3363",
+    "r2-effv2s336-f4:r2effv2s3364",
+    "r2-cnxs336-f0:r2cnxs3360",
+    "r2-cnxs336-f1:r2cnxs3361",
+    "r2-cnxs336-f2:r2cnxs3362",
+    "r2-cnxs336-f3:r2cnxs3363",
+    "r2-cnxs336-f4:r2cnxs3364"
+   ],
+   0.6
+  ],
+  "Lateral OA": [
+   [
+    "r2-c224hvy40-f0b:r2c224hvy400",
+    "r2-c224hvy40-f1:r2c224hvy401",
+    "r2-c224hvy40-f2:r2c224hvy402",
+    "r2-c224hvy40-f3:r2c224hvy403",
+    "r2-c224hvy40-f4:r2c224hvy404",
+    "r2-effv2s336-f0:r2effv2s3360",
+    "r2-effv2s336-f1:r2effv2s3361",
+    "r2-effv2s336-f2:r2effv2s3362",
+    "r2-effv2s336-f3:r2effv2s3363",
+    "r2-effv2s336-f4:r2effv2s3364",
+    "r2-cnxs336-f0:r2cnxs3360",
+    "r2-cnxs336-f1:r2cnxs3361",
+    "r2-cnxs336-f2:r2cnxs3362",
+    "r2-cnxs336-f3:r2cnxs3363",
+    "r2-cnxs336-f4:r2cnxs3364"
+   ],
+   0.6
+  ],
+  "PF OA": [
+   [
+    "r2-c224hvy40-f0b:r2c224hvy400",
+    "r2-c224hvy40-f1:r2c224hvy401",
+    "r2-c224hvy40-f2:r2c224hvy402",
+    "r2-c224hvy40-f3:r2c224hvy403",
+    "r2-c224hvy40-f4:r2c224hvy404",
+    "r2-effv2s336-f0:r2effv2s3360",
+    "r2-effv2s336-f1:r2effv2s3361",
+    "r2-effv2s336-f2:r2effv2s3362",
+    "r2-effv2s336-f3:r2effv2s3363",
+    "r2-effv2s336-f4:r2effv2s3364",
+    "r2-cnxs336-f0:r2cnxs3360",
+    "r2-cnxs336-f1:r2cnxs3361",
+    "r2-cnxs336-f2:r2cnxs3362",
+    "r2-cnxs336-f3:r2cnxs3363",
+    "r2-cnxs336-f4:r2cnxs3364"
+   ],
+   0.6
+  ],
+  "Effusion": [
+   [
+    "r2-c224hvy40-f0b:r2c224hvy400",
+    "r2-c224hvy40-f1:r2c224hvy401",
+    "r2-c224hvy40-f2:r2c224hvy402",
+    "r2-c224hvy40-f3:r2c224hvy403",
+    "r2-c224hvy40-f4:r2c224hvy404",
+    "r2-effv2s336-f0:r2effv2s3360",
+    "r2-effv2s336-f1:r2effv2s3361",
+    "r2-effv2s336-f2:r2effv2s3362",
+    "r2-effv2s336-f3:r2effv2s3363",
+    "r2-effv2s336-f4:r2effv2s3364",
+    "r2-cnxs336-f0:r2cnxs3360",
+    "r2-cnxs336-f1:r2cnxs3361",
+    "r2-cnxs336-f2:r2cnxs3362",
+    "r2-cnxs336-f3:r2cnxs3363",
+    "r2-cnxs336-f4:r2cnxs3364"
+   ],
+   0.6
+  ],
+  "Synovitis": [
+   [
+    "r2-c224hvy40-f0b:r2c224hvy400",
+    "r2-c224hvy40-f1:r2c224hvy401",
+    "r2-c224hvy40-f2:r2c224hvy402",
+    "r2-c224hvy40-f3:r2c224hvy403",
+    "r2-c224hvy40-f4:r2c224hvy404",
+    "r2-effv2s336-f0:r2effv2s3360",
+    "r2-effv2s336-f1:r2effv2s3361",
+    "r2-effv2s336-f2:r2effv2s3362",
+    "r2-effv2s336-f3:r2effv2s3363",
+    "r2-effv2s336-f4:r2effv2s3364",
+    "r2-cnxs336-f0:r2cnxs3360",
+    "r2-cnxs336-f1:r2cnxs3361",
+    "r2-cnxs336-f2:r2cnxs3362",
+    "r2-cnxs336-f3:r2cnxs3363",
+    "r2-cnxs336-f4:r2cnxs3364"
+   ],
+   0.6
+  ],
+  "Baker's": [
+   [
+    "r2-c224hvy40-f0b:r2c224hvy400",
+    "r2-c224hvy40-f1:r2c224hvy401",
+    "r2-c224hvy40-f2:r2c224hvy402",
+    "r2-c224hvy40-f3:r2c224hvy403",
+    "r2-c224hvy40-f4:r2c224hvy404",
+    "r2-effv2s336-f0:r2effv2s3360",
+    "r2-effv2s336-f1:r2effv2s3361",
+    "r2-effv2s336-f2:r2effv2s3362",
+    "r2-effv2s336-f3:r2effv2s3363",
+    "r2-effv2s336-f4:r2effv2s3364",
+    "r2-cnxs336-f0:r2cnxs3360",
+    "r2-cnxs336-f1:r2cnxs3361",
+    "r2-cnxs336-f2:r2cnxs3362",
+    "r2-cnxs336-f3:r2cnxs3363",
+    "r2-cnxs336-f4:r2cnxs3364"
+   ],
+   0.6
+  ],
+  "Contusion": [
+   [
+    "r2-c224hvy40-f0b:r2c224hvy400",
+    "r2-c224hvy40-f1:r2c224hvy401",
+    "r2-c224hvy40-f2:r2c224hvy402",
+    "r2-c224hvy40-f3:r2c224hvy403",
+    "r2-c224hvy40-f4:r2c224hvy404",
+    "r2-effv2s336-f0:r2effv2s3360",
+    "r2-effv2s336-f1:r2effv2s3361",
+    "r2-effv2s336-f2:r2effv2s3362",
+    "r2-effv2s336-f3:r2effv2s3363",
+    "r2-effv2s336-f4:r2effv2s3364",
+    "r2-cnxs336-f0:r2cnxs3360",
+    "r2-cnxs336-f1:r2cnxs3361",
+    "r2-cnxs336-f2:r2cnxs3362",
+    "r2-cnxs336-f3:r2cnxs3363",
+    "r2-cnxs336-f4:r2cnxs3364"
+   ],
+   0.6
+  ],
+  "Fracture": [
+   [
+    "r2-c224hvy40-f0b:r2c224hvy400",
+    "r2-c224hvy40-f1:r2c224hvy401",
+    "r2-c224hvy40-f2:r2c224hvy402",
+    "r2-c224hvy40-f3:r2c224hvy403",
+    "r2-c224hvy40-f4:r2c224hvy404",
+    "r2-effv2s336-f0:r2effv2s3360",
+    "r2-effv2s336-f1:r2effv2s3361",
+    "r2-effv2s336-f2:r2effv2s3362",
+    "r2-effv2s336-f3:r2effv2s3363",
+    "r2-effv2s336-f4:r2effv2s3364",
+    "r2-cnxs336-f0:r2cnxs3360",
+    "r2-cnxs336-f1:r2cnxs3361",
+    "r2-cnxs336-f2:r2cnxs3362",
+    "r2-cnxs336-f3:r2cnxs3363",
+    "r2-cnxs336-f4:r2cnxs3364"
+   ],
+   0.6
+  ]
+ }
+}

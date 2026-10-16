@@ -344,3 +344,12 @@ Format: date | decision | why | rejected
   the final level with real weight. Next probes on top of coat-up15-b4: (1) `_RAD_EXCLUDE` Fracture tweak (free);
   (2) final-level blend of our strongest independent family at w≈0.3–0.45 (needs a family whose rank-corr vs the
   stack is low and whose LB alone is not far below — our own CoAt alone was 0.920, too weak at 0.45).
+
+## 2026-10-11 — Track 2b (sequence-fused windows) closed on four leaderboard probes
+- Idea (user, 10 Oct): window RGB = [fluid-sensitive slice, non-fluid slice at the same position, difference] instead
+  of three adjacent slices. Paired test: ConvNeXt-T in12k @224, k26, 40 epochs, labels r1, folds 0-1, with a twin that
+  differs only in the channels.
+- Leaderboard: control alone 0.929 (57055883), seqfuse alone 0.930 (57057625); 0.950 notebook + seqfuse leg at rank
+  w 0.15 on all findings 0.950 (57057624) and on the five fluid findings 0.950 (57057745).
+- **Decision (rule fixed before the runs):** +0.001 alone is under the +0.003 bar and no blend beats 0.950 -> closed,
+  no folds 2-3. Cost: 16.8 Kaggle GPU-hours, 4 submissions.

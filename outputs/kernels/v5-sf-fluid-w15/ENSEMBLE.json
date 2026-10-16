@@ -1,0 +1,60 @@
+{
+ "base": "rsna-versia-5.ipynb",
+ "members": [
+  "k/ktrain-seqfuse:r1ksf0",
+  "k/ktrain-seqfuse:r1ksf1"
+ ],
+ "weights": [
+  "raptor_ft_r1ksf0.pt",
+  "raptor_ft_r1ksf1.pt"
+ ],
+ "w": 0.15,
+ "leg": "v2",
+ "leg_env": {},
+ "swap_v5": null,
+ "swap_arms": {},
+ "coat_shift": 0.0,
+ "rad_heads": {},
+ "dino": null,
+ "dino_extra": null,
+ "rad_exclude": null,
+ "negate": null,
+ "decor": null,
+ "tails": {
+  "Effusion": [
+   [
+    "k/ktrain-seqfuse:r1ksf0",
+    "k/ktrain-seqfuse:r1ksf1"
+   ],
+   0.15
+  ],
+  "Synovitis": [
+   [
+    "k/ktrain-seqfuse:r1ksf0",
+    "k/ktrain-seqfuse:r1ksf1"
+   ],
+   0.15
+  ],
+  "Contusion": [
+   [
+    "k/ktrain-seqfuse:r1ksf0",
+    "k/ktrain-seqfuse:r1ksf1"
+   ],
+   0.15
+  ],
+  "Baker's": [
+   [
+    "k/ktrain-seqfuse:r1ksf0",
+    "k/ktrain-seqfuse:r1ksf1"
+   ],
+   0.15
+  ],
+  "Fracture": [
+   [
+    "k/ktrain-seqfuse:r1ksf0",
+    "k/ktrain-seqfuse:r1ksf1"
+   ],
+   0.15
+  ]
+ }
+}

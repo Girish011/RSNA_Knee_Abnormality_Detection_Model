@@ -1,0 +1,12 @@
+[
+ [
+  "r4-kcnxtseq-f0",
+  "r4kcnxtseq0",
+  "--arch convnext_tiny.in12k_ft_in1k --res 224 --epochs 40 --bs 8 --k 26 --k_eval 40 --bb_lr 1e-04 --head_lr 0.001 --wd 0.02 --freeze_blocks 0 --grad_ckpt --norm imagenet --aug_geo 1.0 --aug_flip 0.5 --aug_erase 0.25 --drop_path 0.1 --seed 42 --folds 5 --fold 0 --head seq --sample strat"
+ ],
+ [
+  "r4-kcnxtmil-f0",
+  "r4kcnxtmil0",
+  "--arch convnext_tiny.in12k_ft_in1k --res 224 --epochs 40 --bs 8 --k 26 --k_eval 40 --bb_lr 1e-04 --head_lr 0.001 --wd 0.02 --freeze_blocks 0 --grad_ckpt --norm imagenet --aug_geo 1.0 --aug_flip 0.5 --aug_erase 0.25 --drop_path 0.1 --seed 42 --folds 5 --fold 0 --head mil --sample rand"
+ ]
+]

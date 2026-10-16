@@ -1,0 +1,8 @@
+{
+ "base": "rsna-knee-fast-2xt4-inference.ipynb",
+ "members": [],
+ "weights": [],
+ "w": 0.0,
+ "swap_v5": "soupb4w5",
+ "tails": {}
+}

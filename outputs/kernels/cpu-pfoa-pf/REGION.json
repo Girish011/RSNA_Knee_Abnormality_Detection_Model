@@ -1,0 +1,34 @@
+{
+ "base": null,
+ "alone": true,
+ "spec": {
+  "side": [
+   "raptor_rs_side_last.pt",
+   "raptor_rs_side.pt"
+  ],
+  "regions": [
+   {
+    "findings": [
+     "PF OA"
+    ],
+    "rounds": [
+     [
+      "raptor_rs_rs3pf0.pt"
+     ],
+     [
+      "raptor_rs_rs3pf1.pt"
+     ]
+    ]
+   }
+  ],
+  "chunk": 100,
+  "passes": 1,
+  "channels_last": false
+ },
+ "weights": {
+  "PF OA": 1.0
+ },
+ "parity": null,
+ "limit_h": 8.4,
+ "n_ids": 0
+}

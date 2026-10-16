@@ -1,0 +1,55 @@
+{
+ "members": [
+  "r2-c224hvy40-f0b:r2c224hvy400",
+  "r2-c224hvy40-f1:r2c224hvy401",
+  "r2-c224hvy40-f2:r2c224hvy402",
+  "r2-c224hvy40-f3:r2c224hvy403",
+  "r2-c224hvy40-f4:r2c224hvy404",
+  "r2-effv2s336-f0:r2effv2s3360",
+  "r2-effv2s336-f1:r2effv2s3361",
+  "r2-effv2s336-f2:r2effv2s3362",
+  "r2-effv2s336-f3:r2effv2s3363",
+  "r2-effv2s336-f4:r2effv2s3364",
+  "r2-cnxs336-f0:r2cnxs3360",
+  "r2-cnxs336-f1:r2cnxs3361",
+  "r2-cnxs336-f2:r2cnxs3362",
+  "r2-cnxs336-f3:r2cnxs3363",
+  "r2-cnxs336-f4:r2cnxs3364",
+  "r4-cnxs336-f0:r4cnxs3360",
+  "r4-cnxs336-f1:r4cnxs3361",
+  "r4-cnxs336-f2:r4cnxs3362",
+  "r4-cnxs336-f3:r4cnxs3363",
+  "r4-cnxs336-f4:r4cnxs3364"
+ ],
+ "decor": [
+  [
+   "Lateral OA",
+   [
+    "Medial OA"
+   ],
+   0.3
+  ],
+  [
+   "PF OA",
+   [
+    "Medial OA",
+    "Lateral OA"
+   ],
+   0.3
+  ],
+  [
+   "Synovitis",
+   [
+    "Effusion"
+   ],
+   0.3
+  ],
+  [
+   "Lateral Meniscus",
+   [
+    "Medial Meniscus"
+   ],
+   0.2
+  ]
+ ]
+}

@@ -1,0 +1,237 @@
+{
+ "tag": "r0fa2",
+ "args": {
+  "labels": "/workspace/bundle/labels_bestof_v1.parquet",
+  "train_csv": null,
+  "fold_file": "/workspace/bundle/folds_nonexpert_5.json",
+  "holdout": "/workspace/bundle/expert_holdout.json",
+  "fold": 2,
+  "arch": "convnext_small.fb_in22k_ft_in1k",
+  "res_full": 320,
+  "half_h": 384,
+  "half_w": 288,
+  "win": "SagF:6,SagNF:3,CorF:5,CorNF:3,Ax:5",
+  "win_eval": "SagF:10,SagNF:5,CorF:7,CorNF:4,Ax:7",
+  "epochs": 16,
+  "bs": 4,
+  "accum": 2,
+  "bb_lr": 6e-05,
+  "head_lr": 0.0006,
+  "wd": 0.05,
+  "warmup": 0.06,
+  "ema": 0.999,
+  "weak_w": 2.0,
+  "gold_w": 3.0,
+  "mirror": 0.5,
+  "eval_passes": 2,
+  "eval_every": 2,
+  "workers": 2,
+  "grad_ckpt": true,
+  "seed": 0,
+  "tag": "r0fa2",
+  "out": "/workspace/out/r0fa2",
+  "data_root": null,
+  "n_shards": 4,
+  "limit": 0,
+  "no_pretrained": false,
+  "init_encoder": null,
+  "smoke": false
+ },
+ "hist": [
+  {
+   "ep": 0,
+   "loss": 0.8198191726085398,
+   "sec": 633
+  },
+  {
+   "ep": 1,
+   "loss": 0.7806990795015881,
+   "sec": 1263,
+   "oof_ema_macro": 0.7787029296821077,
+   "oof_ema_weak5": 0.76743374236548,
+   "oof_ema_weak": {
+    "Lateral Meniscus": 0.7278,
+    "Lateral OA": 0.7584,
+    "PF OA": 0.75,
+    "Synovitis": 0.8433,
+    "Contusion": 0.7577
+   }
+  },
+  {
+   "ep": 2,
+   "loss": 0.7602128771175136,
+   "sec": 2021
+  },
+  {
+   "ep": 3,
+   "loss": 0.7437429829769286,
+   "sec": 2653,
+   "oof_ema_macro": 0.8187674447604198,
+   "oof_ema_weak5": 0.8016907928174699,
+   "oof_ema_weak": {
+    "Lateral Meniscus": 0.7575,
+    "Lateral OA": 0.7771,
+    "PF OA": 0.7681,
+    "Synovitis": 0.8538,
+    "Contusion": 0.8519
+   }
+  },
+  {
+   "ep": 4,
+   "loss": 0.7316087685533913,
+   "sec": 3410
+  },
+  {
+   "ep": 5,
+   "loss": 0.7174844991250077,
+   "sec": 4040,
+   "oof_ema_macro": 0.8368154834234783,
+   "oof_ema_weak5": 0.8228892861586035,
+   "oof_ema_weak": {
+    "Lateral Meniscus": 0.7945,
+    "Lateral OA": 0.8017,
+    "PF OA": 0.7969,
+    "Synovitis": 0.8625,
+    "Contusion": 0.8588
+   }
+  },
+  {
+   "ep": 6,
+   "loss": 0.7058149479677903,
+   "sec": 4796
+  },
+  {
+   "ep": 7,
+   "loss": 0.6906776831930285,
+   "sec": 5428,
+   "oof_ema_macro": 0.856901337155402,
+   "oof_ema_weak5": 0.8436694674661922,
+   "oof_ema_weak": {
+    "Lateral Meniscus": 0.865,
+    "Lateral OA": 0.8138,
+    "PF OA": 0.8172,
+    "Synovitis": 0.8629,
+    "Contusion": 0.8595
+   }
+  },
+  {
+   "ep": 8,
+   "loss": 0.6803772123944665,
+   "sec": 6173
+  },
+  {
+   "ep": 9,
+   "loss": 0.6698814569680421,
+   "sec": 6804,
+   "oof_ema_macro": 0.8634808708885192,
+   "oof_ema_weak5": 0.850712573183183,
+   "oof_ema_weak": {
+    "Lateral Meniscus": 0.8929,
+    "Lateral OA": 0.8208,
+    "PF OA": 0.8216,
+    "Synovitis": 0.8668,
+    "Contusion": 0.8514
+   }
+  },
+  {
+   "ep": 10,
+   "loss": 0.6593167080098982,
+   "sec": 7541
+  },
+  {
+   "ep": 11,
+   "loss": 0.6506101858112939,
+   "sec": 8173,
+   "oof_ema_macro": 0.8699483643917737,
+   "oof_ema_weak5": 0.8556708783416227,
+   "oof_ema_weak": {
+    "Lateral Meniscus": 0.9028,
+    "Lateral OA": 0.8287,
+    "PF OA": 0.8273,
+    "Synovitis": 0.8667,
+    "Contusion": 0.8528
+   }
+  },
+  {
+   "ep": 12,
+   "loss": 0.6419671548609043,
+   "sec": 8914
+  },
+  {
+   "ep": 13,
+   "loss": 0.636572734761809,
+   "sec": 9547,
+   "oof_ema_macro": 0.8707625212943876,
+   "oof_ema_weak5": 0.8551299262370202,
+   "oof_ema_weak": {
+    "Lateral Meniscus": 0.903,
+    "Lateral OA": 0.8277,
+    "PF OA": 0.8301,
+    "Synovitis": 0.8648,
+    "Contusion": 0.85
+   }
+  },
+  {
+   "ep": 14,
+   "loss": 0.632968254616758,
+   "sec": 10306
+  },
+  {
+   "ep": 15,
+   "loss": 0.6309461366967165,
+   "sec": 10938,
+   "oof_ema_macro": 0.8710214580588151,
+   "oof_ema_weak5": 0.8547901674436578,
+   "oof_ema_weak": {
+    "Lateral Meniscus": 0.9012,
+    "Lateral OA": 0.8272,
+    "PF OA": 0.8309,
+    "Synovitis": 0.8648,
+    "Contusion": 0.8498
+   }
+  }
+ ],
+ "n_train": 3508,
+ "n_oof": 870,
+ "n_holdout": 29,
+ "members": [
+  "last",
+  "ema"
+ ],
+ "oof_vs_fused": {
+  "macro": 0.8730130294335914,
+  "weak5": 0.8565099848712912,
+  "per": {
+   "ACL": 0.8651626511548691,
+   "MCL": 0.744103046624055,
+   "Medial Meniscus": 0.9114580098800283,
+   "Lateral Meniscus": 0.9016870880905969,
+   "Medial OA": 0.8963368580060422,
+   "Lateral OA": 0.8318559197440111,
+   "PF OA": 0.8335232959772276,
+   "Effusion": 0.9183514554309661,
+   "Synovitis": 0.8656296296296296,
+   "Baker's": 0.919480644733511,
+   "Contusion": 0.8498539909149903,
+   "Fracture": 0.9387137630171686
+  }
+ },
+ "holdout29": {
+  "macro": 0.9025302934939159,
+  "weak5": 0.8733591898297781,
+  "per": {
+   "ACL": 0.968421052631579,
+   "MCL": 0.9487179487179487,
+   "Medial Meniscus": 0.8904761904761904,
+   "Lateral Meniscus": 0.7904761904761906,
+   "Medial OA": 0.9833333333333334,
+   "Lateral OA": 0.9743589743589745,
+   "PF OA": 0.8872549019607843,
+   "Effusion": 0.8809523809523809,
+   "Synovitis": 0.7647058823529412,
+   "Baker's": 0.9916666666666667,
+   "Contusion": 0.95,
+   "Fracture": 0.7999999999999999
+  }
+ }
+}

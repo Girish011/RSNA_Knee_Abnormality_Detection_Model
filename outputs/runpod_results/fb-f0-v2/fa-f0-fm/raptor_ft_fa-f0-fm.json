@@ -1,0 +1,180 @@
+{
+ "tag": "fa-f0-fm",
+ "args": {
+  "labels": "/workspace/bundle/labels_fused_7cdb6e83_full.parquet",
+  "train_csv": null,
+  "fold_file": "/workspace/bundle/folds_nonexpert_5.json",
+  "holdout": "/workspace/bundle/expert_holdout.json",
+  "fold": 0,
+  "arch": "convnext_small.fb_in22k_ft_in1k",
+  "res_full": 320,
+  "half_h": 384,
+  "half_w": 288,
+  "win": "SagF:6,SagNF:3,CorF:5,CorNF:3,Ax:5",
+  "win_eval": "SagF:10,SagNF:5,CorF:7,CorNF:4,Ax:7",
+  "epochs": 10,
+  "bs": 4,
+  "accum": 2,
+  "bb_lr": 6e-05,
+  "head_lr": 0.0006,
+  "wd": 0.05,
+  "warmup": 0.06,
+  "ema": 0.999,
+  "weak_w": 2.0,
+  "gold_w": 3.0,
+  "mirror": 0.5,
+  "eval_passes": 2,
+  "eval_every": 2,
+  "workers": 8,
+  "grad_ckpt": true,
+  "seed": 0,
+  "tag": "fa-f0-fm",
+  "out": "/workspace/out/fa-f0-fm",
+  "data_root": null,
+  "n_shards": 4,
+  "limit": 0,
+  "no_pretrained": false,
+  "init_encoder": "/workspace/out/fmri-pre/raptor_fmri_fmri-pre.pt",
+  "smoke": false
+ },
+ "hist": [
+  {
+   "ep": 0,
+   "loss": 0.7445194156099209,
+   "sec": 640
+  },
+  {
+   "ep": 1,
+   "loss": 0.6708340562939508,
+   "sec": 1276,
+   "oof_ema_macro": 0.8730720711670722,
+   "oof_ema_weak5": 0.8700192876112156,
+   "oof_ema_weak": {
+    "Lateral Meniscus": 0.8237,
+    "Lateral OA": 0.8401,
+    "PF OA": 0.7452,
+    "Synovitis": 0.9645,
+    "Contusion": 0.9767
+   }
+  },
+  {
+   "ep": 2,
+   "loss": 0.6378858016385456,
+   "sec": 1994
+  },
+  {
+   "ep": 3,
+   "loss": 0.6142459962020035,
+   "sec": 2630,
+   "oof_ema_macro": 0.9181901490820664,
+   "oof_ema_weak5": 0.9128606002644787,
+   "oof_ema_weak": {
+    "Lateral Meniscus": 0.946,
+    "Lateral OA": 0.8832,
+    "PF OA": 0.7864,
+    "Synovitis": 0.9698,
+    "Contusion": 0.979
+   }
+  },
+  {
+   "ep": 4,
+   "loss": 0.584254389681865,
+   "sec": 3349
+  },
+  {
+   "ep": 5,
+   "loss": 0.5667063826302167,
+   "sec": 3985,
+   "oof_ema_macro": 0.9369001328369952,
+   "oof_ema_weak5": 0.9242266989766847,
+   "oof_ema_weak": {
+    "Lateral Meniscus": 0.9601,
+    "Lateral OA": 0.9077,
+    "PF OA": 0.806,
+    "Synovitis": 0.972,
+    "Contusion": 0.9752
+   }
+  },
+  {
+   "ep": 6,
+   "loss": 0.5512507083818333,
+   "sec": 4701
+  },
+  {
+   "ep": 7,
+   "loss": 0.5412371714887216,
+   "sec": 5336,
+   "oof_ema_macro": 0.9441704495657791,
+   "oof_ema_weak5": 0.9294194741053008,
+   "oof_ema_weak": {
+    "Lateral Meniscus": 0.9639,
+    "Lateral OA": 0.9108,
+    "PF OA": 0.822,
+    "Synovitis": 0.9732,
+    "Contusion": 0.9771
+   }
+  },
+  {
+   "ep": 8,
+   "loss": 0.5345220287822128,
+   "sec": 6051
+  },
+  {
+   "ep": 9,
+   "loss": 0.5324396890000851,
+   "sec": 6687,
+   "oof_ema_macro": 0.9458177261601585,
+   "oof_ema_weak5": 0.9303340992245024,
+   "oof_ema_weak": {
+    "Lateral Meniscus": 0.9638,
+    "Lateral OA": 0.9105,
+    "PF OA": 0.826,
+    "Synovitis": 0.9739,
+    "Contusion": 0.9775
+   }
+  }
+ ],
+ "n_train": 3508,
+ "n_oof": 870,
+ "n_holdout": 29,
+ "members": [
+  "last",
+  "ema"
+ ],
+ "oof_vs_fused": {
+  "macro": 0.946987378692063,
+  "weak5": 0.9300960734089585,
+  "per": {
+   "ACL": 0.9792444444444445,
+   "MCL": 0.9202789773908224,
+   "Medial Meniscus": 0.9541327291026185,
+   "Lateral Meniscus": 0.9653011884087581,
+   "Medial OA": 0.979492604181482,
+   "Lateral OA": 0.9092665500145816,
+   "PF OA": 0.822588546514476,
+   "Effusion": 0.9871531120044794,
+   "Synovitis": 0.9749765037593986,
+   "Baker's": 0.9645491143317231,
+   "Contusion": 0.9783475783475784,
+   "Fracture": 0.9285171958043924
+  }
+ },
+ "holdout29": {
+  "macro": 0.9357815179603106,
+  "weak5": 0.923336924513395,
+  "per": {
+   "ACL": 0.9368421052631579,
+   "MCL": 0.9358974358974359,
+   "Medial Meniscus": 0.9380952380952381,
+   "Lateral Meniscus": 0.8857142857142857,
+   "Medial OA": 0.9722222222222223,
+   "Lateral OA": 0.9871794871794872,
+   "PF OA": 0.9313725490196079,
+   "Effusion": 0.9642857142857143,
+   "Synovitis": 0.8235294117647058,
+   "Baker's": 0.9916666666666667,
+   "Contusion": 0.9888888888888889,
+   "Fracture": 0.8736842105263158
+  }
+ }
+}

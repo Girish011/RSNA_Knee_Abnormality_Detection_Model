@@ -1,0 +1,17 @@
+{
+ "id": "girishbose/rsna-knee-meta-dump",
+ "title": "rsna-knee-meta-dump",
+ "code_file": "meta_dump.py",
+ "language": "python",
+ "kernel_type": "script",
+ "is_private": true,
+ "enable_gpu": false,
+ "enable_tpu": false,
+ "enable_internet": false,
+ "dataset_sources": [],
+ "kernel_sources": [],
+ "model_sources": [],
+ "competition_sources": [
+  "rsna-knee-abnormality-detection"
+ ]
+}

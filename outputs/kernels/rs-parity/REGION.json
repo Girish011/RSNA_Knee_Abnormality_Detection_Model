@@ -1,0 +1,40 @@
+{
+ "base": null,
+ "spec": {
+  "side": [
+   "raptor_rs_side_last.pt",
+   "raptor_rs_side.pt"
+  ],
+  "regions": [
+   {
+    "findings": [
+     "Lateral Meniscus",
+     "Lateral OA",
+     "Medial Meniscus",
+     "Medial OA"
+    ],
+    "ckpts": [
+     "raptor_rs_tf-fused_last.pt",
+     "raptor_rs_tf-fused.pt"
+    ]
+   },
+   {
+    "findings": [
+     "PF OA"
+    ],
+    "ckpts": [
+     "raptor_rs_pf-fused_last.pt",
+     "raptor_rs_pf-fused.pt"
+    ]
+   }
+  ]
+ },
+ "weights": {
+  "Lateral Meniscus": 1.0,
+  "Lateral OA": 1.0,
+  "Medial Meniscus": 1.0,
+  "Medial OA": 1.0,
+  "PF OA": 1.0
+ },
+ "parity": "tf-fused,pf-fused"
+}

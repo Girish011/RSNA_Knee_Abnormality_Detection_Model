@@ -2677,5 +2677,544 @@
    }
   },
   "ts": 1791590452.430779
+ },
+ {
+  "date": "2026-10-11T00:06:09.050862+00:00",
+  "kernel": "girishbose/adj-alone",
+  "version": 1,
+  "fingerprint": "667827379b874f07",
+  "why": "P2 CONTROL PROBE (Track 2b): two ConvNeXt-T @224 folds (0,1), labels r1, ordinary adjacent-slice windows, ALONE. Not a candidate; it is the paired reference for the sequence-fused twin (P1). Expected ~0.930-0.936; odds of beating our best own-alone 0.938: ~1 in 20",
+  "ref": 57055883,
+  "public_lb": 0.929,
+  "ensemble": null,
+  "ts": 1791677170.993026
+ },
+ {
+  "date": "2026-10-11T01:00:32.312941+00:00",
+  "kernel": "girishbose/v5-sf-w15",
+  "version": 1,
+  "fingerprint": "342d28ce901aeb7e",
+  "why": "P3 CANDIDATE (Track 2b): the 0.950 public notebook + two sequence-fused ConvNeXt-T folds (channels = fluid-sensitive slice, non-fluid slice, difference) at rank weight 0.15 on all findings. Odds of > 0.950: ~1 in 4 before the run; lower now (its paired control scored 0.929 alone)",
+  "ref": 57057624,
+  "public_lb": 0.95,
+  "ensemble": {
+   "base": "rsna-versia-5.ipynb",
+   "members": [
+    "k/ktrain-seqfuse:r1ksf0",
+    "k/ktrain-seqfuse:r1ksf1"
+   ],
+   "weights": [
+    "raptor_ft_r1ksf0.pt",
+    "raptor_ft_r1ksf1.pt"
+   ],
+   "w": 0.15,
+   "leg": "v2",
+   "leg_env": {},
+   "swap_v5": null,
+   "swap_arms": {},
+   "coat_shift": 0.0,
+   "rad_heads": {},
+   "dino": null,
+   "dino_extra": null,
+   "rad_exclude": null,
+   "negate": null,
+   "decor": null,
+   "tails": {
+    "ACL": [
+     [
+      "k/ktrain-seqfuse:r1ksf0",
+      "k/ktrain-seqfuse:r1ksf1"
+     ],
+     0.15
+    ],
+    "MCL": [
+     [
+      "k/ktrain-seqfuse:r1ksf0",
+      "k/ktrain-seqfuse:r1ksf1"
+     ],
+     0.15
+    ],
+    "Medial Meniscus": [
+     [
+      "k/ktrain-seqfuse:r1ksf0",
+      "k/ktrain-seqfuse:r1ksf1"
+     ],
+     0.15
+    ],
+    "Lateral Meniscus": [
+     [
+      "k/ktrain-seqfuse:r1ksf0",
+      "k/ktrain-seqfuse:r1ksf1"
+     ],
+     0.15
+    ],
+    "Medial OA": [
+     [
+      "k/ktrain-seqfuse:r1ksf0",
+      "k/ktrain-seqfuse:r1ksf1"
+     ],
+     0.15
+    ],
+    "Lateral OA": [
+     [
+      "k/ktrain-seqfuse:r1ksf0",
+      "k/ktrain-seqfuse:r1ksf1"
+     ],
+     0.15
+    ],
+    "PF OA": [
+     [
+      "k/ktrain-seqfuse:r1ksf0",
+      "k/ktrain-seqfuse:r1ksf1"
+     ],
+     0.15
+    ],
+    "Effusion": [
+     [
+      "k/ktrain-seqfuse:r1ksf0",
+      "k/ktrain-seqfuse:r1ksf1"
+     ],
+     0.15
+    ],
+    "Synovitis": [
+     [
+      "k/ktrain-seqfuse:r1ksf0",
+      "k/ktrain-seqfuse:r1ksf1"
+     ],
+     0.15
+    ],
+    "Baker's": [
+     [
+      "k/ktrain-seqfuse:r1ksf0",
+      "k/ktrain-seqfuse:r1ksf1"
+     ],
+     0.15
+    ],
+    "Contusion": [
+     [
+      "k/ktrain-seqfuse:r1ksf0",
+      "k/ktrain-seqfuse:r1ksf1"
+     ],
+     0.15
+    ],
+    "Fracture": [
+     [
+      "k/ktrain-seqfuse:r1ksf0",
+      "k/ktrain-seqfuse:r1ksf1"
+     ],
+     0.15
+    ]
+   }
+  },
+  "ts": 1791680433.489356
+ },
+ {
+  "date": "2026-10-11T01:00:38.137313+00:00",
+  "kernel": "girishbose/sf-alone",
+  "version": 1,
+  "fingerprint": "3f81b5014a1b4357",
+  "why": "P1 PROBE (Track 2b): two sequence-fused ConvNeXt-T @224 folds ALONE. Not a candidate; read against its paired adjacent-slice control P2 = 0.929. Odds of >= 0.932 (control + 0.003): ~1 in 4",
+  "ref": 57057625,
+  "public_lb": 0.93,
+  "ensemble": null,
+  "ts": 1791680440.921908
+ },
+ {
+  "date": "2026-10-11T01:05:43.312167+00:00",
+  "kernel": "girishbose/v5-sf-fluid-w15",
+  "version": 1,
+  "fingerprint": "114342ab6611ace0",
+  "why": "P4 CANDIDATE (Track 2b): the 0.950 public notebook + two sequence-fused ConvNeXt-T folds at rank weight 0.15 on Effusion, Synovitis, Contusion, Baker's, Fracture only (the fluid findings the fused channels target). Odds of > 0.950: ~1 in 5",
+  "ref": 57057745,
+  "public_lb": 0.95,
+  "ensemble": {
+   "base": "rsna-versia-5.ipynb",
+   "members": [
+    "k/ktrain-seqfuse:r1ksf0",
+    "k/ktrain-seqfuse:r1ksf1"
+   ],
+   "weights": [
+    "raptor_ft_r1ksf0.pt",
+    "raptor_ft_r1ksf1.pt"
+   ],
+   "w": 0.15,
+   "leg": "v2",
+   "leg_env": {},
+   "swap_v5": null,
+   "swap_arms": {},
+   "coat_shift": 0.0,
+   "rad_heads": {},
+   "dino": null,
+   "dino_extra": null,
+   "rad_exclude": null,
+   "negate": null,
+   "decor": null,
+   "tails": {
+    "Effusion": [
+     [
+      "k/ktrain-seqfuse:r1ksf0",
+      "k/ktrain-seqfuse:r1ksf1"
+     ],
+     0.15
+    ],
+    "Synovitis": [
+     [
+      "k/ktrain-seqfuse:r1ksf0",
+      "k/ktrain-seqfuse:r1ksf1"
+     ],
+     0.15
+    ],
+    "Contusion": [
+     [
+      "k/ktrain-seqfuse:r1ksf0",
+      "k/ktrain-seqfuse:r1ksf1"
+     ],
+     0.15
+    ],
+    "Baker's": [
+     [
+      "k/ktrain-seqfuse:r1ksf0",
+      "k/ktrain-seqfuse:r1ksf1"
+     ],
+     0.15
+    ],
+    "Fracture": [
+     [
+      "k/ktrain-seqfuse:r1ksf0",
+      "k/ktrain-seqfuse:r1ksf1"
+     ],
+     0.15
+    ]
+   }
+  },
+  "ts": 1791680745.3419452
+ },
+ {
+  "date": "2026-10-11T04:41:12.824465+00:00",
+  "kernel": "girishbose/v5-sf-weak-w30",
+  "version": 1,
+  "fingerprint": "c6d07abf4a6cef77",
+  "why": "P5 CANDIDATE (Track 2b, user request): the 0.950 public notebook + two sequence-fused ConvNeXt-T folds at rank weight 0.30 (was 0.15) on the weaker findings Synovitis, Lateral OA, PF OA, Fracture, Contusion only. Odds of > 0.950: ~1 in 10; 0.949 is possible",
+  "ref": 57062439,
+  "public_lb": 0.948,
+  "ensemble": {
+   "base": "rsna-versia-5.ipynb",
+   "members": [
+    "k/ktrain-seqfuse:r1ksf0",
+    "k/ktrain-seqfuse:r1ksf1"
+   ],
+   "weights": [
+    "raptor_ft_r1ksf0.pt",
+    "raptor_ft_r1ksf1.pt"
+   ],
+   "w": 0.3,
+   "leg": "v2",
+   "leg_env": {},
+   "swap_v5": null,
+   "swap_arms": {},
+   "coat_shift": 0.0,
+   "rad_heads": {},
+   "dino": null,
+   "dino_extra": null,
+   "rad_exclude": null,
+   "negate": null,
+   "decor": null,
+   "tails": {
+    "Synovitis": [
+     [
+      "k/ktrain-seqfuse:r1ksf0",
+      "k/ktrain-seqfuse:r1ksf1"
+     ],
+     0.3
+    ],
+    "Lateral OA": [
+     [
+      "k/ktrain-seqfuse:r1ksf0",
+      "k/ktrain-seqfuse:r1ksf1"
+     ],
+     0.3
+    ],
+    "PF OA": [
+     [
+      "k/ktrain-seqfuse:r1ksf0",
+      "k/ktrain-seqfuse:r1ksf1"
+     ],
+     0.3
+    ],
+    "Fracture": [
+     [
+      "k/ktrain-seqfuse:r1ksf0",
+      "k/ktrain-seqfuse:r1ksf1"
+     ],
+     0.3
+    ],
+    "Contusion": [
+     [
+      "k/ktrain-seqfuse:r1ksf0",
+      "k/ktrain-seqfuse:r1ksf1"
+     ],
+     0.3
+    ]
+   }
+  },
+  "ts": 1791693673.905055
+ },
+ {
+  "date": "2026-10-12T00:01:39.571995+00:00",
+  "kernel": "girishbose/v5t2-b-w35",
+  "version": 1,
+  "fingerprint": "0ccb42bc7c6165ee",
+  "why": "CANDIDATE: the 0.950 public notebook with the dataset's second expert-trained checkpoint (224 px, 0.945 alone per its README) added to the CoAtNet rank-mean at weight 0.35 (384 px arm 0.65); reader fusion unchanged. Reference: 0.950",
+  "ref": 57088393,
+  "public_lb": 0.95,
+  "ensemble": {
+   "base": "rsna-versia-5.ipynb",
+   "members": [],
+   "weights": [],
+   "w": 0.2,
+   "leg": "v1",
+   "leg_env": {},
+   "swap_v5": null,
+   "swap_arms": {},
+   "coat_shift": 0.0,
+   "rad_heads": {},
+   "dino": null,
+   "dino_extra": null,
+   "rad_exclude": null,
+   "negate": null,
+   "decor": null,
+   "tails": {}
+  },
+  "ts": 1791763301.616244
+ },
+ {
+  "date": "2026-10-12T00:01:50.276955+00:00",
+  "kernel": "girishbose/v5-neg-syn",
+  "version": 1,
+  "fingerprint": "50a0ba6985a206c6",
+  "why": "LEARNING PROBE: the 0.950 notebook with the Synovitis column reversed. Reads that finding's leaderboard AUC = (1 + 12 x (0.950 - score)) / 2. Expected ~0.88",
+  "ref": 57088420,
+  "public_lb": 0.882,
+  "ensemble": {
+   "base": "rsna-versia-5.ipynb",
+   "members": [],
+   "weights": [],
+   "w": 0.2,
+   "leg": "v1",
+   "leg_env": {},
+   "swap_v5": null,
+   "swap_arms": {},
+   "coat_shift": 0.0,
+   "rad_heads": {},
+   "dino": null,
+   "dino_extra": null,
+   "rad_exclude": null,
+   "negate": [
+    "Synovitis"
+   ],
+   "decor": null,
+   "tails": {}
+  },
+  "ts": 1791763313.088479
+ },
+ {
+  "date": "2026-10-12T00:02:01.573497+00:00",
+  "kernel": "girishbose/v5-neg-latoa",
+  "version": 1,
+  "fingerprint": "ca0775f586ed380e",
+  "why": "LEARNING PROBE: the 0.950 notebook with the Lateral OA column reversed. Reads that finding's leaderboard AUC = (1 + 12 x (0.950 - score)) / 2. Expected ~0.88",
+  "ref": 57088452,
+  "public_lb": 0.884,
+  "ensemble": {
+   "base": "rsna-versia-5.ipynb",
+   "members": [],
+   "weights": [],
+   "w": 0.2,
+   "leg": "v1",
+   "leg_env": {},
+   "swap_v5": null,
+   "swap_arms": {},
+   "coat_shift": 0.0,
+   "rad_heads": {},
+   "dino": null,
+   "dino_extra": null,
+   "rad_exclude": null,
+   "negate": [
+    "Lateral OA"
+   ],
+   "decor": null,
+   "tails": {}
+  },
+  "ts": 1791763323.5364292
+ },
+ {
+  "date": "2026-10-12T00:02:12.752620+00:00",
+  "kernel": "girishbose/v5-neg-pfoa",
+  "version": 1,
+  "fingerprint": "f7d9729d75e57d7e",
+  "why": "LEARNING PROBE: the 0.950 notebook with the PF OA column reversed. Reads that finding's leaderboard AUC = (1 + 12 x (0.950 - score)) / 2. Expected ~0.88",
+  "ref": 57088484,
+  "public_lb": 0.879,
+  "ensemble": {
+   "base": "rsna-versia-5.ipynb",
+   "members": [],
+   "weights": [],
+   "w": 0.2,
+   "leg": "v1",
+   "leg_env": {},
+   "swap_v5": null,
+   "swap_arms": {},
+   "coat_shift": 0.0,
+   "rad_heads": {},
+   "dino": null,
+   "dino_extra": null,
+   "rad_exclude": null,
+   "negate": [
+    "PF OA"
+   ],
+   "decor": null,
+   "tails": {}
+  },
+  "ts": 1791763334.695192
+ },
+ {
+  "date": "2026-10-12T00:04:58.745519+00:00",
+  "kernel": "girishbose/t2-alone",
+  "version": 1,
+  "fingerprint": "b2764b826b9dcc71",
+  "why": "LEARNING PROBE: two ConvNeXt-T @224 folds (0,1) ALONE, trained on the two expert-trained public checkpoints' ordering of the training studies instead of report labels; everything else as the control adj-alone = 0.929. Reads whether that judgement transfers to our own models",
+  "ref": 57088812,
+  "public_lb": 0.939,
+  "ensemble": null,
+  "ts": 1791763501.5061162
+ },
+ {
+  "date": "2026-10-13T00:02:23.997842+00:00",
+  "kernel": "girishbose/v5-rs-latoa",
+  "version": 1,
+  "fingerprint": "687e6b70a36ad5f8",
+  "why": "LEARNING PROBE: the 0.950 public notebook with its Lateral OA column REPLACED by our 3 Oct lateral-compartment region specialist (ConvNeXt-S, native-resolution crops, fold 0, report labels). Reads that specialist's Lateral OA AUC = 0.896 + 12 x (score - 0.950); baseline for the new specialists",
+  "ref": 57123007,
+  "public_lb": null,
+  "ensemble": null,
+  "ts": 1791849745.1280088
+ },
+ {
+  "date": "2026-10-14T21:10:06.485809+00:00",
+  "kernel": "girishbose/pub-blend-mine-v1data",
+  "version": 1,
+  "fingerprint": "e3ae6e054cba0111",
+  "why": "FORK of the public notebook blend-mine (expert-trained CoAtNet 0.5 + the public compact ConvNeXt-S model 0.5; its public score is 0.956), dataset slug changed to the versioned heliosli/rsna-knee-compact-v1 (output identical to the r6 fork): the new base on our account. Our best: 0.950",
+  "ref": 57195367,
+  "public_lb": 0.954,
+  "ensemble": null,
+  "ts": 1792012208.798881
+ },
+ {
+  "date": "2026-10-14T23:00:06.795587+00:00",
+  "kernel": "girishbose/cpu-latoa-tf",
+  "version": 1,
+  "fingerprint": "8cecb26cd4a4c7b0",
+  "why": "LEARNING PROBE, CPU, not a candidate: every column 0.5 except Lateral OA = our lateral-compartment specialist (ConvNeXt-S, native-resolution crops, teacher-ordered targets, fold 0 EMA). Reads that specialist's Lateral OA AUC = 12 x score - 5.5; the 0.950 base's column is 0.896",
+  "ref": 57197262,
+  "public_lb": 0.533,
+  "ensemble": null,
+  "ts": 1792018809.765336
+ },
+ {
+  "date": "2026-10-14T23:00:16.464438+00:00",
+  "kernel": "girishbose/cpu-syn-rec",
+  "version": 2,
+  "fingerprint": "a453cd1744fcc6fa",
+  "why": "LEARNING PROBE, CPU, not a candidate: every column 0.5 except Synovitis = our synovium / recess specialist (ConvNeXt-S, native-resolution crops, teacher-ordered targets, fold 0 EMA). Reads that specialist's Synovitis AUC = 12 x score - 5.5; the 0.950 base's column is 0.908",
+  "ref": 57197265,
+  "public_lb": 0.534,
+  "ensemble": null,
+  "ts": 1792018817.66657
+ },
+ {
+  "date": "2026-10-15T00:02:08.406646+00:00",
+  "kernel": "girishbose/cpu-pfoa-pf",
+  "version": 1,
+  "fingerprint": "29822b98fff5c8c4",
+  "why": "LEARNING PROBE, CPU, not a candidate: every column 0.5 except PF OA = our patellofemoral specialist (ConvNeXt-S, native-resolution crops, teacher-ordered targets, fold 0 EMA). Reads that specialist's PF OA AUC = 12 x score - 5.5; the 0.950 base's column is 0.926",
+  "ref": 57198627,
+  "public_lb": 0.534,
+  "ensemble": null,
+  "ts": 1792022531.317188
+ },
+ {
+  "date": "2026-10-15T00:03:03.889079+00:00",
+  "kernel": "girishbose/cpu-latoa-tfold",
+  "version": 1,
+  "fingerprint": "72f4098cfa208cc9",
+  "why": "LEARNING PROBE, CPU, not a candidate: every column 0.5 except Lateral OA = the 3 Oct lateral-compartment specialist trained on fused REPORT labels (contrast of target families with cpu-latoa-tf). Reads that specialist's Lateral OA AUC = 12 x score - 5.5; the 0.950 base's column is 0.896",
+  "ref": 57198745,
+  "public_lb": 0.533,
+  "ensemble": null,
+  "ts": 1792022585.0642428
+ },
+ {
+  "date": "2026-10-15T00:03:56.584232+00:00",
+  "kernel": "girishbose/cpu-syn-recsf",
+  "version": 1,
+  "fingerprint": "8fb60583cdbe278c",
+  "why": "LEARNING PROBE, CPU, not a candidate: every column 0.5 except Synovitis = the recess specialist with fluid / non-fluid / difference channels (contrast with cpu-syn-rec). Reads that specialist's Synovitis AUC = 12 x score - 5.5; the 0.950 base's column is 0.908",
+  "ref": 57198842,
+  "public_lb": 0.534,
+  "ensemble": null,
+  "ts": 1792022639.452815
+ },
+ {
+  "date": "2026-10-16T04:17:16.187059+00:00",
+  "kernel": "girishbose/v5-neg-latmen",
+  "version": 1,
+  "fingerprint": "7b6052987874aeee",
+  "why": "LEARNING PROBE: the 0.950 notebook with the Lateral Meniscus column reversed. Reads that finding's leaderboard AUC = (1 + 12 x (0.950 - score)) / 2 = the base column our lateral-compartment model must beat",
+  "ref": 57254499,
+  "public_lb": 0.875,
+  "ensemble": {
+   "base": "rsna-versia-5.ipynb",
+   "members": [],
+   "weights": [],
+   "w": 0.2,
+   "leg": "v1",
+   "leg_env": {},
+   "swap_v5": null,
+   "swap_arms": {},
+   "coat_shift": 0.0,
+   "rad_heads": {},
+   "dino": null,
+   "dino_extra": null,
+   "rad_exclude": null,
+   "negate": [
+    "Lateral Meniscus"
+   ],
+   "decor": null,
+   "tails": {}
+  },
+  "ts": 1792124239.115028
+ },
+ {
+  "date": "2026-10-16T04:18:10.976894+00:00",
+  "kernel": "girishbose/cpu-latmen-tf",
+  "version": 1,
+  "fingerprint": "8673f2ebacebddcc",
+  "why": "LEARNING PROBE, CPU, not a candidate: every column 0.5 except Lateral Meniscus = our lateral-compartment specialist (teacher-ordered targets, fold 0 EMA); pair of v5-neg-latmen. Reads that model's Lateral Meniscus AUC = 12 x score - 5.5",
+  "ref": 57254520,
+  "public_lb": 0.537,
+  "ensemble": null,
+  "ts": 1792124292.971429
+ },
+ {
+  "date": "2026-10-16T04:19:05.158062+00:00",
+  "kernel": "girishbose/cpu-pfoa-pfold",
+  "version": 1,
+  "fingerprint": "90562321d90d8409",
+  "why": "LEARNING PROBE, CPU, not a candidate: every column 0.5 except PF OA = the 3 Oct patellofemoral specialist trained on fused REPORT labels (the teacher-ordered one read 0.908 vs the base 0.926). Reads that model's PF OA AUC = 12 x score - 5.5",
+  "ref": 57254549,
+  "public_lb": 0.533,
+  "ensemble": null,
+  "ts": 1792124346.2888541
  }
 ]

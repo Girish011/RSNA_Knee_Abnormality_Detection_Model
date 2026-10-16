@@ -1,0 +1,29 @@
+{
+  "id": "girishbose/ktrain-seqfuse",
+  "title": "ktrain-seqfuse",
+  "code_file": "ktrain_seqfuse.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_tpu": false,
+  "enable_internet": false,
+  "keywords": [
+    "gpu"
+  ],
+  "dataset_sources": [
+    "girishbose/rsna-knee-mega-queue",
+    "girishbose/rsna-knee-timm-pretrained"
+  ],
+  "kernel_sources": [
+    "girishbose/rsna-knee-dense80-s0",
+    "girishbose/rsna-knee-dense80-s1",
+    "girishbose/rsna-knee-dense80-s2",
+    "girishbose/rsna-knee-dense80-s3"
+  ],
+  "competition_sources": [
+    "rsna-knee-abnormality-detection"
+  ],
+  "model_sources": [],
+  "machine_shape": "NvidiaTeslaT4"
+}

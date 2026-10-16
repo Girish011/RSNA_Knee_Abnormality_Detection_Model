@@ -1,0 +1,67 @@
+[
+ {
+  "kernel": "outputs/kernels/pub/blend-mine-v1data",
+  "version": 1,
+  "why": "FORK of the public notebook blend-mine (expert-trained CoAtNet 0.5 + the public compact ConvNeXt-S model 0.5; its public score is 0.956), dataset slug changed to the versioned heliosli/rsna-knee-compact-v1 (output identical to the r6 fork): the new base on our account. Our best: 0.950"
+ },
+ {
+  "kernel": "outputs/kernels/cpu-latoa-tf",
+  "version": 1,
+  "why": "LEARNING PROBE, CPU, not a candidate: every column 0.5 except Lateral OA = our lateral-compartment specialist (ConvNeXt-S, native-resolution crops, teacher-ordered targets, fold 0 EMA). Reads that specialist's Lateral OA AUC = 12 x score - 5.5; the 0.950 base's column is 0.896"
+ },
+ {
+  "kernel": "outputs/kernels/cpu-syn-rec",
+  "version": 2,
+  "why": "LEARNING PROBE, CPU, not a candidate: every column 0.5 except Synovitis = our synovium / recess specialist (ConvNeXt-S, native-resolution crops, teacher-ordered targets, fold 0 EMA). Reads that specialist's Synovitis AUC = 12 x score - 5.5; the 0.950 base's column is 0.908"
+ },
+ {
+  "kernel": "outputs/kernels/cpu-pfoa-pf",
+  "version": 1,
+  "why": "LEARNING PROBE, CPU, not a candidate: every column 0.5 except PF OA = our patellofemoral specialist (ConvNeXt-S, native-resolution crops, teacher-ordered targets, fold 0 EMA). Reads that specialist's PF OA AUC = 12 x score - 5.5; the 0.950 base's column is 0.926"
+ },
+ {
+  "kernel": "outputs/kernels/cpu-latoa-tfold",
+  "version": 1,
+  "why": "LEARNING PROBE, CPU, not a candidate: every column 0.5 except Lateral OA = the 3 Oct lateral-compartment specialist trained on fused REPORT labels (contrast of target families with cpu-latoa-tf). Reads that specialist's Lateral OA AUC = 12 x score - 5.5; the 0.950 base's column is 0.896"
+ },
+ {
+  "kernel": "outputs/kernels/cpu-syn-recsf",
+  "version": 1,
+  "why": "LEARNING PROBE, CPU, not a candidate: every column 0.5 except Synovitis = the recess specialist with fluid / non-fluid / difference channels (contrast with cpu-syn-rec). Reads that specialist's Synovitis AUC = 12 x score - 5.5; the 0.950 base's column is 0.908"
+ },
+ {
+  "kernel": "outputs/kernels/v5-neg-latmen",
+  "version": 1,
+  "why": "LEARNING PROBE: the 0.950 notebook with the Lateral Meniscus column reversed. Reads that finding's leaderboard AUC = (1 + 12 x (0.950 - score)) / 2 = the base column our lateral-compartment model must beat"
+ },
+ {
+  "kernel": "outputs/kernels/cpu-latmen-tf",
+  "version": 1,
+  "why": "LEARNING PROBE, CPU, not a candidate: every column 0.5 except Lateral Meniscus = our lateral-compartment specialist (teacher-ordered targets, fold 0 EMA); pair of v5-neg-latmen. Reads that model's Lateral Meniscus AUC = 12 x score - 5.5"
+ },
+ {
+  "kernel": "outputs/kernels/cpu-pfoa-pfold",
+  "version": 1,
+  "why": "LEARNING PROBE, CPU, not a candidate: every column 0.5 except PF OA = the 3 Oct patellofemoral specialist trained on fused REPORT labels (the teacher-ordered one read 0.908 vs the base 0.926). Reads that model's PF OA AUC = 12 x score - 5.5"
+ },
+ {
+  "kernel": "outputs/kernels/pub/r6frozen-9576",
+  "version": 1,
+  "why": "FORK, unchanged, of the public notebook heliosli/this-is-new-public-dataset-version-0-9576 (Raptor 384 + Raptor 224 + compact R6 with flip TTA, frozen dataset; its public score is 0.957). Our best: 0.954"
+ },
+ {
+  "kernel": "outputs/kernels/cpu-pfoa-pfe",
+  "version": 1,
+  "why": "LEARNING PROBE, CPU, not a candidate: every column 0.5 except PF OA = our specialist retrained on EXPERT-THRESHOLD targets (labels_e1: report severity grade folded into the teacher order), folds 0+1 EMA. Reads its PF OA AUC = 12 x score - 5.5; base column 0.926"
+ },
+ {
+  "kernel": "outputs/kernels/cpu-latoa-tfe",
+  "version": 1,
+  "why": "LEARNING PROBE, CPU, not a candidate: every column 0.5 except Lateral OA = our specialist retrained on EXPERT-THRESHOLD targets (labels_e1: report severity grade folded into the teacher order), folds 0+1 EMA. Reads its Lateral OA AUC = 12 x score - 5.5; base column 0.896"
+ },
+ {
+  "kernel": "outputs/kernels/c957-sp20",
+  "version": 1,
+  "why": "CANDIDATE: the 0.957 public fork + our knee-centred compartment specialists (native-resolution crops; menisci / OA, Effusion / Synovitis / Baker's five folds, Contusion / Fracture two folds) rank-blended at 0.2 on their nine columns; as many fold rounds as the 9 h limit allows. Reference: the fork"
+ }
+]

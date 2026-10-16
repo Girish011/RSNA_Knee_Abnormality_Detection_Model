@@ -1,0 +1,25 @@
+{
+ "base": "rsna-knee-fast-2xt4-inference.ipynb",
+ "members": [
+  "soupk16"
+ ],
+ "weights": [
+  "raptor_ft_soupk16.pt"
+ ],
+ "w": 0.35,
+ "swap_v5": "soupbestof4",
+ "tails": {
+  "PF OA": [
+   [
+    "soupk16"
+   ],
+   0.35
+  ],
+  "Synovitis": [
+   [
+    "soupk16"
+   ],
+   0.35
+  ]
+ }
+}

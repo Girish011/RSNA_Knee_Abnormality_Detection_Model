@@ -1,0 +1,197 @@
+{
+ "tag": "fmri-pre",
+ "args": {
+  "labels": "/workspace/bundle/labels_fused_7cdb6e83_full.parquet",
+  "tag": "fmri-pre",
+  "out": "/workspace/out/fmri-pre",
+  "vol_dir": null,
+  "boxes": null,
+  "arch": "convnext_small.fb_in22k_ft_in1k",
+  "epochs": 10,
+  "bs": 24,
+  "lr": 0.0002,
+  "wd": 0.05,
+  "pos_w": 4.0,
+  "per_vol_neg": 6,
+  "val_frac": 0.1,
+  "workers": 8,
+  "grad_ckpt": true,
+  "no_pretrained": false,
+  "seed": 0,
+  "smoke": false
+ },
+ "hist": [
+  {
+   "ep": 0,
+   "loss": 0.4091027220191084,
+   "sec": 421,
+   "val_macro": 0.8992170111086131,
+   "val": {
+    "meniscus": 0.9533,
+    "cart_partial": 0.9008,
+    "cart_full": 0.9907,
+    "bone_edema": 0.9728,
+    "cyst": 0.9325,
+    "acl": 0.9352,
+    "ligament": 0.787,
+    "other": 0.7215
+   }
+  },
+  {
+   "ep": 1,
+   "loss": 0.2106590573841394,
+   "sec": 841,
+   "val_macro": 0.8918327794695755,
+   "val": {
+    "meniscus": 0.9572,
+    "cart_partial": 0.901,
+    "cart_full": 0.9926,
+    "bone_edema": 0.9659,
+    "cyst": 0.942,
+    "acl": 0.9562,
+    "ligament": 0.8201,
+    "other": 0.5996
+   }
+  },
+  {
+   "ep": 2,
+   "loss": 0.14249289274773547,
+   "sec": 1261,
+   "val_macro": 0.8979775342864198,
+   "val": {
+    "meniscus": 0.9592,
+    "cart_partial": 0.9057,
+    "cart_full": 0.9942,
+    "bone_edema": 0.9668,
+    "cyst": 0.9239,
+    "acl": 0.9581,
+    "ligament": 0.8426,
+    "other": 0.6333
+   }
+  },
+  {
+   "ep": 3,
+   "loss": 0.09876015762894615,
+   "sec": 1682,
+   "val_macro": 0.8956207009319815,
+   "val": {
+    "meniscus": 0.9549,
+    "cart_partial": 0.9021,
+    "cart_full": 0.9902,
+    "bone_edema": 0.9541,
+    "cyst": 0.8909,
+    "acl": 0.9421,
+    "ligament": 0.8282,
+    "other": 0.7025
+   }
+  },
+  {
+   "ep": 4,
+   "loss": 0.06862139183607949,
+   "sec": 2104,
+   "val_macro": 0.8857943101002118,
+   "val": {
+    "meniscus": 0.9528,
+    "cart_partial": 0.9051,
+    "cart_full": 0.9934,
+    "bone_edema": 0.9558,
+    "cyst": 0.8951,
+    "acl": 0.9465,
+    "ligament": 0.8057,
+    "other": 0.632
+   }
+  },
+  {
+   "ep": 5,
+   "loss": 0.04562283914603999,
+   "sec": 2526,
+   "val_macro": 0.8816701168170598,
+   "val": {
+    "meniscus": 0.9531,
+    "cart_partial": 0.9029,
+    "cart_full": 0.992,
+    "bone_edema": 0.9545,
+    "cyst": 0.9088,
+    "acl": 0.9439,
+    "ligament": 0.7843,
+    "other": 0.6138
+   }
+  },
+  {
+   "ep": 6,
+   "loss": 0.030532260832645458,
+   "sec": 2948,
+   "val_macro": 0.8899969395520617,
+   "val": {
+    "meniscus": 0.9545,
+    "cart_partial": 0.8912,
+    "cart_full": 0.9765,
+    "bone_edema": 0.9541,
+    "cyst": 0.9072,
+    "acl": 0.939,
+    "ligament": 0.8003,
+    "other": 0.6971
+   }
+  },
+  {
+   "ep": 7,
+   "loss": 0.020256136780031114,
+   "sec": 3369,
+   "val_macro": 0.8936074812350416,
+   "val": {
+    "meniscus": 0.9578,
+    "cart_partial": 0.895,
+    "cart_full": 0.9816,
+    "bone_edema": 0.9605,
+    "cyst": 0.9249,
+    "acl": 0.9426,
+    "ligament": 0.7753,
+    "other": 0.7113
+   }
+  },
+  {
+   "ep": 8,
+   "loss": 0.015752700592986862,
+   "sec": 3793,
+   "val_macro": 0.8942388893170858,
+   "val": {
+    "meniscus": 0.9587,
+    "cart_partial": 0.8864,
+    "cart_full": 0.9834,
+    "bone_edema": 0.9547,
+    "cyst": 0.9232,
+    "acl": 0.9397,
+    "ligament": 0.7702,
+    "other": 0.7377
+   }
+  },
+  {
+   "ep": 9,
+   "loss": 0.013152390397628517,
+   "sec": 4214,
+   "val_macro": 0.8922052536830412,
+   "val": {
+    "meniscus": 0.9591,
+    "cart_partial": 0.8868,
+    "cart_full": 0.9824,
+    "bone_edema": 0.9547,
+    "cyst": 0.9229,
+    "acl": 0.9395,
+    "ligament": 0.7741,
+    "other": 0.7181
+   }
+  }
+ ],
+ "n_volumes": 1172,
+ "classes": [
+  "meniscus",
+  "cart_partial",
+  "cart_full",
+  "effusion",
+  "bone_edema",
+  "cyst",
+  "acl",
+  "ligament",
+  "other"
+ ]
+}

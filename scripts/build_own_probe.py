@@ -38,7 +38,7 @@ __DECOR__
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--name", required=True)
-    ap.add_argument("--members", required=True, help="comma list of job:tag")
+    ap.add_argument("--members", required=True, help="comma list of job:tag (pod result dataset) or k/<kernel>:tag (Kaggle kernel output)")
     ap.add_argument("--decor", action="append", default=[])
     ap.add_argument("--env", action="append", default=[], help="KEY=VALUE for the leg, e.g. OURS_FLIP=1 OURS_K_EVAL=39 OURS_PASSES=4")
     ap.add_argument("--negate", default=None, help="';'-separated findings whose column order is reversed "
@@ -47,7 +47,7 @@ def main() -> None:
     spec = importlib.util.spec_from_file_location("bek", REPO / "scripts" / "build_ensemble_kernel.py")
     bek = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(bek)
-    pairs = [x.split(":") for x in a.members.split(",") if x]
+    pairs = [x.rsplit(":", 1) for x in a.members.split(",") if x]
     files = [f"raptor_ft_{t}.pt" for _, t in pairs]
     decor = [bek.parse_decor(x) for x in a.decor]
     cell = bek.DECOR.replace("__SPEC__", repr([list(x) for x in decor])) if decor else ""
@@ -66,7 +66,8 @@ def main() -> None:
     (d / code).write_text(src)
     meta = json.loads((REPO / "outputs/kernels/leg-bench/kernel-metadata.json").read_text())
     meta.update(id=f"{USER}/{a.name}", title=a.name, code_file=code,
-                dataset_sources=[f"{USER}/rsna-knee-rp-{j}-out" for j, _ in pairs])
+                dataset_sources=[f"{USER}/rsna-knee-rp-{j}-out" for j, _ in pairs if not j.startswith("k/")],
+                kernel_sources=list(dict.fromkeys(f"{USER}/{j[2:]}" for j, _ in pairs if j.startswith("k/"))))
     (d / "kernel-metadata.json").write_text(json.dumps(meta, indent=2))
     (d / "PROBE.json").write_text(json.dumps({"members": a.members.split(","), "decor": [list(x) for x in decor],
                                                "negate": negate}, indent=1))

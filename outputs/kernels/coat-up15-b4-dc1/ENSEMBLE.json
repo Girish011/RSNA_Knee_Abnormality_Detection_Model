@@ -1,0 +1,48 @@
+{
+ "base": "rsna-knee-fast-2xt4-inference.ipynb",
+ "members": [],
+ "weights": [],
+ "w": 0.0,
+ "leg": "v1",
+ "leg_env": {},
+ "swap_v5": "soupbestof4",
+ "swap_arms": {},
+ "coat_shift": 0.15,
+ "rad_heads": {},
+ "dino": null,
+ "dino_extra": null,
+ "rad_exclude": null,
+ "negate": null,
+ "decor": [
+  [
+   "Lateral OA",
+   [
+    "Medial OA"
+   ],
+   0.3
+  ],
+  [
+   "PF OA",
+   [
+    "Medial OA",
+    "Lateral OA"
+   ],
+   0.3
+  ],
+  [
+   "Synovitis",
+   [
+    "Effusion"
+   ],
+   0.3
+  ],
+  [
+   "Lateral Meniscus",
+   [
+    "Medial Meniscus"
+   ],
+   0.2
+  ]
+ ],
+ "tails": {}
+}

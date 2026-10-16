@@ -1,0 +1,27 @@
+{
+  "id": "girishbose/cnxs-r1-f03",
+  "title": "cnxs-r1-f03",
+  "code_file": "cnxs_r1_f03.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_tpu": false,
+  "enable_internet": false,
+  "keywords": [
+    "gpu"
+  ],
+  "dataset_sources": [
+    "girishbose/rsna-knee-rp-r2-cnxs336-f0-out",
+    "girishbose/rsna-knee-rp-r2-cnxs336-f1-out",
+    "girishbose/rsna-knee-rp-r2-cnxs336-f2-out",
+    "girishbose/rsna-knee-rp-r2-cnxs336-f3-out"
+  ],
+  "kernel_sources": [],
+  "competition_sources": [
+    "rsna-knee-abnormality-detection"
+  ],
+  "model_sources": [],
+  "docker_image": "gcr.io/kaggle-private-byod/python@sha256:37c64f7dd9c54116ecd1bcc88817c5469b88387388fade02bfa8bf3fc647d461",
+  "machine_shape": "NvidiaTeslaT4"
+}

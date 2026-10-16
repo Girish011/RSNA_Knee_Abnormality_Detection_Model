@@ -57,7 +57,7 @@ finish() {
 
 status "installing"
 pip freeze | grep -E '^(torch|torchvision|numpy)==' > /tmp/pins.txt; cat /tmp/pins.txt
-timeout 900 pip install --progress-bar off --timeout 20 --retries 2 --prefer-binary -c /tmp/pins.txt timm kaggle pyarrow scikit-learn pandas 2>&1 \
+timeout 900 pip install --progress-bar off --timeout 20 --retries 2 --prefer-binary -c /tmp/pins.txt timm kaggle 'pyarrow<21' scikit-learn 'pandas<3' 2>&1 \
   | grep --line-buffered -E "^(Collecting|Successfully|ERROR)" || true
 python -c "import timm, sklearn, pyarrow, pandas; print('deps ok, timm', timm.__version__)" || finish "pip failed"
 # fastMRI (Family B) only: separate, non-fatal so a resolver clash can never break CoAt jobs.

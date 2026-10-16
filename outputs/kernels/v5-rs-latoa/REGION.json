@@ -1,0 +1,24 @@
+{
+ "base": "outputs/kernels/pub/rsna-versia-5",
+ "spec": {
+  "side": [
+   "raptor_rs_side_last.pt",
+   "raptor_rs_side.pt"
+  ],
+  "regions": [
+   {
+    "findings": [
+     "Lateral OA"
+    ],
+    "ckpts": [
+     "raptor_rs_tf-fused_last.pt",
+     "raptor_rs_tf-fused.pt"
+    ]
+   }
+  ]
+ },
+ "weights": {
+  "Lateral OA": 1.0
+ },
+ "parity": null
+}

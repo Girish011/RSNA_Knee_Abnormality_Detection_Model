@@ -1,0 +1,20 @@
+{
+ "base": "rsna-versia-5.ipynb",
+ "members": [],
+ "weights": [],
+ "w": 0.2,
+ "leg": "v1",
+ "leg_env": {},
+ "swap_v5": null,
+ "swap_arms": {},
+ "coat_shift": 0.0,
+ "rad_heads": {},
+ "dino": null,
+ "dino_extra": null,
+ "rad_exclude": null,
+ "negate": [
+  "Contusion"
+ ],
+ "decor": null,
+ "tails": {}
+}

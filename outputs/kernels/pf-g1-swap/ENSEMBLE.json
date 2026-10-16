@@ -1,0 +1,83 @@
+{
+ "base": "rsna-knee-fast-2xt4-inference.ipynb",
+ "members": [
+  "r2-cnxs336-f0:r2cnxs3360",
+  "r2-cnxs336-f1:r2cnxs3361",
+  "r2-cnxs336-f2:r2cnxs3362",
+  "r2-cnxs336-f3:r2cnxs3363"
+ ],
+ "weights": [
+  "raptor_ft_r2cnxs3360.pt",
+  "raptor_ft_r2cnxs3361.pt",
+  "raptor_ft_r2cnxs3362.pt",
+  "raptor_ft_r2cnxs3363.pt"
+ ],
+ "w": 0.99,
+ "leg": "v2",
+ "leg_env": {},
+ "swap_v5": "soupbestof4",
+ "swap_arms": {},
+ "coat_shift": 0.15,
+ "rad_heads": {},
+ "dino": null,
+ "dino_extra": null,
+ "rad_exclude": null,
+ "negate": null,
+ "decor": null,
+ "tails": {
+  "ACL": [
+   [
+    "r2-cnxs336-f0:r2cnxs3360",
+    "r2-cnxs336-f1:r2cnxs3361",
+    "r2-cnxs336-f2:r2cnxs3362",
+    "r2-cnxs336-f3:r2cnxs3363"
+   ],
+   0.99
+  ],
+  "MCL": [
+   [
+    "r2-cnxs336-f0:r2cnxs3360",
+    "r2-cnxs336-f1:r2cnxs3361",
+    "r2-cnxs336-f2:r2cnxs3362",
+    "r2-cnxs336-f3:r2cnxs3363"
+   ],
+   0.99
+  ],
+  "Medial Meniscus": [
+   [
+    "r2-cnxs336-f0:r2cnxs3360",
+    "r2-cnxs336-f1:r2cnxs3361",
+    "r2-cnxs336-f2:r2cnxs3362",
+    "r2-cnxs336-f3:r2cnxs3363"
+   ],
+   0.99
+  ],
+  "Medial OA": [
+   [
+    "r2-cnxs336-f0:r2cnxs3360",
+    "r2-cnxs336-f1:r2cnxs3361",
+    "r2-cnxs336-f2:r2cnxs3362",
+    "r2-cnxs336-f3:r2cnxs3363"
+   ],
+   0.99
+  ],
+  "Effusion": [
+   [
+    "r2-cnxs336-f0:r2cnxs3360",
+    "r2-cnxs336-f1:r2cnxs3361",
+    "r2-cnxs336-f2:r2cnxs3362",
+    "r2-cnxs336-f3:r2cnxs3363"
+   ],
+   0.99
+  ],
+  "Baker's": [
+   [
+    "r2-cnxs336-f0:r2cnxs3360",
+    "r2-cnxs336-f1:r2cnxs3361",
+    "r2-cnxs336-f2:r2cnxs3362",
+    "r2-cnxs336-f3:r2cnxs3363"
+   ],
+   0.99
+  ]
+ }
+}

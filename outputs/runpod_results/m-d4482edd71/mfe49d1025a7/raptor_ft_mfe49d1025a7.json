@@ -1,0 +1,81 @@
+{
+ "tag": "mfe49d1025a7",
+ "src": "init:raptor_ft_coatnet_v5_full_swa.pt",
+ "best_gold_auc": 0.9203382234131663,
+ "ema_gold_auc": 0.9206587023663685,
+ "last_gold_auc": null,
+ "swa_gold_auc": 0.9199501003276747,
+ "aucs": {
+  "ACL": 0.9761904761904763,
+  "MCL": 0.9782608695652174,
+  "Medial Meniscus": 1.0,
+  "Lateral Meniscus": 0.9111111111111112,
+  "Medial OA": 0.963768115942029,
+  "Lateral OA": 0.75,
+  "PF OA": 0.7444444444444445,
+  "Effusion": 0.9857142857142858,
+  "Synovitis": 0.9157894736842105,
+  "Baker's": 0.987012987012987,
+  "Contusion": 0.9210526315789473,
+  "Fracture": 0.9107142857142857
+ },
+ "aucs_ema": {
+  "ACL": 0.9761904761904763,
+  "MCL": 0.9710144927536232,
+  "Medial Meniscus": 1.0,
+  "Lateral Meniscus": 0.8777777777777778,
+  "Medial OA": 0.963768115942029,
+  "Lateral OA": 0.7619047619047619,
+  "PF OA": 0.7333333333333334,
+  "Effusion": 0.9857142857142858,
+  "Synovitis": 0.9315789473684211,
+  "Baker's": 0.9805194805194806,
+  "Contusion": 0.9315789473684211,
+  "Fracture": 0.9345238095238095
+ },
+ "hist": [
+  {
+   "ep": 0,
+   "loss": 0.8531364957711095,
+   "gold_auc": 0.8877219759109988
+  },
+  {
+   "ep": 1,
+   "loss": 0.8714256489694009,
+   "gold_auc": 0.8997835457369043
+  },
+  {
+   "ep": 2,
+   "loss": 0.8548366978462669,
+   "gold_auc": 0.9137307751152144
+  },
+  {
+   "ep": 3,
+   "loss": 0.8413435856281724,
+   "gold_auc": 0.9200583254358997
+  },
+  {
+   "ep": 4,
+   "loss": 0.8230932927921991,
+   "gold_auc": 0.9203382234131663
+  },
+  {
+   "ep": 5,
+   "loss": 0.8118006583735429,
+   "gold_auc": 0.9191478985672349
+  }
+ ],
+ "res": 384,
+ "epochs": 6,
+ "bb_lr": 3e-05,
+ "head_lr": 0.001,
+ "n_train": 4349,
+ "n_gold": 29,
+ "roi": false,
+ "roi_mode": "compartment",
+ "ema": 0.999,
+ "eval_passes": 2,
+ "oof_members": [],
+ "partial": false,
+ "epochs_done": 6
+}

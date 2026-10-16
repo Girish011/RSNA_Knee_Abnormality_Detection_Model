@@ -1,0 +1,34 @@
+{
+ "base": "outputs/kernels/pub/blend-mine-in-private-lb-luck-to-all-upvoters",
+ "spec": {
+  "side": [
+   "raptor_rs_side_last.pt",
+   "raptor_rs_side.pt"
+  ],
+  "regions": [
+   {
+    "findings": [
+     "Lateral OA"
+    ],
+    "ckpts": [
+     "raptor_rs_tf-fused_last.pt",
+     "raptor_rs_tf-fused.pt"
+    ]
+   },
+   {
+    "findings": [
+     "PF OA"
+    ],
+    "ckpts": [
+     "raptor_rs_pf-fused_last.pt",
+     "raptor_rs_pf-fused.pt"
+    ]
+   }
+  ]
+ },
+ "weights": {
+  "Lateral OA": 0.5,
+  "PF OA": 0.5
+ },
+ "parity": null
+}

@@ -1,0 +1,109 @@
+{
+ "base": "rsna-versia-5.ipynb",
+ "members": [
+  "k/ktrain-t2:t2kadj0",
+  "k/ktrain-t2:t2kadj1"
+ ],
+ "weights": [
+  "raptor_ft_t2kadj0.pt",
+  "raptor_ft_t2kadj1.pt"
+ ],
+ "w": 0.4,
+ "leg": "v2",
+ "leg_env": {},
+ "swap_v5": null,
+ "swap_arms": {},
+ "coat_shift": 0.0,
+ "rad_heads": {},
+ "dino": null,
+ "dino_extra": null,
+ "rad_exclude": null,
+ "negate": null,
+ "decor": null,
+ "tails": {
+  "ACL": [
+   [
+    "k/ktrain-t2:t2kadj0",
+    "k/ktrain-t2:t2kadj1"
+   ],
+   0.4
+  ],
+  "MCL": [
+   [
+    "k/ktrain-t2:t2kadj0",
+    "k/ktrain-t2:t2kadj1"
+   ],
+   0.4
+  ],
+  "Medial Meniscus": [
+   [
+    "k/ktrain-t2:t2kadj0",
+    "k/ktrain-t2:t2kadj1"
+   ],
+   0.4
+  ],
+  "Lateral Meniscus": [
+   [
+    "k/ktrain-t2:t2kadj0",
+    "k/ktrain-t2:t2kadj1"
+   ],
+   0.4
+  ],
+  "Medial OA": [
+   [
+    "k/ktrain-t2:t2kadj0",
+    "k/ktrain-t2:t2kadj1"
+   ],
+   0.4
+  ],
+  "Lateral OA": [
+   [
+    "k/ktrain-t2:t2kadj0",
+    "k/ktrain-t2:t2kadj1"
+   ],
+   0.4
+  ],
+  "PF OA": [
+   [
+    "k/ktrain-t2:t2kadj0",
+    "k/ktrain-t2:t2kadj1"
+   ],
+   0.4
+  ],
+  "Effusion": [
+   [
+    "k/ktrain-t2:t2kadj0",
+    "k/ktrain-t2:t2kadj1"
+   ],
+   0.4
+  ],
+  "Synovitis": [
+   [
+    "k/ktrain-t2:t2kadj0",
+    "k/ktrain-t2:t2kadj1"
+   ],
+   0.4
+  ],
+  "Baker's": [
+   [
+    "k/ktrain-t2:t2kadj0",
+    "k/ktrain-t2:t2kadj1"
+   ],
+   0.4
+  ],
+  "Contusion": [
+   [
+    "k/ktrain-t2:t2kadj0",
+    "k/ktrain-t2:t2kadj1"
+   ],
+   0.4
+  ],
+  "Fracture": [
+   [
+    "k/ktrain-t2:t2kadj0",
+    "k/ktrain-t2:t2kadj1"
+   ],
+   0.4
+  ]
+ }
+}

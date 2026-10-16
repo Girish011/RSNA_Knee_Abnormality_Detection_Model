@@ -1,0 +1,373 @@
+[
+ {
+  "job": "rs2-tf-f0",
+  "tag": "rs2tf0",
+  "spec": "tf",
+  "fold": 0,
+  "labels": "labels_t2.parquet",
+  "pod": "u9qrbhq4rrjgna",
+  "price": 0.59,
+  "launched": "2026-10-13T02:01:59"
+ },
+ {
+  "job": "rs2-tf-f1",
+  "tag": "rs2tf1",
+  "spec": "tf",
+  "fold": 1,
+  "labels": "labels_t2.parquet",
+  "pod": "jwztq9paflk0h1",
+  "price": 0.59,
+  "launched": "2026-10-13T02:04:05"
+ },
+ {
+  "job": "rs2-pf-f0",
+  "tag": "rs2pf0",
+  "spec": "pf",
+  "fold": 0,
+  "labels": "labels_t2.parquet",
+  "pod": "te4a22d654cq18",
+  "price": 0.59,
+  "launched": "2026-10-13T02:05:40"
+ },
+ {
+  "job": "rs2-pf-f1",
+  "tag": "rs2pf1",
+  "spec": "pf",
+  "fold": 1,
+  "labels": "labels_t2.parquet",
+  "pod": "b49jn51gl6fwy8",
+  "price": 0.59,
+  "launched": "2026-10-13T02:07:12"
+ },
+ {
+  "job": "rs2-rec-f0",
+  "tag": "rs2rec0",
+  "spec": "rec",
+  "fold": 0,
+  "labels": "labels_t2.parquet",
+  "pod": "t0wl6bnjvjvy42",
+  "price": 0.59,
+  "launched": "2026-10-13T02:08:43"
+ },
+ {
+  "job": "rs2-rec-f1",
+  "tag": "rs2rec1",
+  "spec": "rec",
+  "fold": 1,
+  "labels": "labels_t2.parquet",
+  "pod": "rfdprfla2ooz51",
+  "price": 0.59,
+  "launched": "2026-10-13T02:10:13"
+ },
+ {
+  "job": "rs2-recsf-f0",
+  "tag": "rs2recsf0",
+  "spec": "recsf",
+  "fold": 0,
+  "labels": "labels_t2.parquet",
+  "pod": "f791gfel74pf1n",
+  "price": 0.59,
+  "launched": "2026-10-13T02:11:58"
+ },
+ {
+  "job": "rs2-tfg-f0",
+  "tag": "rs2tfg0",
+  "spec": "tfg",
+  "fold": 0,
+  "labels": "labels_t2.parquet",
+  "pod": "4ricewrjzzrglm",
+  "price": 0.59,
+  "launched": "2026-10-13T02:13:31"
+ },
+ {
+  "job": "rs2-pfg-f0",
+  "tag": "rs2pfg0",
+  "spec": "pfg",
+  "fold": 0,
+  "labels": "labels_t2.parquet",
+  "pod": "bhplv5f2e88rz1",
+  "price": 0.59,
+  "launched": "2026-10-13T02:15:08"
+ },
+ {
+  "job": "rs3-tf-f0",
+  "tag": "rs3tf0",
+  "spec": "tf",
+  "fold": 0,
+  "labels": "labels_t2.parquet",
+  "pod": "cf3vjg3ovxcgv2",
+  "price": 0.59,
+  "launched": "2026-10-13T02:17:49"
+ },
+ {
+  "job": "rs3-tf-f1",
+  "tag": "rs3tf1",
+  "spec": "tf",
+  "fold": 1,
+  "labels": "labels_t2.parquet",
+  "pod": "lpqdk7pc1f422f",
+  "price": 0.59,
+  "launched": "2026-10-13T02:23:40"
+ },
+ {
+  "job": "rs3-pf-f0",
+  "tag": "rs3pf0",
+  "spec": "pf",
+  "fold": 0,
+  "labels": "labels_t2.parquet",
+  "pod": "hfkq2ffd2xlrdj",
+  "price": 0.59,
+  "launched": "2026-10-13T02:25:09"
+ },
+ {
+  "job": "rs3-pf-f1",
+  "tag": "rs3pf1",
+  "spec": "pf",
+  "fold": 1,
+  "labels": "labels_t2.parquet",
+  "pod": "num3nm10stusea",
+  "price": 0.59,
+  "launched": "2026-10-13T02:26:41"
+ },
+ {
+  "job": "rs3-rec-f0",
+  "tag": "rs3rec0",
+  "spec": "rec",
+  "fold": 0,
+  "labels": "labels_t2.parquet",
+  "pod": "xgdfbj2tqwuel2",
+  "price": 0.59,
+  "launched": "2026-10-13T02:28:13"
+ },
+ {
+  "job": "rs3-rec-f1",
+  "tag": "rs3rec1",
+  "spec": "rec",
+  "fold": 1,
+  "labels": "labels_t2.parquet",
+  "pod": "n61jlseo2z8q5t",
+  "price": 0.59,
+  "launched": "2026-10-13T02:29:45"
+ },
+ {
+  "job": "rs3-recsf-f0",
+  "tag": "rs3recsf0",
+  "spec": "recsf",
+  "fold": 0,
+  "labels": "labels_t2.parquet",
+  "pod": "4p2kk4n7dsbwy3",
+  "price": 0.59,
+  "launched": "2026-10-13T02:31:48"
+ },
+ {
+  "job": "rs3-tfg-f0",
+  "tag": "rs3tfg0",
+  "spec": "tfg",
+  "fold": 0,
+  "labels": "labels_t2.parquet",
+  "pod": "gvuqu3ounaw9dn",
+  "price": 0.59,
+  "launched": "2026-10-13T02:33:22"
+ },
+ {
+  "job": "rs3-pfg-f0",
+  "tag": "rs3pfg0",
+  "spec": "pfg",
+  "fold": 0,
+  "labels": "labels_t2.parquet",
+  "pod": "p6mfe6by43qm2r",
+  "price": 0.59,
+  "launched": "2026-10-13T02:34:59"
+ },
+ {
+  "job": "rs3-tf-f2",
+  "tag": "rs3tf2",
+  "spec": "tf",
+  "fold": 2,
+  "labels": "labels_t2.parquet",
+  "pod": "jusw7sthqg0prf",
+  "price": 0.59,
+  "launched": "2026-10-16T10:08:12"
+ },
+ {
+  "job": "rs3-tf-f3",
+  "tag": "rs3tf3",
+  "spec": "tf",
+  "fold": 3,
+  "labels": "labels_t2.parquet",
+  "pod": "mwvlzk7yra7m0j",
+  "price": 0.59,
+  "launched": "2026-10-16T10:09:43"
+ },
+ {
+  "job": "rs3-tf-f4",
+  "tag": "rs3tf4",
+  "spec": "tf",
+  "fold": 4,
+  "labels": "labels_t2.parquet",
+  "pod": "i1oragescp5ice",
+  "price": 0.59,
+  "launched": "2026-10-16T10:11:17"
+ },
+ {
+  "job": "rs3-rec-f2",
+  "tag": "rs3rec2",
+  "spec": "rec",
+  "fold": 2,
+  "labels": "labels_t2.parquet",
+  "pod": "jjehjrf1elqlzn",
+  "price": 0.59,
+  "launched": "2026-10-16T10:12:46"
+ },
+ {
+  "job": "rs3-rec-f3",
+  "tag": "rs3rec3",
+  "spec": "rec",
+  "fold": 3,
+  "labels": "labels_t2.parquet",
+  "pod": "6m4idppx7tr1il",
+  "price": 0.59,
+  "launched": "2026-10-16T10:14:16"
+ },
+ {
+  "job": "rs3-rec-f4",
+  "tag": "rs3rec4",
+  "spec": "rec",
+  "fold": 4,
+  "labels": "labels_t2.parquet",
+  "pod": "ybflybbh1gtieo",
+  "price": 0.33,
+  "launched": "2026-10-16T10:15:47",
+  "note": "pod gone within 5 min, no dataset (provider dropped it); relaunched as rs3r-rec-f4"
+ },
+ {
+  "job": "rs3-bm-f0",
+  "tag": "rs3bm0",
+  "spec": "bm",
+  "fold": 0,
+  "labels": "labels_t2.parquet",
+  "pod": "sue0w277j52s82",
+  "price": 0.59,
+  "launched": "2026-10-16T10:17:21"
+ },
+ {
+  "job": "rs3-bm-f1",
+  "tag": "rs3bm1",
+  "spec": "bm",
+  "fold": 1,
+  "labels": "labels_t2.parquet",
+  "pod": "rw1rwzn2kksjfs",
+  "price": 0.59,
+  "launched": "2026-10-16T10:18:51"
+ },
+ {
+  "job": "rs3r-rec-f4",
+  "tag": "rs3rrec4",
+  "spec": "rec",
+  "fold": 4,
+  "labels": "labels_t2.parquet",
+  "pod": "nh7v5rwbin3v0n",
+  "price": 0.59,
+  "launched": "2026-10-16T10:23:23"
+ },
+ {
+  "job": "rs4-tf-f0",
+  "tag": "rs4tf0",
+  "spec": "tf",
+  "fold": 0,
+  "labels": "labels_e1.parquet",
+  "pod": "zt2329h9dugsdw",
+  "price": 0.59,
+  "launched": "2026-10-16T11:01:11"
+ },
+ {
+  "job": "rs4-tf-f1",
+  "tag": "rs4tf1",
+  "spec": "tf",
+  "fold": 1,
+  "labels": "labels_e1.parquet",
+  "pod": "obtkslju22cy3y",
+  "price": 0.59,
+  "launched": "2026-10-16T11:02:42"
+ },
+ {
+  "job": "rs4-pf-f0",
+  "tag": "rs4pf0",
+  "spec": "pf",
+  "fold": 0,
+  "labels": "labels_e1.parquet",
+  "pod": "aord4epp2vrya0",
+  "price": 0.59,
+  "launched": "2026-10-16T11:04:08"
+ },
+ {
+  "job": "rs4-pf-f1",
+  "tag": "rs4pf1",
+  "spec": "pf",
+  "fold": 1,
+  "labels": "labels_e1.parquet",
+  "pod": "gy2fc4edeyuor7",
+  "price": 0.59,
+  "launched": "2026-10-16T11:05:40"
+ },
+ {
+  "job": "rs4-pf-f2",
+  "tag": "rs4pf2",
+  "spec": "pf",
+  "fold": 2,
+  "labels": "labels_e1.parquet",
+  "pod": "bvzt39hsiat2on",
+  "price": 0.59,
+  "launched": "2026-10-16T14:17:43"
+ },
+ {
+  "job": "rs4-pf-f3",
+  "tag": "rs4pf3",
+  "spec": "pf",
+  "fold": 3,
+  "labels": "labels_e1.parquet",
+  "pod": "k43aoyiot64zmq",
+  "price": 0.59,
+  "launched": "2026-10-16T15:12:38"
+ },
+ {
+  "job": "rs4-pf-f4",
+  "tag": "rs4pf4",
+  "spec": "pf",
+  "fold": 4,
+  "labels": "labels_e1.parquet",
+  "pod": "qzocw420p8m18n",
+  "price": 0.59,
+  "launched": "2026-10-16T15:14:24"
+ },
+ {
+  "job": "rs4-tf-f2",
+  "tag": "rs4tf2",
+  "spec": "tf",
+  "fold": 2,
+  "labels": "labels_e1.parquet",
+  "pod": "c2301f8lf7jw7z",
+  "price": 0.59,
+  "launched": "2026-10-16T15:16:12"
+ },
+ {
+  "job": "rs4-tf-f3",
+  "tag": "rs4tf3",
+  "spec": "tf",
+  "fold": 3,
+  "labels": "labels_e1.parquet",
+  "pod": "aqx4i99k13iv0f",
+  "price": 0.59,
+  "launched": "2026-10-16T15:18:00"
+ },
+ {
+  "job": "rs4-tf-f4",
+  "tag": "rs4tf4",
+  "spec": "tf",
+  "fold": 4,
+  "labels": "labels_e1.parquet",
+  "pod": "02kl19z4b6nd8a",
+  "price": 0.59,
+  "launched": "2026-10-16T15:19:50"
+ }
+]

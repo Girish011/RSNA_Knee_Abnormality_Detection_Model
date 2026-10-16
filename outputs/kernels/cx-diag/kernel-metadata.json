@@ -1,0 +1,17 @@
+{
+ "id": "girishbose/cx-diag",
+ "title": "cx-diag",
+ "code_file": "cx_diag.py",
+ "language": "python",
+ "kernel_type": "script",
+ "is_private": true,
+ "enable_gpu": false,
+ "enable_tpu": false,
+ "enable_internet": false,
+ "dataset_sources": [],
+ "kernel_sources": [
+  "girishbose/cx-cache-s0"
+ ],
+ "model_sources": [],
+ "competition_sources": []
+}

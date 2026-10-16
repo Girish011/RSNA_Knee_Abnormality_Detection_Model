@@ -1,0 +1,20 @@
+{
+ "tag": "ef3fb2a5a708",
+ "src": "init:raptor_ft_coatnet_v5_full_swa.pt",
+ "best_gold_auc": 0.9172961430255482,
+ "aucs": {
+  "ACL": 0.980952380952381,
+  "MCL": 0.9927536231884059,
+  "Medial Meniscus": 1.0,
+  "Lateral Meniscus": 0.8611111111111112,
+  "Medial OA": 0.9710144927536232,
+  "Lateral OA": 0.7916666666666667,
+  "PF OA": 0.7722222222222221,
+  "Effusion": 0.9666666666666667,
+  "Synovitis": 0.8315789473684211,
+  "Baker's": 0.9675324675324675,
+  "Contusion": 0.9315789473684211,
+  "Fracture": 0.9404761904761905
+ },
+ "eval_only": true
+}

@@ -1,0 +1,82 @@
+{
+ "base": "outputs/kernels/pub/r6frozen-9576",
+ "alone": false,
+ "spec": {
+  "side": [
+   "raptor_rs_side_last.pt",
+   "raptor_rs_side.pt"
+  ],
+  "regions": [
+   {
+    "findings": [
+     "Lateral Meniscus",
+     "Lateral OA",
+     "Medial Meniscus",
+     "Medial OA"
+    ],
+    "rounds": [
+     [
+      "raptor_rs_rs3tf0.pt",
+      "raptor_rs_rs3tf1.pt"
+     ],
+     [
+      "raptor_rs_rs3tf2.pt",
+      "raptor_rs_rs3tf3.pt"
+     ],
+     [
+      "raptor_rs_rs3tf4.pt"
+     ]
+    ]
+   },
+   {
+    "findings": [
+     "Effusion",
+     "Synovitis",
+     "Baker's"
+    ],
+    "rounds": [
+     [
+      "raptor_rs_rs3rec0.pt",
+      "raptor_rs_rs3rec1.pt"
+     ],
+     [
+      "raptor_rs_rs3rec2.pt",
+      "raptor_rs_rs3rec3.pt"
+     ],
+     [
+      "raptor_rs_rs3rrec4.pt"
+     ]
+    ]
+   },
+   {
+    "findings": [
+     "Contusion",
+     "Fracture"
+    ],
+    "rounds": [
+     [
+      "raptor_rs_rs3bm0.pt",
+      "raptor_rs_rs3bm1.pt"
+     ]
+    ]
+   }
+  ],
+  "chunk": 100,
+  "passes": 1,
+  "extra": []
+ },
+ "weights": {
+  "Lateral Meniscus": 0.2,
+  "Lateral OA": 0.2,
+  "Medial Meniscus": 0.2,
+  "Medial OA": 0.2,
+  "Effusion": 0.2,
+  "Synovitis": 0.2,
+  "Baker's": 0.2,
+  "Contusion": 0.2,
+  "Fracture": 0.2
+ },
+ "parity": null,
+ "limit_h": 8.6,
+ "n_ids": 0
+}

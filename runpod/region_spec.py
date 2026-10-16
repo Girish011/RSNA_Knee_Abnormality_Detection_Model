@@ -46,6 +46,9 @@ BLOCKS = {"SagF": (0, 22, "sag"), "SagNF": (22, 40, "sag"), "CorF": (40, 55, "co
           "CorNF": (55, 65, "cor"), "Ax": (65, 80, "ax")}
 IMG = 512
 N_POS = 8
+PARTNER = {"SagF": "SagNF", "CorF": "CorNF"}     # --chan seqfuse: fluid-sensitive block -> its non-fluid partner
+AUX_FINDS = ("Medial OA", "Lateral OA", "PF OA")  # --aux_grades: findings with a report severity grade (0-4) as side target
+AUX_THR = (2, 3, 4)                               # ordinal side outputs: grade >= 2 (any), >= 3 (moderate), >= 4 (severe)
 
 # In-plane image axes as canonical (A lateral, B anterior, C superior) unit vectors:
 # coronal: right = lateral, down = inferior | sagittal: right = posterior, down = inferior |
@@ -176,12 +179,15 @@ class RegionTiles(Dataset):
     """Item = (study, variant) -> {group: (n,3,H,W)} tiles + pos/valid vectors, target, weight."""
 
     def __init__(self, corpus, region, ids, labels, weights, left, train, aug=1.0, eval_phase=0.0,
-                 side_mode=False):
+                 side_mode=False, chan="adj", aux=None, variants=None, few=False):
         self.c, self.reg, self.train = corpus, REGIONS[region], train
+        self.aux = aux        # {uid: (targets (12, 3), weight (12,))} from load_aux, or None: 3 extra targets per item
+        self.chan = chan      # "seqfuse": tiles of a fluid-sensitive group = [fluid, non-fluid, difference] (see PARTNER)
         self.labels, self.weights, self.left = labels, weights, left
-        self.items = [(u, v) for u in ids for v in range(len(self.reg["variants"]))]
+        self.items = [(u, v) for u in ids for v in (variants or range(len(self.reg["variants"])))]
         self.aug = aug if train else 0.0
         self.eval_phase, self.side_mode = eval_phase, side_mode
+        self.few = few        # evaluation with the TRAINING number of tiles per group (evenly spaced): ~1.6x cheaper
 
     def __len__(self):
         return len(self.items)
@@ -206,6 +212,11 @@ class RegionTiles(Dataset):
             lat = (1.0 if self.left[uid] >= 0.5 else -1.0) * sgn
             idx = [L[f] for f in finds]
             y, w = self.labels[uid][idx].astype(np.float32), self.weights[uid][idx].astype(np.float32)
+            if self.aux is not None:     # severity grade of this variant's OA finding; weight 0 = not mentioned / no report
+                k = next(L[f] for f in finds if f in AUX_FINDS)
+                ay, aw = self.aux.get(uid, (np.zeros((len(LAB), len(AUX_THR)), np.float32), np.zeros(len(LAB), np.float32)))
+                y = np.concatenate([y, ay[k]])
+                w = np.concatenate([w, np.full(len(AUX_THR), aw[k], np.float32)])
         E = np.array([[lat, 0, 0], [0, -1, 0], [0, 0, 1]], float)   # canonical A,B,C in patient LPS
         rot = math.radians(random.uniform(-8, 8)) * self.aug
         sc = 1.0 + random.uniform(-0.08, 0.08) * self.aug
@@ -214,7 +225,7 @@ class RegionTiles(Dataset):
         out = {}
         for gi, gdef in enumerate(self.reg["groups"]):
             lo, hi, plane = BLOCKS[gdef["block"]]
-            n = gdef["n"][0 if self.train else 1]
+            n = gdef["n"][0 if (self.train or self.few) else 1]
             W, H = gdef["out"]
             eh, ev = (np.array(a, float) @ E for a in AXES[plane])
             nrm = np.array(NORMAL[plane], float) @ E
@@ -234,6 +245,11 @@ class RegionTiles(Dataset):
                 (h0, h1), (v0, v1) = gdef["hbox"], gdef["vbox"]
                 hc, vc, hh, vh = (h0 + h1) / 2, (v0 + v1) / 2, (h1 - h0) / 2 * sc, (v1 - v0) / 2 * sc
                 dst = np.float32([[0, 0], [W, 0], [0, H]])
+                # --chan seqfuse: the non-fluid series of the same plane, matched in PATIENT mm (each slice is warped
+                # with its own geometry, so the two sequences are registered in the tile)
+                plo, phi = BLOCKS[PARTNER[gdef["block"]]][:2] if (self.chan == "seqfuse" and gdef["block"] in PARTNER) else (0, 0)
+                pvalid = np.where(msk[plo:phi])[0]
+                pcoord = (slice_centres(geom[plo:phi]) - P) @ nrm if len(pvalid) else None
                 for t, c in enumerate(self._pick(order, n)):
                     c = int(c)
                     pos[t] = int(np.clip((coord[c] - rng[0]) / max(rng[1] - rng[0], 1e-3) * N_POS, 0, N_POS - 1))
@@ -241,7 +257,15 @@ class RegionTiles(Dataset):
                     for a, b in ((-hh, -vh), (hh, -vh), (-hh, vh)):
                         a, b = a * cr - b * sr, a * sr + b * cr
                         corners.append(P + eh * (hc + a) + ev * (vc + b))
-                    M = cv2.getAffineTransform(to_pixel(geom[lo + c], np.array(corners)).astype(np.float32), dst)
+                    corners = np.array(corners)
+                    M = cv2.getAffineTransform(to_pixel(geom[lo + c], corners).astype(np.float32), dst)
+                    if len(pvalid):
+                        k2 = int(pvalid[np.argmin(np.abs(pcoord[pvalid] - coord[c]))])
+                        M2 = cv2.getAffineTransform(to_pixel(geom[plo + k2], corners).astype(np.float32), dst)
+                        fl = cv2.warpAffine(np.ascontiguousarray(vol[lo + c]), M, (W, H), flags=cv2.INTER_LINEAR) / 255.0
+                        nf = cv2.warpAffine(np.ascontiguousarray(vol[plo + k2]), M2, (W, H), flags=cv2.INTER_LINEAR) / 255.0
+                        tiles[t, 0], tiles[t, 1], tiles[t, 2] = fl, nf, np.clip(0.5 + (fl - nf) / 2, 0, 1)
+                        continue
                     # neighbours ordered along the canonical normal so mirrored knees stay consistent
                     nb = (c - 1, c, c + 1) if coord[c + 1] >= coord[c - 1] else (c + 1, c, c - 1)
                     for ch, k in enumerate(nb):
@@ -331,6 +355,21 @@ def load_targets(a, corpus):
     return labels, weights, [u for u in nonexp if u not in oofset] + dev, oof, holdout
 
 
+def load_aux(path, w):
+    """Report severity grades (scripts/graded_labels.py: 0 explicitly normal, 1 not mentioned, 2 low-grade, 3 moderate,
+    4 severe) -> {uid: (ordinal targets (12, 3) = grade >= AUX_THR, weight (12,))}. A finding that the report does not
+    mention is unknown (weight 0), not negative. `w` is the summed weight of the three side outputs of a known finding."""
+    g = pd.read_parquet(path) if path.endswith(".parquet") else pd.read_csv(path)
+    g["StudyInstanceUID"] = g["StudyInstanceUID"].astype(str)
+    G = g.set_index("StudyInstanceUID")[LAB].to_numpy(np.float32)
+    thr = np.array(AUX_THR, np.float32)
+    out = {}
+    for u, r in zip(g["StudyInstanceUID"], G):
+        known = np.isfinite(r) & (r != 1)
+        out[u] = ((np.nan_to_num(r)[:, None] >= thr).astype(np.float32), known.astype(np.float32) * w / len(AUX_THR))
+    return out
+
+
 def auc(y, p):
     from sklearn.metrics import roc_auc_score
     y = (np.asarray(y) >= 0.5).astype(int)
@@ -370,7 +409,28 @@ def main():
     ap.add_argument("--no_pretrained", action="store_true")
     ap.add_argument("--smoke", action="store_true")
     ap.add_argument("--dump", default=None, help="write a jpg of the first samples' tiles and exit")
+    ap.add_argument("--chan", default="adj", choices=["adj", "seqfuse"],
+                    help="tile channels: adj = 3 adjacent slices; seqfuse = fluid-sensitive slice, the non-fluid slice of the "
+                         "same plane nearest in patient mm, and their difference (fluid-sensitive groups only)")
+    ap.add_argument("--aux_grades", default=None,
+                    help="report severity grades (labels_graded_v1.parquet): three extra ordinal outputs for the OA finding "
+                         "of each variant (tf, pf), trained with a masked loss and ignored at test time")
+    ap.add_argument("--aux_w", type=float, default=0.5, help="summed loss weight of the three side outputs")
+    ap.add_argument("--predict", default=None,
+                    help="comma list of raptor_rs_*.pt checkpoints of ONE region (paths or names under the search "
+                         "roots): score every study of the corpus without labels, mean over the checkpoints, and write "
+                         "raptor_rspred_<tag>.npz (ids, pred (n, 12), NaN outside the region) or, for the side region, "
+                         "raptor_side_<tag>.npz (ids, p_left). Used by the test-time leg (ours_leg_rs.py)")
+    ap.add_argument("--only_findings", default=None,
+                    help="--predict: semicolon list of findings; only the variants that hold one of them are scored "
+                         "(tf: 'Lateral OA' = the lateral compartment alone, half the cost); the others stay NaN")
+    ap.add_argument("--channels_last", action="store_true", help="--predict: backbone in channels-last memory format")
+    ap.add_argument("--threads", type=int, default=0, help="--predict: torch CPU threads (0 = torch's default)")
+    ap.add_argument("--eval_tiles", default="eval", choices=["eval", "train"],
+                    help="--predict: tiles per group = the evaluation count (default) or the smaller training count")
     a = ap.parse_args()
+    if a.predict:
+        return predict_only(a)
     a.fold_file = a.fold_file or _find("folds_nonexpert_5.json")
     a.holdout = a.holdout or _find("expert_holdout.json")
     if not a.fold_file or not a.holdout:
@@ -389,6 +449,18 @@ def main():
     a.side_file = a.side_file or (None if side_mode else _find_side())
     left, src = corpus.left_prob(a.side_file)
     cols = [[L.get(f, -1) for f in finds] for _, finds in reg["variants"]]
+    aux = None
+    if a.aux_grades:
+        if not all(any(f in AUX_FINDS for f in finds) for _, finds in reg["variants"]):
+            raise SystemExit(f"--aux_grades: region {a.region} has a variant without an OA finding")
+        path = a.aux_grades if os.path.exists(a.aux_grades) else _find(os.path.basename(a.aux_grades))
+        if not path:
+            raise SystemExit(f"--aux_grades: {a.aux_grades} not found")
+        aux = load_aux(path, a.aux_w)
+        n_known = {f: int(sum(aux[u][1][L[f]] > 0 for u in train_ids if u in aux)) for _, fs in reg["variants"]
+                   for f in fs if f in AUX_FINDS}
+        print(f"aux grades {os.path.basename(path)} | train studies with a known grade {n_known} | weight {a.aux_w}", flush=True)
+    n_aux = len(AUX_THR) if aux is not None else 0
     if side_mode:                 # target = Laterality tag; only tagged studies train / score
         tagged = corpus.tag_left
         labels = {u: tagged[u] for u in tagged}
@@ -403,7 +475,7 @@ def main():
           f"oof {len(oof_ids)} | holdout {len(hold_ids)} | side source {n_src}", flush=True)
 
     mk = lambda ids, train, phase=0.0: RegionTiles(corpus, a.region, ids, labels, weights, left, train,
-                                                    eval_phase=phase, side_mode=side_mode)
+                                                    eval_phase=phase, side_mode=side_mode, chan=a.chan, aux=aux)
     if a.dump:
         ds = mk((train_ids + oof_ids)[:4], False)
         rows = []
@@ -421,7 +493,8 @@ def main():
                     num_workers=a.workers, collate_fn=collate, pin_memory=dev == "cuda",
                     persistent_workers=a.workers > 0,
                     worker_init_fn=lambda w: np.random.seed((a.seed * 1000 + w + int(time.time())) % 2**31))
-    n_out = len(cols[0])
+    n_main = len(cols[0])
+    n_out = n_main + n_aux        # outputs: the region's findings, then the ordinal side outputs (training only)
     model = RegionNet(a.arch, len(reg["groups"]), len(reg["variants"]), n_out,
                       pretrained=not a.no_pretrained, grad_ckpt=a.grad_ckpt).to(dev)
     bb = [p for n, p in model.named_parameters() if n.startswith("backbone.")]
@@ -437,6 +510,7 @@ def main():
         Y = np.stack([labels[u] for u in train_ids])
         prev = np.clip(np.stack([Y[:, c].mean(0) for c in cols]), 0.03, 0.7)        # (variants, n_out)
         pw = torch.tensor(np.clip((1 - prev) / prev, 1, 6), dtype=torch.float32, device=dev)[None]
+        pw = torch.cat([pw, torch.ones(1, len(cols), n_aux, device=dev)], 2)           # side outputs: no class weight
     ema = {k: v.detach().float().clone() for k, v in model.state_dict().items() if v.is_floating_point()}
 
     def fwd(x):
@@ -483,7 +557,8 @@ def main():
         for it, (x, y, w) in enumerate(tl):
             logit, var = fwd(x)
             y, w = y.to(dev), w.to(dev)
-            loss = (F.binary_cross_entropy_with_logits(logit, y, pos_weight=pw[0][var], reduction="none") * w).mean()
+            per = F.binary_cross_entropy_with_logits(logit, y, pos_weight=pw[0][var], reduction="none") * w
+            loss = per[:, :n_main].mean() + per[:, n_main:].sum(1).mean()   # the finding loss keeps its scale; side term added
             (loss / a.accum).backward()
             if (it + 1) % a.accum == 0:
                 torch.nn.utils.clip_grad_norm_(model.parameters(), 2.0)
@@ -506,7 +581,8 @@ def main():
         print(f"ep{ep} {json.dumps(rec)}", flush=True)
 
     last = {k: v.detach().cpu().clone() for k, v in model.state_dict().items()}
-    meta_ck = {"arch": a.arch, "region": a.region, "spec": reg, "lab": LAB, "fold": a.fold, "seed": a.seed}
+    meta_ck = {"arch": a.arch, "region": a.region, "spec": reg, "lab": LAB, "fold": a.fold, "seed": a.seed, "chan": a.chan,
+               "n_aux": n_aux}
     torch.save({"model": last, **meta_ck}, os.path.join(a.out, f"raptor_rs_{a.tag}_last.pt"))
     res = {"tag": a.tag, "args": vars(a), "hist": hist, "n_train": len(train_ids), "n_oof": len(oof_ids),
            "n_holdout": len(hold_ids), "members": ["last", "ema"], "side_source": n_src}
@@ -546,6 +622,72 @@ def main():
     json.dump(res, open(os.path.join(a.out, f"raptor_ft_{a.tag}.json"), "w"), indent=1, default=str)
     print("RESULT " + json.dumps({k: res[k] for k in ("oof", "holdout29", "side_all") if k in res}), flush=True)
     print(f"done in {time.time() - t0:.0f}s", flush=True)
+    return 0
+
+
+def predict_only(a):
+    """Labels-free scoring of a whole corpus with trained checkpoints (same tiles and passes as training-time predict)."""
+    t0 = time.time()
+    dev = "cuda" if torch.cuda.is_available() else "cpu"
+    os.makedirs(a.out, exist_ok=True)
+    paths = [x if os.path.exists(x) else _find(os.path.basename(x)) for x in a.predict.split(",") if x]
+    if not paths or not all(paths):
+        raise SystemExit(f"--predict: checkpoint not found among {a.predict}")
+    cks = [torch.load(x, map_location="cpu", weights_only=False) for x in paths]
+    region = cks[0]["region"]
+    assert all(c["region"] == region and c["arch"] == cks[0]["arch"] for c in cks), "one region / arch per call"
+    reg, side_mode = REGIONS[region], region == "side"
+    corpus = Corpus(a.n_shards, a.data_root)
+    ids = list(corpus.ids)
+    left, src = corpus.left_prob(None if side_mode else a.side_file)
+    cols = [[L.get(f, -1) for f in finds] for _, finds in reg["variants"]]
+    vsel = list(range(len(cols)))
+    if a.only_findings:
+        want = {f.strip() for f in a.only_findings.split(";") if f.strip()}
+        vsel = [v for v, (_, finds) in enumerate(reg["variants"]) if want & set(finds)]
+        if not vsel:
+            raise SystemExit(f"--only_findings {sorted(want)}: none of them belongs to region {region}")
+    n_out = len(cols[0]) + cks[0].get("n_aux", 0)     # side outputs of --aux_grades models are scored and dropped below
+    assert all(c.get("n_aux", 0) == cks[0].get("n_aux", 0) for c in cks), "checkpoints with and without side outputs: call twice"
+    zero = np.zeros(len(LAB), np.float32)
+    labels, weights = ({}, {}) if side_mode else (dict.fromkeys(ids, zero), dict.fromkeys(ids, zero))
+    model = RegionNet(cks[0]["arch"], len(reg["groups"]), len(reg["variants"]), n_out, pretrained=False).to(dev)
+    model.eval()
+    if a.threads:
+        torch.set_num_threads(a.threads)
+    if a.channels_last:
+        model.backbone.to(memory_format=torch.channels_last)
+        model.backbone.register_forward_pre_hook(lambda m, x: (x[0].contiguous(memory_format=torch.channels_last),))
+    n_src = {k: sum(v == k for v in src.values()) for k in ("tag", "model", "x")}
+    print(f"predict | device {dev} | region {region} | {len(paths)} checkpoint(s) | studies {len(ids)} | "
+          f"passes {a.eval_passes} | variants {vsel} | tiles {a.eval_tiles} | threads {torch.get_num_threads()} | "
+          f"side source {n_src}", flush=True)
+    acc = 0
+    for ci, ck in enumerate(cks):
+        model.load_state_dict(ck["model"], strict=True)
+        for p in range(a.eval_passes):
+            ds = RegionTiles(corpus, region, ids, labels, weights, left, False,
+                             eval_phase=0.0 if a.eval_passes == 1 else p / a.eval_passes, side_mode=side_mode,
+                             chan=ck.get("chan", "adj"), variants=vsel, few=a.eval_tiles == "train")
+            dl = DataLoader(ds, batch_size=a.bs, shuffle=False, num_workers=a.workers, collate_fn=collate)
+            out = []
+            with torch.no_grad():
+                for x, _, _ in dl:
+                    x = {k: v.to(dev, non_blocking=True) for k, v in x.items()}
+                    with torch.autocast(dev, dtype=torch.float16, enabled=dev == "cuda"):   # T4: no native bfloat16
+                        out.append(torch.sigmoid(model(x).float()).cpu().numpy())
+            acc = acc + np.concatenate(out)
+            print(f"  checkpoint {os.path.basename(paths[ci])} pass {p} | {time.time() - t0:.0f}s", flush=True)
+    acc = (acc / (len(cks) * a.eval_passes)).reshape(len(ids), len(vsel), n_out)
+    P = np.full((len(ids), len(LAB)), np.nan, np.float32)
+    for vi, v in enumerate(vsel):
+        for j, k in enumerate(cols[v]):
+            P[:, k if k >= 0 else 0] = acc[:, vi, j]
+    if side_mode:
+        np.savez(os.path.join(a.out, f"raptor_side_{a.tag}.npz"), ids=np.array(ids), p_left=P[:, 0])
+    else:
+        np.savez(os.path.join(a.out, f"raptor_rspred_{a.tag}.npz"), ids=np.array(ids), pred=P)
+    print(f"predict done | {len(ids)} studies | {time.time() - t0:.0f}s", flush=True)
     return 0
 
 

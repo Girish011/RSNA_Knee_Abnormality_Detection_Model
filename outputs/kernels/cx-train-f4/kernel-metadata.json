@@ -1,0 +1,28 @@
+{
+ "id": "girishbose/cx-train-f4",
+ "title": "cx-train-f4",
+ "code_file": "cx_train_f4.py",
+ "language": "python",
+ "kernel_type": "script",
+ "is_private": true,
+ "enable_gpu": true,
+ "enable_tpu": false,
+ "enable_internet": false,
+ "machine_shape": "NvidiaTeslaT4",
+ "dataset_sources": [
+  "goodpjw2008/rsna-knee-2-5d-convnext-reader",
+  "girishbose/rsna-knee-timm-pretrained"
+ ],
+ "kernel_sources": [
+  "girishbose/cx-cache-s0",
+  "girishbose/cx-cache-s1",
+  "girishbose/cx-cache-s2",
+  "girishbose/cx-cache-s3",
+  "girishbose/cx-cache-s4",
+  "girishbose/cx-cache-s5"
+ ],
+ "model_sources": [],
+ "competition_sources": [
+  "rsna-knee-abnormality-detection"
+ ]
+}

@@ -1,0 +1,28 @@
+{
+  "id": "girishbose/probe-r1-c224x5",
+  "title": "probe-r1-c224x5",
+  "code_file": "probe_r1_c224x5.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_tpu": false,
+  "enable_internet": false,
+  "keywords": [
+    "gpu"
+  ],
+  "dataset_sources": [
+    "girishbose/rsna-knee-rp-r1-c224-f0-out",
+    "girishbose/rsna-knee-rp-r1-c224-f1-out",
+    "girishbose/rsna-knee-rp-r1-c224-f2-out",
+    "girishbose/rsna-knee-rp-r1-c224-f3-out",
+    "girishbose/rsna-knee-rp-r1-c224-f4-out"
+  ],
+  "kernel_sources": [],
+  "competition_sources": [
+    "rsna-knee-abnormality-detection"
+  ],
+  "model_sources": [],
+  "docker_image": "gcr.io/kaggle-private-byod/python@sha256:37c64f7dd9c54116ecd1bcc88817c5469b88387388fade02bfa8bf3fc647d461",
+  "machine_shape": "NvidiaTeslaT4"
+}

@@ -1,0 +1,39 @@
+{
+ "id": "girishbose/c957-sp20",
+ "title": "c957-sp20",
+ "code_file": "c957-sp20.ipynb",
+ "language": "python",
+ "kernel_type": "notebook",
+ "is_private": true,
+ "enable_gpu": true,
+ "enable_tpu": false,
+ "enable_internet": false,
+ "keywords": [
+  "gpu"
+ ],
+ "dataset_sources": [
+  "heliosli/rsna-knee-r6-frozen-fe055406",
+  "nartaa/rsna-knee-publication-swa-weights-20261007",
+  "heliosli/rsna-orthofoundation-fold0-epoch7-20261004",
+  "girishbose/rsna-knee-rp-rs-f0-v2-out",
+  "girishbose/rsna-knee-rp-rs3-tf-f0-out",
+  "girishbose/rsna-knee-rp-rs3-tf-f1-out",
+  "girishbose/rsna-knee-rp-rs3-tf-f2-out",
+  "girishbose/rsna-knee-rp-rs3-tf-f3-out",
+  "girishbose/rsna-knee-rp-rs3-tf-f4-out",
+  "girishbose/rsna-knee-rp-rs3-rec-f0-out",
+  "girishbose/rsna-knee-rp-rs3-rec-f1-out",
+  "girishbose/rsna-knee-rp-rs3-rec-f2-out",
+  "girishbose/rsna-knee-rp-rs3-rec-f3-out",
+  "girishbose/rsna-knee-rp-rs3-bm-f0-out",
+  "girishbose/rsna-knee-rp-rs3-bm-f1-out",
+  "girishbose/rsna-knee-rp-rs3r-rec-f4-out"
+ ],
+ "kernel_sources": [],
+ "competition_sources": [
+  "rsna-knee-abnormality-detection"
+ ],
+ "model_sources": [],
+ "docker_image": "gcr.io/kaggle-private-byod/python@sha256:2757e0c7d1e0a9cb43da657b97e223c321a98f5014bdf64f44f2f6b083ad2b2f",
+ "machine_shape": "NvidiaTeslaT4"
+}

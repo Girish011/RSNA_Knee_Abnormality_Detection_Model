@@ -556,3 +556,23 @@ Append one row (or block) per run. Never delete history.
 - ref 56704765 swap-d4-soup4 = **0.944** (rank 258/4660, from 488). Soups on our protocol: bestof4 0.9365, bestof2 0.9364, mix8 0.9358; public v5 0.9256.
 - Self-training: fused_full members 0.9330 = bestof_v1 0.9330 → closed. DeepSeek re-queued round 3 (f-e0c8d254ca, running) despite the memory note → hard block via `agent/runs/policy.json` {"fold_jobs_closed": true} enforced in `members.queue_folds`.
 - Running: m-98092c689a (bestof_v1, **k=16**, v5, 6 ep, seeds 42/1337) on 48 GB.
+
+### 2026-10-11 — Track 2b: sequence-fused windows vs adjacent-slice twin (all leaderboard)
+| ref | kernel | what | LB |
+|---|---|---|---:|
+| 57055883 | adj-alone | ConvNeXt-T @224, folds 0-1, labels r1, adjacent-slice windows, alone | 0.929 |
+| 57057625 | sf-alone | same, `--chan seqfuse`, alone | 0.930 |
+| 57057624 | v5-sf-w15 | pub/rsna-versia-5 (0.950) + seqfuse leg, rank w 0.15, all findings | 0.950 |
+| 57057745 | v5-sf-fluid-w15 | same, w 0.15 on Effusion, Synovitis, Contusion, Baker's, Fracture | 0.950 |
+Offline, 29 gold studies, best epoch: control 0.9298 / 0.9292, seqfuse 0.9283 / 0.9263. Closed.
+
+### 2026-10-15 — leaderboard: fork 0.954; region specialists alone on CPU (round 1)
+| ref | kernel | what | LB | finding AUC (12 x LB - 5.5) | base column |
+|---|---|---|---:|---:|---:|
+| 57195367 | pub-blend-mine-v1data | public blend-mine fork, `compact-v1` dataset | **0.954** | - | - |
+| 57197262 | cpu-latoa-tf | Lateral OA, teacher-ordered, folds 0+1 EMA | 0.533 | 0.896 | 0.896 |
+| 57198745 | cpu-latoa-tfold | Lateral OA, fused report labels, fold 0 | 0.533 | 0.896 | 0.896 |
+| 57197265 | cpu-syn-rec | Synovitis, teacher-ordered, fold 0 | 0.534 | 0.908 | 0.908 |
+| 57198842 | cpu-syn-recsf | Synovitis, seqfuse channels, fold 0 | 0.534 | 0.908 | 0.908 |
+| 57198627 | cpu-pfoa-pf | PF OA, teacher-ordered, folds 0+1 EMA | 0.534 | 0.908 | 0.926 |
+None beats its base column (+-0.006). Out-of-fold AUC against their own targets was 0.96-0.98: not a ruler.

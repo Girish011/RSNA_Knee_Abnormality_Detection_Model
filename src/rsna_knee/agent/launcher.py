@@ -65,14 +65,19 @@ def build_bundle(job: str, arms: list[Arm], inits: list[tuple[str, str, str]] | 
     fmp = REPO / "data" / "external" / "fastmri_plus" / "knee.csv"   # public fastMRI+ boxes (MIT)
     if fmp.exists():
         shutil.copy(fmp, d)
+    side = REPO / "outputs" / "runpod_results" / "rs-f0-v2" / "side" / "raptor_side_side.npz"
+    if side.exists():   # knee side of every train study (3 Oct side model): region_spec.py finds it in the bundle
+        shutil.copy(side, d)
     shutil.copy(REPO / "runpod" / "run_job.sh", d)
     shutil.copy(REPO / "runpod" / "fetch_dense80.py", d)
     for f in PROTOCOL_FILES:
         shutil.copy(REPO / "agent" / "protocol" / f, d)
     train = pd.read_csv(REPO / "data" / "raw" / "train.csv")
     train[["StudyInstanceUID", *LABEL_COLS]].to_csv(d / "train.csv", index=False)
-    for _, labels, _ in arms:
+    for _, labels, extra in arms:
         shutil.copy(REPO / "data" / "processed" / labels, d)
+        if "--aux_grades " in extra:    # region_spec.py side targets: the file named after the flag travels too
+            shutil.copy(REPO / "data" / "processed" / extra.split("--aux_grades ", 1)[1].split()[0], d)
     (d / "arms.txt").write_text("".join(f"{t}|{lab}|{extra}\n" for t, lab, extra in arms))
     inits = list(inits or [])
     if any(V5_INIT[0] in extra for _, _, extra in arms) and V5_INIT not in inits:

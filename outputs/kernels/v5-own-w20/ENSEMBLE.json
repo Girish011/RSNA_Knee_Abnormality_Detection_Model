@@ -1,0 +1,139 @@
+{
+ "base": "rsna-versia-5.ipynb",
+ "members": [
+  "r2-cnxs336-f0:r2cnxs3360",
+  "r2-cnxs336-f1:r2cnxs3361",
+  "r2-cnxs336-f2:r2cnxs3362",
+  "r2-cnxs336-f3:r2cnxs3363"
+ ],
+ "weights": [
+  "raptor_ft_r2cnxs3360.pt",
+  "raptor_ft_r2cnxs3361.pt",
+  "raptor_ft_r2cnxs3362.pt",
+  "raptor_ft_r2cnxs3363.pt"
+ ],
+ "w": 0.2,
+ "leg": "v2",
+ "leg_env": {
+  "OURS_FLIP": "1"
+ },
+ "swap_v5": null,
+ "swap_arms": {},
+ "coat_shift": 0.0,
+ "rad_heads": {},
+ "dino": null,
+ "dino_extra": null,
+ "rad_exclude": null,
+ "negate": null,
+ "decor": null,
+ "tails": {
+  "ACL": [
+   [
+    "r2-cnxs336-f0:r2cnxs3360",
+    "r2-cnxs336-f1:r2cnxs3361",
+    "r2-cnxs336-f2:r2cnxs3362",
+    "r2-cnxs336-f3:r2cnxs3363"
+   ],
+   0.2
+  ],
+  "MCL": [
+   [
+    "r2-cnxs336-f0:r2cnxs3360",
+    "r2-cnxs336-f1:r2cnxs3361",
+    "r2-cnxs336-f2:r2cnxs3362",
+    "r2-cnxs336-f3:r2cnxs3363"
+   ],
+   0.2
+  ],
+  "Medial Meniscus": [
+   [
+    "r2-cnxs336-f0:r2cnxs3360",
+    "r2-cnxs336-f1:r2cnxs3361",
+    "r2-cnxs336-f2:r2cnxs3362",
+    "r2-cnxs336-f3:r2cnxs3363"
+   ],
+   0.2
+  ],
+  "Lateral Meniscus": [
+   [
+    "r2-cnxs336-f0:r2cnxs3360",
+    "r2-cnxs336-f1:r2cnxs3361",
+    "r2-cnxs336-f2:r2cnxs3362",
+    "r2-cnxs336-f3:r2cnxs3363"
+   ],
+   0.2
+  ],
+  "Medial OA": [
+   [
+    "r2-cnxs336-f0:r2cnxs3360",
+    "r2-cnxs336-f1:r2cnxs3361",
+    "r2-cnxs336-f2:r2cnxs3362",
+    "r2-cnxs336-f3:r2cnxs3363"
+   ],
+   0.2
+  ],
+  "Lateral OA": [
+   [
+    "r2-cnxs336-f0:r2cnxs3360",
+    "r2-cnxs336-f1:r2cnxs3361",
+    "r2-cnxs336-f2:r2cnxs3362",
+    "r2-cnxs336-f3:r2cnxs3363"
+   ],
+   0.2
+  ],
+  "PF OA": [
+   [
+    "r2-cnxs336-f0:r2cnxs3360",
+    "r2-cnxs336-f1:r2cnxs3361",
+    "r2-cnxs336-f2:r2cnxs3362",
+    "r2-cnxs336-f3:r2cnxs3363"
+   ],
+   0.2
+  ],
+  "Effusion": [
+   [
+    "r2-cnxs336-f0:r2cnxs3360",
+    "r2-cnxs336-f1:r2cnxs3361",
+    "r2-cnxs336-f2:r2cnxs3362",
+    "r2-cnxs336-f3:r2cnxs3363"
+   ],
+   0.2
+  ],
+  "Synovitis": [
+   [
+    "r2-cnxs336-f0:r2cnxs3360",
+    "r2-cnxs336-f1:r2cnxs3361",
+    "r2-cnxs336-f2:r2cnxs3362",
+    "r2-cnxs336-f3:r2cnxs3363"
+   ],
+   0.2
+  ],
+  "Baker's": [
+   [
+    "r2-cnxs336-f0:r2cnxs3360",
+    "r2-cnxs336-f1:r2cnxs3361",
+    "r2-cnxs336-f2:r2cnxs3362",
+    "r2-cnxs336-f3:r2cnxs3363"
+   ],
+   0.2
+  ],
+  "Contusion": [
+   [
+    "r2-cnxs336-f0:r2cnxs3360",
+    "r2-cnxs336-f1:r2cnxs3361",
+    "r2-cnxs336-f2:r2cnxs3362",
+    "r2-cnxs336-f3:r2cnxs3363"
+   ],
+   0.2
+  ],
+  "Fracture": [
+   [
+    "r2-cnxs336-f0:r2cnxs3360",
+    "r2-cnxs336-f1:r2cnxs3361",
+    "r2-cnxs336-f2:r2cnxs3362",
+    "r2-cnxs336-f3:r2cnxs3363"
+   ],
+   0.2
+  ]
+ }
+}

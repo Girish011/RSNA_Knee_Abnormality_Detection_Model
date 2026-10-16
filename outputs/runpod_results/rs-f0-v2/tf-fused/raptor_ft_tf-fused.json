@@ -1,0 +1,141 @@
+{
+ "tag": "tf-fused",
+ "args": {
+  "labels": "/workspace/bundle/labels_fused_7cdb6e83_full.parquet",
+  "region": "tf",
+  "train_csv": null,
+  "fold_file": "/workspace/bundle/folds_nonexpert_5.json",
+  "holdout": "/workspace/bundle/expert_holdout.json",
+  "side_file": "/workspace/out/side/raptor_side_side.npz",
+  "fold": 0,
+  "arch": "convnext_small.fb_in22k_ft_in1k",
+  "epochs": 10,
+  "bs": 6,
+  "accum": 2,
+  "bb_lr": 6e-05,
+  "head_lr": 0.0006,
+  "wd": 0.05,
+  "warmup": 0.06,
+  "ema": 0.999,
+  "gold_w": 3.0,
+  "eval_passes": 2,
+  "eval_every": 2,
+  "workers": 8,
+  "grad_ckpt": true,
+  "seed": 0,
+  "tag": "tf-fused",
+  "out": "/workspace/out/tf-fused",
+  "data_root": null,
+  "n_shards": 8,
+  "limit": 0,
+  "no_pretrained": false,
+  "smoke": false,
+  "dump": null
+ },
+ "hist": [
+  {
+   "ep": 0,
+   "loss": 0.7211687099331969,
+   "sec": 648
+  },
+  {
+   "ep": 1,
+   "loss": 0.596949038875725,
+   "sec": 1296,
+   "oof_ema": {
+    "Lateral Meniscus": 0.9386,
+    "Lateral OA": 0.8749,
+    "Medial Meniscus": 0.9556,
+    "Medial OA": 0.9565
+   }
+  },
+  {
+   "ep": 2,
+   "loss": 0.5695240890449494,
+   "sec": 2039
+  },
+  {
+   "ep": 3,
+   "loss": 0.5565522977360504,
+   "sec": 2689,
+   "oof_ema": {
+    "Lateral Meniscus": 0.948,
+    "Lateral OA": 0.8763,
+    "Medial Meniscus": 0.9626,
+    "Medial OA": 0.9672
+   }
+  },
+  {
+   "ep": 4,
+   "loss": 0.5329625538850666,
+   "sec": 3428
+  },
+  {
+   "ep": 5,
+   "loss": 0.5192320363275815,
+   "sec": 4078,
+   "oof_ema": {
+    "Lateral Meniscus": 0.955,
+    "Lateral OA": 0.8906,
+    "Medial Meniscus": 0.9638,
+    "Medial OA": 0.9743
+   }
+  },
+  {
+   "ep": 6,
+   "loss": 0.5005847664089464,
+   "sec": 4826
+  },
+  {
+   "ep": 7,
+   "loss": 0.49107280766178746,
+   "sec": 5477,
+   "oof_ema": {
+    "Lateral Meniscus": 0.9516,
+    "Lateral OA": 0.9046,
+    "Medial Meniscus": 0.9701,
+    "Medial OA": 0.9775
+   }
+  },
+  {
+   "ep": 8,
+   "loss": 0.4847650155361337,
+   "sec": 6212
+  },
+  {
+   "ep": 9,
+   "loss": 0.4794163224506419,
+   "sec": 6857,
+   "oof_ema": {
+    "Lateral Meniscus": 0.9527,
+    "Lateral OA": 0.9106,
+    "Medial Meniscus": 0.9711,
+    "Medial OA": 0.9792
+   }
+  }
+ ],
+ "n_train": 3508,
+ "n_oof": 870,
+ "n_holdout": 29,
+ "members": [
+  "last",
+  "ema"
+ ],
+ "side_source": {
+  "tag": 2178,
+  "model": 2229,
+  "x": 0
+ },
+ "oof": {
+  "Lateral Meniscus": 0.9562320518495817,
+  "Lateral OA": 0.9123408185087976,
+  "Medial Meniscus": 0.9719571685484714,
+  "Medial OA": 0.9797503911250178
+ },
+ "holdout29": {
+  "Lateral Meniscus": 0.8952380952380953,
+  "Lateral OA": 1.0,
+  "Medial Meniscus": 0.9666666666666667,
+  "Medial OA": 0.961111111111111
+ }
+}

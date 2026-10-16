@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 
 import numpy as np
+import pytest
 import torch
 
 REPO = Path(__file__).resolve().parents[1]
@@ -81,3 +82,120 @@ def test_medial_variant_is_mirrored(tmp_path):
     ds = rs.RegionTiles(c, "tf", ["s0"], labels, labels, left, False)
     lat, med = ds[0][0]["x0"], ds[1][0]["x0"]      # left knee: +x is lateral
     assert lat.sum() > 0 and med.sum() == 0
+
+
+def test_seqfuse_channels_are_fluid_nonfluid_difference(tmp_path):
+    c = _corpus(tmp_path)
+    c.study(0)
+    v = np.array(c.vols[0]); v[:] = 0
+    v[0, 0:22] = 200        # SagF bright, SagNF dark -> difference channel above 0.5
+    v[0, 22:40] = 50
+    c.vols = [v]
+    labels = {u_: np.zeros(12, np.float32) for u_ in c.ids}
+    left, _ = c.left_prob()
+    adj = rs.RegionTiles(c, "rec", ["s0"], labels, labels, left, False)[0][0]
+    fus = rs.RegionTiles(c, "rec", ["s0"], labels, labels, left, False, chan="seqfuse")[0][0]
+    g = [i for i, d in enumerate(rs.REGIONS["rec"]["groups"]) if d["block"] == "SagF"][0]
+    x = fus[f"x{g}"]
+    m = x[:, 0] > 0.5                               # inside the imaged field (the box is wider than the 140 mm crop)
+    assert m.float().mean() > 0.5
+    assert torch.allclose(x[:, 0][m], torch.tensor(200 / 255), atol=1e-3)
+    assert torch.allclose(x[:, 1][m], torch.tensor(50 / 255), atol=1e-3)          # same footprint: registered in patient mm
+    assert torch.allclose(x[:, 2], (0.5 + (x[:, 0] - x[:, 1]) / 2).clamp(0, 1), atol=1e-6)
+    a0 = adj[f"x{g}"]
+    assert torch.allclose(a0[:, 1][m], torch.tensor(200 / 255), atol=1e-3)        # default: adjacent slices of one series
+    for gi, d in enumerate(rs.REGIONS["rec"]["groups"]):                                           # other groups unchanged
+        if d["block"] not in rs.PARTNER:
+            assert torch.equal(adj[f"x{gi}"], fus[f"x{gi}"])
+
+
+def test_aux_grades_targets_are_masked_ordinal(tmp_path):
+    import pandas as pd
+    c = _corpus(tmp_path)
+    g = pd.DataFrame({"StudyInstanceUID": list(c.ids)})
+    for f in rs.LAB:
+        g[f] = 0
+    g["Lateral OA"] = [4, 1, 2, 0]          # severe, not mentioned, low-grade, explicitly normal
+    g["Medial OA"] = [3, 3, 1, 1]
+    g.to_parquet(tmp_path / "grades.parquet")
+    aux = rs.load_aux(str(tmp_path / "grades.parquet"), 0.6)
+    labels = {u: np.random.rand(12).astype(np.float32) for u in c.ids}
+    weights = {u: np.ones(12, np.float32) for u in c.ids}
+    left, _ = c.left_prob()
+    ds = rs.RegionTiles(c, "tf", list(c.ids), labels, weights, left, False, aux=aux)
+    got = {ds.items[i]: ds[i][1:] for i in range(len(ds))}          # (uid, variant) -> (y, w); variant 0 = lateral
+    y, w = got[("s0", 0)]
+    assert y.shape == (5,) and y[2:].tolist() == [1, 1, 1] and np.allclose(w[2:], 0.2)
+    assert got[("s1", 0)][1][2:].tolist() == [0, 0, 0]              # not mentioned -> unknown, no loss
+    assert got[("s2", 0)][0][2:].tolist() == [1, 0, 0] and got[("s3", 0)][0][2:].tolist() == [0, 0, 0]
+    assert np.allclose(got[("s3", 0)][1][2:], 0.2)                  # explicitly normal -> known negative
+    assert got[("s0", 1)][0][2:].tolist() == [1, 1, 0] and got[("s2", 1)][1][2:].tolist() == [0, 0, 0]   # medial variant
+    assert np.allclose(got[("s0", 0)][0][:2], labels["s0"][[rs.L["Lateral Meniscus"], rs.L["Lateral OA"]]])
+
+
+def test_aux_grades_train_and_predict_end_to_end(tmp_path, monkeypatch):
+    """A --aux_grades model trains, saves n_aux, and --predict returns only the region's findings."""
+    import pandas as pd
+    import sys
+    c = _corpus(tmp_path, n=8)
+    ids = list(c.ids)
+    tr = pd.DataFrame({"StudyInstanceUID": ids})
+    for f in rs.LAB:
+        tr[f] = [1.0, 0.0] + [np.nan] * 6                           # s0, s1 = expert studies
+    tr.to_csv(tmp_path / "train.csv", index=False)
+    lab = pd.DataFrame({"StudyInstanceUID": ids, **{f: np.random.rand(8) for f in rs.LAB}})
+    lab.to_parquet(tmp_path / "labels.parquet")
+    g = pd.DataFrame({"StudyInstanceUID": ids, **{f: np.random.randint(0, 5, 8) for f in rs.LAB}})
+    g.to_parquet(tmp_path / "grades.parquet")
+    json.dump({"folds": {u: i % 2 for i, u in enumerate(ids)}}, open(tmp_path / "folds.json", "w"))
+    json.dump(["s1"], open(tmp_path / "hold.json", "w"))
+    out = tmp_path / "out"
+    base = ["region_spec.py", "--data_root", str(tmp_path), "--n_shards", "1", "--out", str(out), "--workers", "0", "--bs", "2"]
+    monkeypatch.setattr(sys, "argv", base + [
+        "--labels", str(tmp_path / "labels.parquet"), "--region", "pf", "--train_csv", str(tmp_path / "train.csv"),
+        "--fold_file", str(tmp_path / "folds.json"), "--holdout", str(tmp_path / "hold.json"), "--arch", "resnet18",
+        "--no_pretrained", "--smoke", "--tag", "t", "--aux_grades", str(tmp_path / "grades.parquet")])
+    assert rs.main() == 0
+    ck = torch.load(out / "raptor_rs_t.pt", map_location="cpu", weights_only=False)
+    assert ck["n_aux"] == 3 and ck["model"]["cls_b"].shape == (4,)
+    monkeypatch.setattr(sys, "argv", base + ["--labels", "x", "--region", "pf", "--tag", "p", "--eval_passes", "1",
+                                             "--predict", f"{out / 'raptor_rs_t_last.pt'},{out / 'raptor_rs_t.pt'}"])
+    assert rs.main() == 0
+    z = np.load(out / "raptor_rspred_p.npz")
+    k = rs.L["PF OA"]
+    assert z["pred"].shape == (8, 12) and np.isfinite(z["pred"][:, k]).all()
+    assert np.isnan(np.delete(z["pred"], k, axis=1)).all()
+
+
+def test_predict_only_findings_scores_one_variant(tmp_path, monkeypatch):
+    """--only_findings 'Lateral OA' scores the lateral compartment alone: same numbers as the full call, medial NaN."""
+    import pandas as pd
+    import sys
+    c = _corpus(tmp_path, n=8)
+    ids = list(c.ids)
+    tr = pd.DataFrame({"StudyInstanceUID": ids})
+    for f in rs.LAB:
+        tr[f] = [1.0, 0.0] + [np.nan] * 6
+    tr.to_csv(tmp_path / "train.csv", index=False)
+    pd.DataFrame({"StudyInstanceUID": ids, **{f: np.random.rand(8) for f in rs.LAB}}).to_parquet(tmp_path / "labels.parquet")
+    json.dump({"folds": {u: i % 2 for i, u in enumerate(ids)}}, open(tmp_path / "folds.json", "w"))
+    json.dump(["s1"], open(tmp_path / "hold.json", "w"))
+    out = tmp_path / "out"
+    base = ["region_spec.py", "--data_root", str(tmp_path), "--n_shards", "1", "--out", str(out), "--workers", "0", "--bs", "2"]
+    monkeypatch.setattr(sys, "argv", base + [
+        "--labels", str(tmp_path / "labels.parquet"), "--region", "tf", "--train_csv", str(tmp_path / "train.csv"),
+        "--fold_file", str(tmp_path / "folds.json"), "--holdout", str(tmp_path / "hold.json"), "--arch", "resnet18",
+        "--no_pretrained", "--smoke", "--tag", "t"])
+    assert rs.main() == 0
+    pred = base + ["--labels", "x", "--region", "tf", "--eval_passes", "1", "--predict", str(out / "raptor_rs_t.pt")]
+    monkeypatch.setattr(sys, "argv", pred + ["--tag", "all"])
+    assert rs.main() == 0
+    monkeypatch.setattr(sys, "argv", pred + ["--tag", "lat", "--only_findings", "Lateral OA", "--channels_last"])
+    assert rs.main() == 0
+    full, lat = np.load(out / "raptor_rspred_all.npz")["pred"], np.load(out / "raptor_rspred_lat.npz")["pred"]
+    kl = [rs.L["Lateral Meniscus"], rs.L["Lateral OA"]]; km = [rs.L["Medial Meniscus"], rs.L["Medial OA"]]
+    assert np.isfinite(full[:, kl + km]).all()
+    assert np.allclose(lat[:, kl], full[:, kl], atol=1e-5) and np.isnan(lat[:, km]).all()
+    monkeypatch.setattr(sys, "argv", pred + ["--tag", "bad", "--only_findings", "PF OA"])
+    with pytest.raises(SystemExit):
+        rs.main()
