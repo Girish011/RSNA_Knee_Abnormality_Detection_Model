@@ -120,7 +120,7 @@ Code lives in the public monorepo: [RSNA_Knee_Abnormality_Detection_Model](https
 
 ## Attribution
 
-Series context: [Post 01](01-imaging-playbook.html) · [Post 02](02-eda-problem-shape.html).
+Series context: [Post 01](01-imaging-playbook.html) · [Post 02](02-eda-problem-shape.html) · next: [Post 04](04-full-campaign.html).
 
 Competition: [RSNA Knee Abnormality Detection](https://www.kaggle.com/competitions/rsna-knee-abnormality-detection).
 

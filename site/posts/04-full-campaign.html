@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>04: The full campaign - RSNA Knee</title>
+  <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body>
+  <header class="site-header">
+    <p class="brand">RSNA Knee Imaging Playbook</p>
+    <nav>
+      <a href="../index.html">Series</a>
+      <a href="../about.html">About</a>
+      <a href="https://github.com/Girish011/RSNA_Knee_Abnormality_Detection_Model">Code</a>
+    </nav>
+  </header>
+
+  <main>
+    <article>
+      <p class="meta">Post 04</p>
+      <h1>The Full Campaign: What We Built and What the Leaderboard Said</h1>
+      <p>This is Post 04 of the <a href="../index.html">RSNA Knee Imaging Playbook</a>. The contest, <a href="https://www.kaggle.com/competitions/rsna-knee-abnormality-detection">RSNA Knee Abnormality Detection</a>, closed on 22 October 2026. This post covers the whole campaign after <a href="03-first-simple-models.html">Post 03</a>: what we built, what each step scored, and where the time and money went. <a href="05-winning-solutions.html">Post 05</a> compares it with the winning solutions.</p>
+      <p><strong>Final result:</strong> private leaderboard <strong>0.942</strong> macro AUC, rank <strong>1,336 of 6,425</strong> teams. No medal. The bronze line was also 0.942, but it fell inside a tie of 1,322 teams that had all submitted copies of the same public notebooks, and ties are ordered by submission time.</p>
+      <h2>The short version</h2>
+      <table>
+      <thead>
+      <tr>
+      <th>Phase</th>
+      <th>Dates</th>
+      <th>Best public score</th>
+      <th>What decided it</th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr>
+      <td>Greenfield models, keyword labels</td>
+      <td>Aug to 22 Sep</td>
+      <td>no submission (gold-58 ≈ 0.59 to 0.73)</td>
+      <td>thin input, weak labels, a noisy ruler</td>
+      </tr>
+      <tr>
+      <td>Own CoAtNet on the public geometry</td>
+      <td>23 to 28 Sep</td>
+      <td>0.920</td>
+      <td>public LLM report labels + a dense 80-slice input</td>
+      </tr>
+      <tr>
+      <td>Public stack + our members</td>
+      <td>29 Sep to 8 Oct</td>
+      <td>0.945</td>
+      <td>the public stack; our models added 0.001 to 0.002</td>
+      </tr>
+      <tr>
+      <td>Forks of new public notebooks</td>
+      <td>9 to 17 Oct</td>
+      <td>0.950 → 0.958</td>
+      <td>other people's new models</td>
+      </tr>
+      <tr>
+      <td>Specialists on weak findings</td>
+      <td>12 to 22 Oct</td>
+      <td>0.958 (no change)</td>
+      <td>gains too small to see at three decimals</td>
+      </tr>
+      <tr>
+      <td>Private leaderboard</td>
+      <td>23 Oct</td>
+      <td><strong>0.942</strong></td>
+      <td>the same as every copy of the public notebooks</td>
+      </tr>
+      </tbody>
+      </table>
+      <figure class="post-figure"><img src="../assets/campaign_timeline.png" alt="Our 96 submissions over time" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 0 auto;" /></figure>
+      <p><em>Every scored submission at 0.90 or above. Probes that blank or reverse a column on purpose are left out. Blue dots are our own models with no public notebook inside; orange dots contain a public notebook.</em></p>
+      <p>Our own models alone never scored above <strong>0.939</strong> on the public board. The winners' single models scored <strong>0.964 to 0.969</strong>. Post 05 shows that most of that gap came from one thing: the quality of the training labels.</p>
+      <h2>Phase 1: greenfield models (August to 22 September)</h2>
+      <p>Posts 01 to 03 describe this phase. In summary:</p>
+      <ul>
+      <li><strong>Model:</strong> frozen DINOv2 (a pretrained vision transformer) on a thin cache: 3 series × 12 slices × 224 px per study.</li>
+      <li><strong>Labels:</strong> keyword rules over the multilingual reports, later a constrained Qwen LLM fill.</li>
+      <li><strong>Ruler:</strong> macro AUC on the 58 expert-labelled training studies ("gold-58").</li>
+      </ul>
+      <p>What we learned:</p>
+      <ol>
+      <li><strong>The ruler was too noisy for our A/B tests.</strong> Three seeds of the same recipe gave 0.592 ± 0.021 on gold-58. A difference of 0.005 between two recipes was noise. We set the keep margin from measured seed noise and banned single-seed comparisons.</li>
+      <li><strong>Per-label gold reads are noise at n = 58.</strong> Two label sets with identical ACL labels gave ACL AUCs of 0.770 and 0.596.</li>
+      <li><strong>Most "obvious" upgrades failed on the honest ruler:</strong> unfreezing the backbone (collapse, −0.114), 24 slices instead of 12, 336 px instead of 224, more series, expert-only fine-tuning, and an external knee MRI set (KneeMRI ACL AUC 0.53, close to chance, because of domain shift).</li>
+      <li><strong>Label micro-tuning had stopped paying.</strong> Dropping coin-flip LLM fills for ACL and MCL helped once (+0.024 on 46 experts). After that, label variants were tied within noise.</li>
+      </ol>
+      <p>By 22 September the best greenfield model was far below the public notebooks (about 0.936 on the public board). We changed course.</p>
+      <h2>Phase 2: public geometry, public labels, own training (23 to 28 September)</h2>
+      <ul>
+      <li><strong>Labels:</strong> two public LLM report-label tables (CC0) replaced our keyword teachers. On the experts they scored <strong>0.870</strong> macro AUC against <strong>0.63 to 0.65</strong> for keywords. This was the largest single gain of our campaign, and it came from a better teacher, not a better model.</li>
+      <li><strong>Input:</strong> our own 80-slice "dense80" cache, built with the public test-time slice picker so training and test used the same geometry.</li>
+      <li><strong>Training:</strong> a CoAtNet-384 on rented RunPod GPUs (~$0.34 to $0.74 an hour).</li>
+      <li><strong>Search:</strong> an autonomous loop in which a DeepSeek planner proposed one-field changes to a typed recipe and launched pods.</li>
+      </ul>
+      <p>First own-weights submission: fold-0 proxy <strong>0.9366</strong>, public <strong>0.920</strong>. The local proxy was optimistic by 0.017. The autonomous loop mostly varied learning rate, weight decay and epochs, and those changes stayed within ±0.003. We later closed that axis in code, and paused the strategist after 40 turns ($3.65) produced nothing new.</p>
+      <h2>Phase 3: our models inside the public stack (29 September to 8 October)</h2>
+      <p>A public "D4" stack scored 0.943. We added our CoAtNet members by swapping them into its slots or by rank-blending them at the final level.</p>
+      <table>
+      <thead>
+      <tr>
+      <th>Submission</th>
+      <th style="text-align: right;">Public</th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr>
+      <td>D4 stack + our model in the v5 slot</td>
+      <td style="text-align: right;">0.943</td>
+      </tr>
+      <tr>
+      <td>+ a 4-seed soup of our best-label members</td>
+      <td style="text-align: right;">0.944</td>
+      </tr>
+      <tr>
+      <td>+ CoAtNet branch weight +0.15</td>
+      <td style="text-align: right;"><strong>0.945</strong></td>
+      </tr>
+      <tr>
+      <td>+ per-finding tails, fused labels, fine-tuned DINO, 15 to 20 own models at w 0.25 to 0.60</td>
+      <td style="text-align: right;">0.939 to 0.944</td>
+      </tr>
+      </tbody>
+      </table>
+      <p>What we measured:</p>
+      <ul>
+      <li><strong>Self-training made labels agree better with the experts but did not make better models.</strong> Labels fused from report and image predictions scored 0.946 to 0.949 against experts (report labels 0.883), but members trained on them were flat (0.9315 to 0.9330 on gold-58).</li>
+      <li><strong>Signal added inside a big stack is diluted.</strong> Our members sat in slots with about 0.25 effective weight. A +0.011 expert gain there showed as +0.001 on the board, and smaller transplants did not show at all.</li>
+      <li><strong>Our models alone scored 0.928 to 0.939.</strong> Only a model whose errors differ from the stack's, and which is strong on its own, can lift a blend. Ours were neither.</li>
+      <li><strong>We found a leak in our own baseline.</strong> A public checkpoint we warm-started from had seen every training study, so its out-of-fold scores were inflated by about 0.03 to 0.04. Three of our model families looked like failures until we compared them with a clean ImageNet-initialised baseline.</li>
+      </ul>
+      <h2>The pilot we parked (9 October)</h2>
+      <p>On 9 October we tested an <strong>LLM image reader</strong>: Claude Opus with a slice viewer read two training studies end to end (69 to 81 views, ~200k tokens each) and gave Present/Absent per finding. It agreed with the experts on 17 of 24 cells. It handled ACL, effusion, Baker's cyst, gross OA and MCL well, and struggled with menisci, synovitis, fine cartilage and contusion versus fracture.</p>
+      <p>An 18-study test would have cost about $60. We parked it to keep the money. <strong>In hindsight this was our biggest miss.</strong> An LLM agent reading the images to build training labels is the step every top team took (Post 05).</p>
+      <h2>Phase 4: forking the new public notebooks (9 to 17 October)</h2>
+      <p>From 7 October new public notebooks reached 0.950, then 0.954, 0.956 and 0.958. Hundreds of teams forked them, so a forked score did not change anyone's rank. We forked each new best:</p>
+      <table>
+      <thead>
+      <tr>
+      <th>Date</th>
+      <th>Fork</th>
+      <th style="text-align: right;">Public</th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr>
+      <td>9 Oct</td>
+      <td>four public notebooks, unchanged</td>
+      <td style="text-align: right;">0.950</td>
+      </tr>
+      <tr>
+      <td>14 Oct</td>
+      <td>blend-mine (expert-trained CoAtNet + compact ConvNeXt)</td>
+      <td style="text-align: right;">0.954</td>
+      </tr>
+      <tr>
+      <td>17 Oct</td>
+      <td>an older blend version</td>
+      <td style="text-align: right;">0.956</td>
+      </tr>
+      <tr>
+      <td>17 Oct</td>
+      <td>blend-mine and goodpjw2008 0.958 versions</td>
+      <td style="text-align: right;"><strong>0.958</strong></td>
+      </tr>
+      </tbody>
+      </table>
+      <p>To see how the public steps were made, we read the notebooks. Each step from 0.950 came from <strong>one new independent model</strong> rank-blended at 0.2 to 0.5: a model with zoomed, side-aware local views of the knee, or one trained on knee-compartment crops. A third general model at 0.25 added nothing.</p>
+      <p>Own experiments during this phase:</p>
+      <ul>
+      <li><strong>Sequence-fused windows</strong> (fluid-sensitive slice, non-fluid slice and their difference as RGB): 0.930 alone against 0.929 for its twin. Closed.</li>
+      <li><strong>Training on the public expert-trained model's ordering of the training studies</strong> ("labels_t2"): <strong>0.939</strong> alone against 0.929 for an identical control, +0.010. This was our best own-model result, and it was another label effect.</li>
+      </ul>
+      <h2>Phase 5: specialists for the weak findings (12 to 22 October)</h2>
+      <p>The 0.950 to 0.958 notebooks were weakest on Lateral OA, Synovitis, PF OA and the menisci. We trained region specialists on knee-compartment crops on RunPod and read each finding's AUC on the leaderboard with <strong>column probes</strong>.</p>
+      <p><strong>Column probe:</strong> submit real predictions in one column and 0.5 everywhere else. The other 11 columns each score 0.5, so the finding's AUC is 12 × score − 5.5 (about ±0.006).</p>
+      <table>
+      <thead>
+      <tr>
+      <th>Finding</th>
+      <th style="text-align: right;">Public base</th>
+      <th style="text-align: right;">Our specialist alone</th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr>
+      <td>Lateral OA</td>
+      <td style="text-align: right;">0.896 (0.950 base), 0.908 (0.958 base)</td>
+      <td style="text-align: right;">0.908</td>
+      </tr>
+      <tr>
+      <td>Medial Meniscus</td>
+      <td style="text-align: right;">0.980</td>
+      <td style="text-align: right;">0.980</td>
+      </tr>
+      <tr>
+      <td>Lateral Meniscus</td>
+      <td style="text-align: right;">0.950</td>
+      <td style="text-align: right;">0.944</td>
+      </tr>
+      <tr>
+      <td>PF OA</td>
+      <td style="text-align: right;">0.926</td>
+      <td style="text-align: right;">0.920</td>
+      </tr>
+      </tbody>
+      </table>
+      <p>The specialists caught up with the public base on two findings and did not beat it on any. Added at weight 0.4 to 0.5, every candidate still scored 0.957 or 0.958.</p>
+      <p>A related tool, the <strong>reversal probe</strong>, flips one column (1 − p) and reads the drop. It told us which findings had room to improve before we spent GPU time on them.</p>
+      <h2>Finals and the private board</h2>
+      <p>Kaggle orders identical scores by submission time, so a plain copy of a public notebook ranks behind every earlier copy. Our two finals were:</p>
+      <ol>
+      <li>The 0.958 blend-mine copy + our compartment specialist at 0.4 on Lateral OA and Medial Meniscus (public 0.958 → private <strong>0.941</strong>).</li>
+      <li>A plain goodpjw2008 0.958 copy (public 0.958 → private <strong>0.942</strong>).</li>
+      </ol>
+      <p>The highest private score among all 96 of our submissions was 0.942. No choice of finals would have won a medal. All the public 0.958 notebooks finished at 0.941 to 0.942 private. They lost 0.016 between boards, while the winners lost 0.009 to 0.013 (Post 05).</p>
+      <h2>Operational lessons</h2>
+      <p>These cost us days, not points:</p>
+      <ul>
+      <li><strong>Never loop on a refused submission.</strong> A launchd job that retried a refused submit got the whole account locked for about 40 hours, website included. A submit script should make one call and stop on any error other than the daily cap.</li>
+      <li><strong>A forked notebook attaches the latest dataset versions.</strong> Twice a fork scored 0.001 to 0.002 below its source, and once it failed three times, because a dataset had changed underneath it. Check the model files a notebook expects against each dataset's current manifest before pushing.</li>
+      <li><strong>Hidden-test run time varies.</strong> The same code took 6 to 8.5 hours of the 9-hour limit. Every optional stage needs a time guard that falls back to the base output.</li>
+      <li><strong>Kaggle GPU quota (30 h a week) runs out mid-week.</strong> Use it only to save submission notebooks and train elsewhere.</li>
+      <li><strong>Unattended scripts on a laptop die</strong> with sleep and reboots. Use <code>caffeinate</code>, and check the processes at the start of every session.</li>
+      </ul>
+      <h2>What the campaign proved</h2>
+      <ol>
+      <li><strong>Labels were the ceiling, and we saw it twice without acting on it.</strong> Public LLM labels instead of keywords gave our biggest gain. Training on a better model's ordering gave +0.010. A label-construction pilot looked promising and was parked.</li>
+      <li><strong>Improving a big public stack by 0.001 steps does not win medals.</strong> The public stack ended in a 1,322-team tie on both boards. A medal needed a model that beat the stack on its own.</li>
+      <li><strong>Leaderboard probes were our most reliable ruler.</strong> Column and reversal probes gave per-finding AUC on the real test distribution. Gold-58 put models in the wrong order three times.</li>
+      <li><strong>Automation needs a goal it can reach.</strong> The autonomous loop ran pods for weeks, but only on the parts of the recipe that did not matter.</li>
+      </ol>
+      <h2>Attribution</h2>
+      <p>Series: <a href="01-imaging-playbook.html">Post 01</a> · <a href="02-eda-problem-shape.html">Post 02</a> · <a href="03-first-simple-models.html">Post 03</a> · <a href="05-winning-solutions.html">Post 05</a>.</p>
+      <p>Public notebooks we forked or built on (Apache 2.0): heliosli, goodpjw2008, evgendvorkin, jiweiliu, pjmathematician. Public report-label tables (CC0): pilkwang, dreaddevelopment.</p>
+      <p>Code, probes and the full experiment log (<code>docs/STATUS.md</code>, <code>docs/experiments.md</code>, <code>docs/DECISIONS.md</code>) are in the public monorepo: <a href="https://github.com/Girish011/RSNA_Knee_Abnormality_Detection_Model">RSNA_Knee_Abnormality_Detection_Model</a>.</p>
+    </article>
+  </main>
+
+  <footer class="site-footer">
+    <p><a href="../index.html">Back to series hub</a> · <a href="03-first-simple-models.html">Previous post</a> · <a href="05-winning-solutions.html">Next post</a></p>
+  </footer>
+</body>
+</html>
