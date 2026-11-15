@@ -1,6 +1,6 @@
 # How the Winners Did It, and What to Learn
 
-This is Post 05, the last post of the [RSNA Knee Imaging Playbook](../index.html). [Post 04](04-full-campaign.html) covered our own campaign (private 0.942, rank 1,336 of 6,425). This post summarises the top teams' published write-ups and compares them with what we did. Every number here comes from the authors' own posts on the competition forum, linked at the end.
+This is Post 05 of the [RSNA Knee Imaging Playbook](../index.html). [Post 04](04-full-campaign.html) covered our own campaign (private 0.942, rank 1,336 of 6,425). This post summarises the top teams' published write-ups and compares them with what we did. Every number here comes from the authors' own posts on the competition forum, linked at the end.
 
 ---
 
@@ -171,4 +171,4 @@ Write-ups on the competition forum (all retrieved 5 November 2026):
 - [Efficiency track 3rd place](https://www.kaggle.com/competitions/rsna-knee-abnormality-detection/discussion/754458)
 - [Host ruling on commercial LLM APIs](https://www.kaggle.com/competitions/rsna-knee-abnormality-detection/discussion/733965)
 
-Series: [Post 01](01-imaging-playbook.html) · [Post 02](02-eda-problem-shape.html) · [Post 03](03-first-simple-models.html) · [Post 04](04-full-campaign.html).
+Series: [Post 01](01-imaging-playbook.html) · [Post 02](02-eda-problem-shape.html) · [Post 03](03-first-simple-models.html) · [Post 04](04-full-campaign.html) · next: [Post 06](06-agent-search-loop.html).

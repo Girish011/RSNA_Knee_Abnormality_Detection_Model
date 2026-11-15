@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>06: The agent search loop - RSNA Knee</title>
+  <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body>
+  <header class="site-header">
+    <p class="brand">RSNA Knee Imaging Playbook</p>
+    <nav>
+      <a href="../index.html">Series</a>
+      <a href="../about.html">About</a>
+      <a href="https://github.com/Girish011/RSNA_Knee_Abnormality_Detection_Model">Code</a>
+    </nav>
+  </header>
+
+  <main>
+    <article>
+      <p class="meta">Post 06</p>
+      <h1>Letting an Agent Run the Search: What MLEvolve-Style Search Did for Us</h1>
+      <p>This is Post 06 of the <a href="../index.html">RSNA Knee Imaging Playbook</a>. <a href="04-full-campaign.html">Post 04</a> mentioned an "autonomous loop" in one paragraph. This post covers it in full: we adapted the ideas of <strong>MLEvolve</strong>, an agent that searches over machine-learning experiments, to our competition, and let it plan, launch and score training runs on rented GPUs from 24 September to 2 October 2026. Below is how we built it, what it found, and where it failed. The last sections cover the other half of the spend: the hundreds of runs we launched by hand or by script around it, up to the last week of the competition.</p>
+      <p><strong>Short answer:</strong> the harness was useful, and the search inside it was not. Across the whole campaign we launched <strong>262 rented GPU pods that trained 359 models, made 96 leaderboard submissions and spent roughly $300</strong> on GPUs and LLM calls. The agent loop itself ran 31 fold-0 training experiments and 38 free "dream" blends unattended, plus a long tail of full-data models. It made every result comparable, and its best run later served as our clean reference model. But it searched the wrong levers. Its best model scored <strong>0.920</strong> on the public leaderboard, below the public notebooks it started from (0.936). Everything we trained afterwards, by hand and by script, ended where the public notebooks already were: our best leaderboard score was 0.958, level with them, and the private score was <strong>0.942</strong>, rank 1,336 of 6,425.</p>
+      <h2>The short version</h2>
+      <table>
+      <thead>
+      <tr>
+      <th>Question</th>
+      <th>Answer</th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr>
+      <td>What did we build?</td>
+      <td>An MLEvolve-style search loop: experiment graph, memory with a ban list, a typed recipe the LLM edits, Dream-RSI replay, DeepSeek as planner</td>
+      </tr>
+      <tr>
+      <td>How long did it run?</td>
+      <td>Fold-0 search 24 to 29 Sep; a DeepSeek "strategist" 29 Sep to 2 Oct</td>
+      </tr>
+      <tr>
+      <td>How much did the loop run?</td>
+      <td>31 fold-0 experiments (15 finished, 16 failed; 83 pod launches in all), 38 dreams, 50 full-data member jobs (100 models), 150 planning steps, 80 strategist turns, 16 LLM relabel jobs</td>
+      </tr>
+      <tr>
+      <td>How much did the whole campaign run?</td>
+      <td>262 pods, 359 models, 96 leaderboard submissions, about $300 (RunPod about $250, DeepSeek about $50)</td>
+      </tr>
+      <tr>
+      <td>Best result</td>
+      <td>Fold-0 score 0.9215 → 0.9366 (+0.015); public leaderboard 0.920</td>
+      </tr>
+      <tr>
+      <td>What moved the score</td>
+      <td>Training labels and the number of training windows per study. Learning rate, weight decay and epoch changes moved it −0.014 to +0.002</td>
+      </tr>
+      <tr>
+      <td>Best single finding</td>
+      <td>An LLM relabel of Synovitis: 0.80 → 0.87 on the experts, in 4 of 4 models</td>
+      </tr>
+      <tr>
+      <td>What the rest of the runs found</td>
+      <td>Nothing beyond the public notebooks: the best own ensemble scored 0.935 to 0.936 alone and added nothing to the stack</td>
+      </tr>
+      <tr>
+      <td>What we kept</td>
+      <td>The experiment graph, fixed protocol, per-finding judging of labels, and the submit gate</td>
+      </tr>
+      <tr>
+      <td>What we stopped</td>
+      <td>Fold-0 search on 29 Sep; the strategist on 2 Oct</td>
+      </tr>
+      </tbody>
+      </table>
+      <figure class="post-figure"><img src="../assets/search_loop_nodes.png" alt="The search loop&#x27;s training runs and dreams" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 0 auto;" /></figure>
+      <p><em>Each dot is one finished fold-0 experiment of the agent loop, placed by launch time and coloured by what it changed. The dashed line is the best free blend of finished runs. Crosses are runs that failed. This is only the loop's search; the whole campaign is under "Every run" below.</em></p>
+      <h2>Why we tried it</h2>
+      <p>On 23 September we were far behind. Our greenfield models scored about 0.59 on the 58 expert-labelled studies, and a public notebook scored 0.936 on the leaderboard. We had four weeks, a $300 cap, and one laptop. Driving every GPU job by hand meant idle GPUs between jobs and constant monitoring.</p>
+      <p>Two papers suggested a way to search cheaply:</p>
+      <ul>
+      <li><strong><a href="https://arxiv.org/html/2606.06473v1">MLEvolve</a></strong> (<a href="https://github.com/InternScience/MLEvolve">code</a>) treats ML engineering as a graph search. Each node is an experiment. A Monte Carlo graph search picks which node to extend next; "retrospective memory" stores what worked and failed; a planner model proposes changes and a coder model writes them.</li>
+      <li><strong><a href="https://arxiv.org/html/2609.14858v1">Dream-RSI</a></strong> (<a href="https://github.com/zhengkid/Dream-RSI">code</a>) treats a finished experiment tree as a replay world: some new ideas can be scored from saved predictions, with no new training. We called these <strong>dreams</strong>.</li>
+      </ul>
+      <p>Our plan said it plainly at the time: these tools make search cheaper and stop repeats, but they do not create the extra accuracy we needed. That has to come from better labels or better input.</p>
+      <h2>How we adapted MLEvolve</h2>
+      <p>Running MLEvolve as published on raw MRI would have spent our budget on install failures and on ideas we had already ruled out. We kept its mechanisms and changed the rest.</p>
+      <p><strong>1. A typed recipe instead of free code.</strong> The planner could not write training code. It could only change fields of a fixed recipe (<code>agent/genome.py</code>): corpus, label set, training windows per study (a window is three neighbouring slices), epochs, learning rates, weight decay. Each value came from a short menu. A "primary" step changed one field; branch steps could change two or three.</p>
+      <p><strong>2. Memory with a ban list.</strong> The static half of the memory (<code>agent/memory/cold_start.md</code>) held every measured result from August and September, including a list of banned ideas: unfreezing the backbone on noisy labels, training longer after the expert score peaked, many-backbone ensembles, and judging small changes on the 58 experts. The planner's first proposal was blocked by this list: it tried to unfreeze the backbone, which had collapsed the expert score by 0.114 on 21 September.</p>
+      <p><strong>3. The experiment graph and search.</strong> <code>agent/journal.py</code> stored every node with its parent, recipe, scores and cost. <code>agent/search.py</code> picked the next parent with a progressive tree search (UCT, which balances the best node so far against nodes tried less often) and chose an operator: extend the best node, branch from a sibling, cross two branches, or aggregate. Reward followed the paper: −1 for a failed run, 1 for a valid run with no gain, 2 for a new branch best.</p>
+      <p><strong>4. A fixed, paired protocol.</strong> Every run used seed 42 and the same five study folds, and trained on folds 1 to 4. The <strong>fold-0 score</strong> (our "proxy") was macro AUC on the 870 fold-0 studies where the two public LLM label tables agreed. The 58 expert studies were split 29 for checking and 29 held out; the held-out score was never shown to the planner. A child counted as a gain only if seed, folds and corpus matched its parent.</p>
+      <p><strong>5. Dreams first.</strong> After each finished run, the loop rank-blended the saved fold-0 predictions of the best runs, pairwise and greedily per finding. Dreams cost nothing and took seconds.</p>
+      <p><strong>6. DeepSeek as planner, with tools.</strong> DeepSeek (Flash and V4 Pro models) planned through function calls: <code>launch_runpod_train</code>, <code>request_relabel</code> (an LLM re-reads the reports for chosen findings), <code>get_runpod_status</code> and <code>stop_search</code>. The host checked every proposal before anything ran.</p>
+      <p><strong>7. Hard gates.</strong> One pod at a time, a $300 campaign cap counting GPU and LLM spend, user approval for any action over $10, and no leaderboard submissions by the agent. A file named <code>STOP</code> halted the loop.</p>
+      <p>The loop ran under <code>launchd</code> on the laptop, so it restarted after crashes and reboots.</p>
+      <h2>How it ran</h2>
+      <table>
+      <thead>
+      <tr>
+      <th>Date</th>
+      <th>What happened</th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr>
+      <td>24 Sep</td>
+      <td>Loop live. Baseline run (public recipe, public labels): fold-0 <strong>0.9215</strong>. First relabel (Lateral Meniscus, Fracture): <strong>0.9259</strong></td>
+      </tr>
+      <tr>
+      <td>25 Sep</td>
+      <td>A corpus download hung for 3.7 GPU hours. Our own 80-slice corpus ("dense80") enabled as the default</td>
+      </tr>
+      <tr>
+      <td>26 Sep</td>
+      <td>Loop idled about 7 hours: the search picked dream nodes as parents, which cannot be trained, and the relabel cap parked every tick</td>
+      </tr>
+      <tr>
+      <td>27 Sep</td>
+      <td>User decision: DeepSeek owns every idle tick and may edit allowlisted harness code. Many pods vanished for lack of capacity</td>
+      </tr>
+      <tr>
+      <td>28 Sep</td>
+      <td>12 and 16 training windows per study ran out of GPU memory and were banned in code. Best run <strong>0.9366</strong> (20 epochs). First own-weights leaderboard score: <strong>0.920</strong></td>
+      </tr>
+      <tr>
+      <td>29 Sep</td>
+      <td>Fold-0 search retired. Submissions move to the public stack plus our full-data models. DeepSeek "strategist" starts</td>
+      </tr>
+      <tr>
+      <td>30 Sep</td>
+      <td>Self-training through the loop closed: fused labels gave no better models</td>
+      </tr>
+      <tr>
+      <td>2 Oct</td>
+      <td>Strategist paused by the user</td>
+      </tr>
+      </tbody>
+      </table>
+      <h2>What the search found</h2>
+      <p>The 15 finished runs, grouped by what they changed:</p>
+      <table>
+      <thead>
+      <tr>
+      <th>Change</th>
+      <th style="text-align: right;">Runs</th>
+      <th>Fold-0 score</th>
+      <th>Effect</th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr>
+      <td>Baseline (public recipe)</td>
+      <td style="text-align: right;">1</td>
+      <td>0.9215</td>
+      <td>reference</td>
+      </tr>
+      <tr>
+      <td>Label set, same input</td>
+      <td style="text-align: right;">6</td>
+      <td>0.9233 to 0.9362</td>
+      <td>up to 0.011 between label sets on the same corpus</td>
+      </tr>
+      <tr>
+      <td>Our 80-slice corpus</td>
+      <td style="text-align: right;">1</td>
+      <td>0.9205</td>
+      <td>−0.005 vs the same labels on the public corpus, at first</td>
+      </tr>
+      <tr>
+      <td>8 training windows per study instead of 12</td>
+      <td style="text-align: right;">1</td>
+      <td>0.9344</td>
+      <td><strong>+0.014</strong>, the largest single step</td>
+      </tr>
+      <tr>
+      <td>Learning rate, weight decay, epochs</td>
+      <td style="text-align: right;">6</td>
+      <td>0.9200 to 0.9366</td>
+      <td>−0.014 to +0.002 vs parent</td>
+      </tr>
+      </tbody>
+      </table>
+      <p>Three observations:</p>
+      <ol>
+      <li><strong>The largest gain came from outside the planner.</strong> The switch from 12 to 8 training windows was the host's fallback: when DeepSeek stopped without a valid proposal, the host trained the next untried menu value. It came right after a 16-window run had failed for lack of GPU memory.</li>
+      <li><strong>Optimizer changes were noise or worse.</strong> Six one-field changes to learning rates, weight decay and epochs landed between −0.014 and +0.002. On 29 September we closed this axis in code, so the planner could no longer propose it.</li>
+      <li><strong>Dreams beat every single run, and we never used them.</strong> The best 4-way dream blend scored <strong>0.9407</strong>, +0.004 over the best single run. By the time it existed we had moved submissions to the public stack, where fold-0 models had no slot.</li>
+      </ol>
+      <p><strong>The proxy was optimistic.</strong> The best run scored 0.9366 on fold 0 and <strong>0.920</strong> on the public leaderboard, a gap of 0.017. The proxy measured agreement with report labels on studies where two LLM tables agreed. These are the easier studies, and the hidden test is graded from images.</p>
+      <h2>The strategist and the relabels</h2>
+      <p>From 29 September a second DeepSeek role, the <strong>strategist</strong>, ran every 45 minutes while pods trained. It could analyse per-finding results, request relabels, queue full-data training jobs, and build (but not submit) ensemble notebooks.</p>
+      <p>The best result of the whole loop came from here. Relabel <code>c7ab23d1</code> re-read every report for Synovitis, PF OA and Lateral OA. In four trained models it lifted <strong>Synovitis from 0.80 to 0.87</strong> on the experts. The same relabel <strong>lowered PF OA from 0.86 to 0.80–0.84</strong>, even though its label audit said PF OA labels had improved (0.888 → 0.922 on 29 experts).</p>
+      <p>That taught us a rule we kept: <strong>judge a label change by models trained on it, one finding at a time</strong>, not by how well the labels themselves agree with the experts. The combined label set <code>bestof_v1</code> (the earlier relabel, with Synovitis from <code>c7ab23d1</code>) gave both of its models 0.932 on the experts; every other label set gave 0.923 to 0.928.</p>
+      <p>The rest of the strategist's work was weaker:</p>
+      <ul>
+      <li>44 of 80 turns ended with no action, usually because every route was capped or closed.</li>
+      <li>62 of 80 turns ended in free text instead of the required JSON.</li>
+      <li>A seed-cap bug let it train six seeds of one label set (~$3) before we fixed it.</li>
+      <li>It kept proposing more seeds of models we already had.</li>
+      </ul>
+      <p>On 2 October the user paused it. Our policy file records the reason: the strategist's turns had produced only unapproved seed proposals and non-JSON stops.</p>
+      <h2>Where the agent behaved badly</h2>
+      <p>These are the failure patterns we saw, with counts from the activity log:</p>
+      <ul>
+      <li><strong>It repeated itself.</strong> The planner proposed relabelling Fracture 25 times on 25 and 26 September, with small changes of wording. Retrospective memory stored results, but it did not stop near-duplicate ideas. The relabel cap rejected 21 proposals.</li>
+      <li><strong>It stopped without acting.</strong> 22 planner calls ended with no valid tool call. We made <code>stop_search</code> refusable and added a mandatory retry.</li>
+      <li><strong>The search picked untrainable parents.</strong> Dream nodes scored best, so the tree search selected them, but a blend has no recipe to train. The loop idled about 7 hours until the host resolved dreams to their best real parent.</li>
+      <li><strong>A long-running process ran stale code.</strong> Fixes reached the loop only after a restart. Once a stale import made every tick fail for about 2 hours; once a new flag was silently ignored.</li>
+      <li><strong>Rented GPUs failed often.</strong> Of 16 failed runs, 8 found no GPU capacity, 5 finished without results, and the other 3 were a hung download, a clash between two pods, and a run stopped by the new memory ban. They cost 8.1 of 64.1 GPU hours. We added heartbeats, phantom-pod detection and automatic relaunches.</li>
+      </ul>
+      <h2>What the loop itself cost</h2>
+      <table>
+      <thead>
+      <tr>
+      <th>Item</th>
+      <th>Amount</th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr>
+      <td>Fold-0 training runs</td>
+      <td>64.1 GPU hours on RTX 3090 / 4090 at $0.22 to $0.74 an hour (8.1 h on failed runs)</td>
+      </tr>
+      <tr>
+      <td>DeepSeek relabel jobs</td>
+      <td>16 jobs, $21.98 (2 changed nothing)</td>
+      </tr>
+      <tr>
+      <td>Strategist turns</td>
+      <td>80 turns, $6.80</td>
+      </tr>
+      <tr>
+      <td>Planner</td>
+      <td>150 planning steps, $2.55</td>
+      </tr>
+      </tbody>
+      </table>
+      <p>The loop's LLM side cost about $31. The planning itself was cheap; relabels were where LLM money went. The loop's own ledger of pod costs reads about $66 up to 1 October. That is the smaller part of the bill, as the next sections show.</p>
+      <h2>Every run: the whole campaign</h2>
+      <p>The loop's 31 experiments are not the whole picture. The activity log records every pod launch from 24 September to 16 October: <strong>262 pods that trained 359 models</strong>. The result folders in the repo hold 168 job outputs, 146 of them with saved predictions. The agent loop launched 133 of the pods; the rest came from scripts and from us.</p>
+      <figure class="post-figure"><img src="../assets/search_loop_all_runs.png" alt="Where the rented GPUs went" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 0 auto;" /></figure>
+      <p><em>Pod launches by group, from <code>agent/runs/activity.jsonl</code>. A pod can train several models, such as the five folds of one recipe or two seeds. Pods that failed on start-up and were relaunched are counted each time.</em></p>
+      <p>The loop's 83 fold-0 launches belong to only 32 distinct experiments. The rest were relaunches after pods vanished for lack of GPU capacity, hung downloads and installs, or stale code. That is why the loop's run count looks larger in the log than in the graph above.</p>
+      <h3>What each group found</h3>
+      <table>
+      <thead>
+      <tr>
+      <th>Group</th>
+      <th style="text-align: right;">Pods</th>
+      <th>What we tried</th>
+      <th>What we found</th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr>
+      <td>Early label A/Bs, Family A / B</td>
+      <td style="text-align: right;">24</td>
+      <td>Two public label tables against a blend; our own "Family A" region model; "Family B" with a fastMRI-pretrained encoder</td>
+      <td>The label tables were interchangeable. Family A failed its rulers. Family B gave no gain on report labels (+0.03 on 29 experts, noisy)</td>
+      </tr>
+      <tr>
+      <td>Agent loop: fold-0 nodes</td>
+      <td style="text-align: right;">83</td>
+      <td>The search above</td>
+      <td>Fold-0 0.9215 → 0.9366, public 0.920</td>
+      </tr>
+      <tr>
+      <td>Agent loop: full-data members</td>
+      <td style="text-align: right;">50</td>
+      <td>Two seeds at a time of the best label sets, trained on every study from the public checkpoint</td>
+      <td>Used as ensemble members. A public warm start that had seen every study made their fold-0 scores leaky, so they were judged on the experts and the leaderboard</td>
+      </tr>
+      <tr>
+      <td>Label rounds r0 to r8</td>
+      <td style="text-align: right;">68</td>
+      <td>Round 0: teacher models. Round 1: five-fold students trained on teacher labels, at 224 and 384 px, with ResNet-50 and CoAtNet. Later rounds: graded labels, expert-threshold labels, fastMRI pseudo-labels</td>
+      <td>Round 1 students gained +0.003 over their near-copy teachers. Round 2 labels were worse. Graded labels read +0.003 on reports and nothing on experts</td>
+      </tr>
+      <tr>
+      <td>Region specialists</td>
+      <td style="text-align: right;">37</td>
+      <td>Native-resolution models for the knee regions behind the weak findings: tibiofemoral, patellofemoral, recess, bone marrow</td>
+      <td>They read at the level of the public columns they replaced, and below on PF OA. Expert-threshold targets lifted two findings (Lateral OA, Medial Meniscus) by one step</td>
+      </tr>
+      </tbody>
+      </table>
+      <h3>The architecture and recipe sweep</h3>
+      <p>On 4 and 5 October, with a $250 budget, we ran the trial and error on RunPod that the loop had not covered:</p>
+      <table>
+      <thead>
+      <tr>
+      <th>Try</th>
+      <th>Result</th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr>
+      <td>224 px CoAtNet, five folds</td>
+      <td>Own legs plateaued at 0.929 to 0.933 on the leaderboard</td>
+      </tr>
+      <tr>
+      <td>288 px (fixed position bias, would not run at that size), 32 windows per study, backbone learning rate 1e-4</td>
+      <td>Failed by design, closed, or null on fold 0 (learning rate 1e-4 scored below its base)</td>
+      </tr>
+      <tr>
+      <td>30 epochs and a plain loss</td>
+      <td>Pods stopped on 4 October when the user ended the own-model track; the plain-loss and 40-epoch runs were relaunched that night</td>
+      </tr>
+      <tr>
+      <td>Affine augmentation and drop-path</td>
+      <td>No gain at 20 epochs; +0.003 at 40 epochs</td>
+      </tr>
+      <tr>
+      <td>Heavy augmentation, 40 epochs</td>
+      <td>+0.0044 on the report ruler. The first recipe to pass our gate</td>
+      </tr>
+      <tr>
+      <td>EfficientNetV2-S, Swin-T, DINOv2-S, ConvNeXt-T / B / V2</td>
+      <td>ConvNeXt-S was the best single arm. The ConvNeXt variants added nothing in a blend</td>
+      </tr>
+      <tr>
+      <td>fastMRI pseudo-labelled students (four pods)</td>
+      <td>No gain, slightly worse</td>
+      </tr>
+      <tr>
+      <td>Mirror pass and extra evaluation passes</td>
+      <td>No gain</td>
+      </tr>
+      </tbody>
+      </table>
+      <p>The audit we ran on the night of 4 October found that, across 117 finished runs at that point, only one had used augmentation, none had trained beyond 20 epochs, and none had used a plain loss. Those gaps are what the sweep filled, and they changed little.</p>
+      <h3>What the submissions said</h3>
+      <table>
+      <thead>
+      <tr>
+      <th>Own system</th>
+      <th>Leaderboard</th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr>
+      <td>Best single family (five folds, 224 px)</td>
+      <td>0.933</td>
+      </tr>
+      <tr>
+      <td>15 or 20 own models blended alone</td>
+      <td>0.935 to 0.936</td>
+      </tr>
+      <tr>
+      <td>Public stack alone</td>
+      <td>0.945</td>
+      </tr>
+      <tr>
+      <td>Stack plus 15 or 20 own models, at rank weights 0.25 to 0.60</td>
+      <td>0.944</td>
+      </tr>
+      <tr>
+      <td>Label A/B on the leaderboard (r1, r4, graded labels)</td>
+      <td>0.937, 0.934, 0.935</td>
+      </tr>
+      <tr>
+      <td>Region specialists blended into the 0.958 public notebook</td>
+      <td>0.957 to 0.958</td>
+      </tr>
+      </tbody>
+      </table>
+      <p>By 6 October eight own-model blends had read between 0.941 and 0.944, each level with or just under the stack alone. On 6 October the report was blunt: the own system had caught up with the stack and added nothing to it.</p>
+      <p>From 9 October the public notebooks climbed past us: 0.950, then 0.954, then 0.956 and 0.958. We forked them and submitted. Each of our own-model blends on top of them read at or below the base. Of the 96 submissions, 56 came after 9 October, mostly probes looking for +0.001. We finished at <strong>0.958 public</strong>, level with the public notebooks, and <strong>0.942 private</strong>. Bronze on the private board was a 0.942 tie, and we were 1,336th.</p>
+      <h2>What the whole bill was</h2>
+      <table>
+      <thead>
+      <tr>
+      <th>Item</th>
+      <th>Amount</th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr>
+      <td>RunPod GPU time</td>
+      <td>About $250 across 262 pods. The running tally reached about $172 by the afternoon of 5 October; the later queue pod, round 8 ($9.63), the nine specialists (about $20 on 13 Oct) and the two specialist rounds on 16 Oct (about $35) took it to roughly this figure</td>
+      </tr>
+      <tr>
+      <td>DeepSeek, the loop</td>
+      <td>About $31 (relabels $21.98, strategist $6.80, planner $2.55)</td>
+      </tr>
+      <tr>
+      <td>DeepSeek, the graded-label pass over 4,407 reports</td>
+      <td>About $20</td>
+      </tr>
+      <tr>
+      <td>Kaggle GPU</td>
+      <td>Free quota for forks, probes and some training kernels</td>
+      </tr>
+      <tr>
+      <td>Total</td>
+      <td>About $300, in line with the $300 cap we set on 23 September</td>
+      </tr>
+      </tbody>
+      </table>
+      <p>These are the repo's running tallies, not an invoice. RunPod's bill is the authority on the GPU figure. The money was not wasted on a bug or a runaway pod; it went on one real problem we could not solve by search: our labels were built from reports, and the winners' were built from images.</p>
+      <h2>What helped (the loop)</h2>
+      <ol>
+      <li><strong>One protocol for every run.</strong> Fixed seed, folds and held-out experts made 15 runs directly comparable. Our best fold-0 run, <code>5bc0a0f45d75</code>, later became the clean reference for our own models, after we found that a public warm-start checkpoint had seen every training study (Post 04).</li>
+      <li><strong>The ban list.</strong> It blocked the backbone-unfreeze idea on the first call and kept old dead ends closed.</li>
+      <li><strong>Dreams.</strong> 38 blends at no GPU cost told us how much ensembling could add (+0.004) before we spent anything on it.</li>
+      <li><strong>Per-finding label judging.</strong> The Synovitis gain and the PF OA loss were only visible because the loop scored each finding separately.</li>
+      <li><strong>Gates.</strong> No agent submission, user approval above $10, one pod at a time. The agent never spent money we had not planned.</li>
+      </ol>
+      <h2>What did not (the loop and the rest)</h2>
+      <ol>
+      <li><strong>The search space was the ceiling.</strong> The recipe the agent could edit held learning rates, epochs and label tables built from reports. The winners' gains came from labels read from the images and from finding the knee before classifying it (Post 05). No amount of search over our recipe could reach those.</li>
+      <li><strong>A proxy built from report labels.</strong> It ranked runs reasonably but overstated the leaderboard by 0.017, and the agent optimised it.</li>
+      <li><strong>Planner quality.</strong> A cheap model with tools proposed small, repeated, often invalid changes. Most real decisions (dense80, 8 training windows, the ensemble pivot, closing self-training) came from the host's rules or from the user.</li>
+      <li><strong>An agent cannot fix a strategy.</strong> The loop made each step cheaper but kept us moving in small steps. By 29 September the right move was to change strategy, and that was a human decision.</li>
+      </ol>
+      <h2>Compared with the winners</h2>
+      <p>The 1st-place team also used an AI agent for research, and says it drove most of their model gains (Post 05, section 8). The differences are instructive:</p>
+      <table>
+      <thead>
+      <tr>
+      <th></th>
+      <th>1st place</th>
+      <th>Us</th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr>
+      <td>Agent's job</td>
+      <td>Propose and run experiments on how to use new annotations (ROI boxes, lesion boxes)</td>
+      <td>Change fields of a fixed recipe</td>
+      </tr>
+      <tr>
+      <td>Search space</td>
+      <td>Open: new heads, pooling, crops</td>
+      <td>Closed: learning rates, epochs, label tables, training windows</td>
+      </tr>
+      <tr>
+      <td>Labels</td>
+      <td>Built first, by LLM agents reading the images</td>
+      <td>Report labels, relabelled from report text</td>
+      </tr>
+      <tr>
+      <td>Model</td>
+      <td>Frontier model (Claude Opus 5.5) with a human choosing directions</td>
+      <td>DeepSeek Flash / V4 Pro, mostly unattended</td>
+      </tr>
+      </tbody>
+      </table>
+      <p>An agent searches inside the space you give it. Theirs was given the right problem; ours was given a well-fenced small one.</p>
+      <h2>Lessons</h2>
+      <ol>
+      <li><strong>Decide the levers before you automate the search.</strong> Automating the wrong search space only finds the wrong answer faster.</li>
+      <li><strong>Keep the harness, even if the search fails.</strong> The experiment graph, fixed protocol and gates were worth building on their own.</li>
+      <li><strong>Make the ruler match the test.</strong> A proxy built on the training teacher rewards fitting the teacher.</li>
+      <li><strong>Judge label changes by trained models, per finding.</strong></li>
+      <li><strong>Block near-duplicates, not just exact duplicates.</strong> Memory of results is not memory of ideas.</li>
+      <li><strong>Dreams are worth running even when you train.</strong> They are free, and they tell you the value of blending.</li>
+      <li><strong>A cheap planner is cheap for a reason.</strong> Planning cost $2.55 and produced little; one strong model with a person choosing directions did better for the winners.</li>
+      <li><strong>Long-running agents need restarts after every code change</strong>, and a log of every tick, so failures are found in minutes, not hours.</li>
+      <li><strong>Count the runs before you plan the budget.</strong> Our 31-experiment loop became 262 pods once relaunches, folds, seeds and hand-run rounds were added. A cap on experiments is not a cap on pods.</li>
+      <li><strong>Stop a family after two nulls.</strong> We ran at least eight own-model blends against the same stack and got the same answer each time. The first two readings told us enough.</li>
+      </ol>
+      <h2>Attribution</h2>
+      <p>Series: <a href="01-imaging-playbook.html">Post 01</a> · <a href="02-eda-problem-shape.html">Post 02</a> · <a href="03-first-simple-models.html">Post 03</a> · <a href="04-full-campaign.html">Post 04</a> · <a href="05-winning-solutions.html">Post 05</a>.</p>
+      <p>Methods: <a href="https://arxiv.org/html/2606.06473v1">MLEvolve</a> (<a href="https://github.com/InternScience/MLEvolve">code</a>) and <a href="https://arxiv.org/html/2609.14858v1">Dream-RSI</a> (<a href="https://github.com/zhengkid/Dream-RSI">code</a>). We used their ideas in our own code, not their packages.</p>
+      <p>The loop's code is in <code>src/rsna_knee/agent/</code>, its experiment graph in <code>agent/runs/journal.json</code> and its tick-by-tick log in <code>agent/runs/activity.jsonl</code>. Decisions and results are in <code>docs/DECISIONS.md</code> and <code>docs/experiments.md</code>, in the public monorepo: <a href="https://github.com/Girish011/RSNA_Knee_Abnormality_Detection_Model">RSNA_Knee_Abnormality_Detection_Model</a>.</p>
+    </article>
+  </main>
+
+  <footer class="site-footer">
+    <p><a href="../index.html">Back to series hub</a> · <a href="05-winning-solutions.html">Previous post</a></p>
+  </footer>
+</body>
+</html>
