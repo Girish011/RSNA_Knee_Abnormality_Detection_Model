@@ -185,3 +185,162 @@ Format: date | decision | why | rejected
 - **Loader note:** Official `build_sam` mis-assigns teacher `pos_embed` and the checkpoint has no SAM neck. We map `teacher.backbone.*` ourselves, interpolate pos embeds, and pool **768-d** pre-neck tokens.
 - **Why:** Thin DINOv2-S levers closed; MRI-CORE is the pre-registered domain encoder in EXTERNAL_ASSETS; weights + source already offline-bundled.
 - **Rejected:** Rebuilding a 384 cache first; feature-cache-only head (want end-to-end parity with gf_v0); DINOv2-B before MRI-CORE.
+
+## 2026-09-23 — Pivot: fork the public 0.936 floor; autonomous search loop; 6 Oct gate
+- **Decision (user-approved plan):** Stop greenfield thin-cache A/Bs. Day 1: fork the public rsna-base recipe (Max-Span Dense Corpus + twelve-findings weights + DINOv2, public LB 0.936, ~3 min on T4x2) and submit once to confirm the floor. The separating lever is our own multilingual report-distilled soft labels trained on dense geometry. Training moves off Kaggle GPU to a rented RunPod RTX 4090 (~$0.34/hr); total cap $300 (~$230 GPU, ~$50 LLM API). Search runs through `src/rsna_knee/agent/` (MLEvolve-style MCGS journal + retrospective memory + ban list, Dream-RSI replay over stored logits and the experiment tree). Pre-registered gate on **2026-10-06**: public LB ≥ 0.950 keeps main-board search; below that, spend the rest on seed/fold averaging and the efficiency final.
+- **Why:** gf_v0 is 0.592 ± 0.021 gold vs a public band of ~0.95–0.96 with 10+ teams at 0.96; rebuilding the public recipe from scratch costs a third of the remaining time. Public measurements show geometry and labels, not backbones or ensembles, move the board.
+- **Supersedes:** "no public LB until OOF gold win" for the single floor-confirmation submit (a public, known-score notebook); later submits are proxy calibrations, max ~2/day. The MRI-CORE thin-cache run is logged when it finishes but no longer blocks anything.
+- **Open risk:** the Max-Span Dense Corpus and twelve-findings weights show no explicit license on their Kaggle pages (only the notebooks are Apache-2.0). Must be confirmed before either is part of a final, because winners must open-source all assets.
+- **Rejected:** Top-5 main board as the success criterion (stretch only); rebuilding a dense cache before forking the public one; training on Kaggle GPU (weekly quota stalls an autonomous loop); running MLEvolve unmodified on raw MRI (install/ban-list waste on a $300 cap).
+
+## 2026-09-24 — First-train supervision = public LLM soft labels; keyword teachers retired
+- **Decision:** The first RunPod train uses the mean of the `pilkwang/rsna-knee-llm-labels` and `dreaddevelopment/rsna-knee-labels` soft probabilities (both CC0; plain mean, not rank-mean, so per-label prevalence survives as a BCE target), with expert labels overriding the 58. File: `data/processed/labels_llm_blend_v1.csv` from `scripts/build_llm_blend_labels.py`. Under the pre-registered per-label gate (precision ≥ 0.5 on the experts), **Contusion** from pilk fails (0.44): it stays in the loss as a soft target at half weight rather than dropped, because it is a scored label. Keyword `weak_v1` / `v7` are no longer used as teachers for any new train.
+- **Why:** On the 57 experts pilk scores macro AUC 0.870 vs keyword 0.63–0.65; the paired gap is +0.24 [0.19, 0.29], ~6x the gold-58 noise band. dread cannot be graded on the experts (it omits them), but it agrees with pilk at Spearman 0.81 on the other ~4300 studies, so it is a second LLM read, not an independent weaker one.
+- **Consequence for the plan:** "Our own soft labels beat the public ones" is now a measurable bar: a candidate label file must beat pilk on the experts with a paired bootstrap CI excluding 0, with the caveat that pilk was prompt-checked on the annotated studies. Spend on our own LLM pass (DeepSeek) only for the weak columns (Synovitis, Contusion, Lat OA) and only after the first train exists.
+- **Rejected:** Building a full own-LLM label set before the first train; dropping Contusion from the loss; averaging keyword labels into the teacher.
+
+## 2026-09-24 — Train on RunPod now; own dense80 cache is the submission geometry
+- **Decision (user: do not wait for the Kaggle GPU reset; top 5 is the priority):** Use the public CoAtNet trainer on RunPod immediately for a paired label A/B on the public 44-slot corpus (dread vs blend v2). In parallel, build our own 80-slot, 2–98% cache on Kaggle CPU with the public widedense test-time picker scaled from 64 to 80 slots; all submission models train on that cache, so train/test preprocessing is identical by construction. Kaggle submits resume at the GPU quota reset.
+- **Why:** A 16-epoch CoAtNet-384 run is ~3 h on a 4090 (~$1), so paired A/Bs are cheap and should not wait days. Public density results (44→64→80 slots: 0.926→0.928→0.932) make 80 slots the best measured geometry, and it is not public as slices. The 44-slot corpus has no published test-time builder, so it cannot carry a submission.
+- **Rejected:** Waiting for Saturday; submitting on CPU (the floor fork is a multi-model GPU ensemble; a 9 h CPU run on ~1300 studies is not realistic); SSH-driven pods (no key registered; the pod runs a self-contained job, serves progress on the RunPod HTTP proxy, and terminates itself).
+
+## 2026-09-24 — Autonomous loop goes live (DeepSeek planner, typed genome, fixed protocol)
+- **Decision (user-approved: full loop; gates = LB submits/finals and any action > $10; host = this Mac):** `python -m rsna_knee.agent.loop run` drives the campaign: observe finished pods → score → dream blends → select (progressive UCT / elite) → operator (primary / intra / cross / aggregate) → DeepSeek-flash proposal → checks → RunPod job or relabel → record. The planner can only (a) change fields of the typed genome in `agent/genome.py` (no code), (b) request an LLM relabel of weak label cells (`agent/labeler.py`), or (c) stop.
+- **Protocol (fixed for every online node):** seed 42; non-expert studies in 5 fixed folds (`agent/protocol/folds_nonexpert_5.json`), train on folds 1-4, **proxy = fold-0 OOF macro AUC vs reference cells where pilk and dread agree** (~870 studies; agreement-only so the ruler does not favour either teacher); experts split 29 dev / 29 holdout (`expert_split.json`). The trainer selects epochs on dev; gold_dev is a veto (drop > 0.04 vs parent = failed node). Holdout AUC goes to `agent/runs/holdout.json`, never to the planner, and is for human keep decisions only.
+- **Checks:** menu validation; primary operator changes one field (intra/cross 2, aggregate 3); duplicate genomes rejected; ban list on plan text; one pod at a time (waits for hand-launched pods too); pod killed at 2x estimate + 1 h; campaign cap $300 counting GPU + LLM; relabels capped at 4 and gated per finding on dev (reader AUC ≥ pilk − 0.01 and precision ≥ 0.5); `agent/runs/STOP` kill switch; `loop pause|resume|approve|reject`.
+- **Why:** hand-driving every job meant idle GPUs and constant monitoring. The measured label A/B (dread vs blend v2 peaked at the same 0.9148 gold) says labels are one lever among several, so they are a branch of the search, not its objective.
+- **Rejected:** letting the LLM edit trainer code (an install or shape bug burns a rented GPU); scoring on all 58 experts (the loop would overfit them); auto-submitting to the leaderboard.
+
+## 2026-09-24 — DeepSeek tool calls auto-trigger RunPod
+- **Decision:** Planner uses DeepSeek native function calling. When a train is needed it must call `launch_runpod_train` (not only emit JSON text). The host validates the genome, then auto-starts the pod via existing one-pod / budget / >$10 approval gates. Also exposed: `get_runpod_status`, `request_relabel`, `stop_search`.
+- **Why:** User asked for DeepSeek tool calling so RunPod execution is auto-triggered whenever needed; JSON-only proposals could describe a train without a hard side-effect contract.
+- **Rejected:** Letting the model terminate/create pods with raw RunPod API args; skipping validation before queue.
+
+## 2026-09-25 — Target 0.958 is submit/LB AUC, not fold-0 proxy
+- **Decision (user clarification):** Campaign success is **Kaggle public / final macro AUC ≥ 0.958** (top-10 band). Fold-0 proxy is only the **local search compass** used between submits; hitting proxy 0.958 without a confirming LB score does **not** count as done.
+- **How the loop uses proxy:** keep searching while proxy is below ~0.958 *and* budget remains, then **submit** (user-approved) to read the real score. Calibrate proxy↔LB; do not hill-climb the public board or treat proxy as the trophy.
+- **Why:** User: “we need 0.958 when we submit, not specifically fold-0 proxy.”
+- **Rejected:** Stopping the campaign solely because local proxy crossed 0.958; equating proxy with competition AUC.
+
+## 2026-09-25 — Prefer community 3090 + kill dead pods early
+- **Decision:** Launcher prefers **community 3090** before community 4090 (secure 4090 last). On-pod `HEARTBEAT` every 60s; Mac `observe` terminates a RUNNING pod if proxy is unreachable for 2 ticks (~20 min) or HEARTBEAT is stale >20 min (after a 12 min boot grace), then infra-relaunches without download thrash.
+- **Why:** `kapkdevrgtovbs` (community 4090) vanished mid-train at ~2.84 h with no Kaggle upload (~$1 burned). Community 3090s completed the two successful protocol trains. Billing a silent-dead host until API 404 is waste.
+- **Rejected:** Moving all trains to secure cloud (pip hangs); mid-epoch checkpoint upload to Kaggle every N minutes (heavier; revisit if 3090 preference is not enough).
+
+## 2026-09-25 — Enable dense80 as the default search / submit corpus
+- **Decision (user):** `CORPORA["dense80"]=True`. Kaggle CPU shards `girishbose/rsna-knee-dense80-s0..s3` are COMPLETE. New trains download those kernel outputs on the pod (`CORPUS=dense80`), trainer reads `vols_s{0..3}` / masks / ids. Planner + auto-queue prefer a one-field `corpus=dense80` train on the best parent; `genome.BASE` defaults to dense80. Let the in-flight raptor44 `blend_v2` job finish, then switch.
+- **Why:** raptor44 has no public test-time builder (measurement only). dense80 matches the submit picker; public density 44→80 ≈ +0.006 LB. User asked to point DeepSeek / the loop at dense80.
+- **Rejected:** Waiting for more raptor44 label hill-climbing before enabling geometry; killing the live blend_v2 pod early.
+
+## 2026-09-26 — Loop must not idle on MAX_RELABELS / dream parents
+- **Decision:** `MAX_RELABELS=4` remains a **budget guard** on unique successful LLM relabel jobs (not a scientific AUC threshold). Counting is unique registered names (failed/duplicate entries do not burn the cap). When the cap is hit, or DeepSeek says stop, the host **forces the next unused menu train** from an online seed. Dream elites are never used as train genomes (resolve to best valid online, prefer dense80). Deterministic menu walk (unused dense80 labels → dense80 if missing → k/epochs/lrs/…) runs **before** DeepSeek so the campaign cannot burn API dollars while no pod is active.
+- **Why:** Overnight after the first dense80 score, UCT selected dream blends; stop-fallback validated `{blend:…}` and failed; relabel proposals hit a inflated list length and parked 15 min — ~7 h idle + LLM thrash.
+- **Rejected:** Removing the relabel cap entirely (unbounded DeepSeek label spend); letting DeepSeek edit trainer code.
+
+## 2026-09-27 — DeepSeek coder + owns every idle tick (user: make DeepSeek do all)
+- **Decision (user):** (1) Allowlisted code edits via `list_repo` / `read_repo_file` / `write_repo_file` / `run_agent_tests` on `src/rsna_knee/agent/`, `runpod/`, `tests/`, `agent/memory/`, `agent/labels/` (trainer ships on next bundle). (2) Remove host auto-queue of unused labels / dense80 / menu-before-LLM — **every idle plan calls DeepSeek first** (coder-first encouraged). (3) `stop_search` is **refused** while unused dense80 labels or menu genomes remain; a mandatory retry demands `launch_runpod_train`. Host menu train is only a **safety net** if DeepSeek still returns stop/no-launch after retry.
+- **Why:** User asked for DeepSeek to do all: no auto menu ahead, force launch, coder-first; previously auto-queue + soft stops left DeepSeek underused.
+- **Still forbidden:** secrets, paths outside allowlist, auto LB submit, skipping one-pod / $300 / >$10.
+- **Supersedes:** 2026-09-24 ban on LLM trainer edits (allowlisted only); host-first auto-queue from 2026-09-26.
+
+## 2026-09-28 — Speed: VRAM-safe menu + dream-first + CoAtNet lock
+- **Decision (user):** Make progress faster by cutting dead GPU work, not by swapping architectures.
+  1. **Ban OOM genomes:** `MENU.k=[8]`, `MENU.k_eval=[24]`; hard validate rejects `k>8` / `k_eval>24`. Historical parents clamp via `genome.clamp`. Measured: k=12/16 CUDA OOM on 24GB after dense80 download (~0.8 h waste).
+  2. **Settled recipe:** `arch=coatnet384` only on MENU; `BASE` = dense80 + CoAtNet-384 + k=8. No new backbones this week.
+  3. **Dream/replay first:** each idle `plan` runs free rank-mean + greedy per-label blends over saved OOF before DeepSeek; GPU trains only for unused labels / lr / epoch diffs.
+  4. **Efficiency final later:** fewer windows / lighter student from the same weights; not a parallel backbone research track.
+  5. **Phantoms:** keep post-create verify in launcher; capacity noise is RunPod community, not a model problem.
+- **Why:** User asked to implement the “actually makes training faster” levers after Jev/RLCD/Model-One were ruled wrong modality.
+- **Rejected:** Raising k again “to chase geometry” on 24GB; MobileOne/Jev/RLCD as the MRI backbone; spending budget on efficiency-student research before a scored dense80 k=8 win.
+
+## 2026-09-28 — First own-weights LB: proxy 0.9366 → public 0.920 (gap −0.017)
+- **Decision:** Record calibration from `submit-dense80-5bc0` v2 (ref 56643440): public LB **0.920** vs fold-0 online proxy **0.9366**. Gate future own-weights submits with this optimism in mind; do not equate proxy ≳ 0.936 with a 0.958-ready LB.
+- **Why:** First measured dense80 CoAtNet submit (epochs=20, `relabel_8c56cdf0`, k_eval=24×2). Trophy remains public/final ≥ 0.958 (DECISIONS 2026-09-25).
+- **Open:** Whether SWA/EMA / denser k_eval / rank-blend of top online OOF closes part of the gap before the next burn. Prefer one diagnosed change per submit.
+- **Rejected:** Treating the 0.920 as a floor-notebook result; auto-submitting every new proxy peak.
+
+## 2026-09-29 — Pivot to ensemble track: public D4 stack + our full-data members (v5 warm start)
+- **Decision:** Stop treating single fold-0 models as submissions. (1) Every submit = public D4 stack (`jiweiliu/rsna-knee-fast-2xt4-inference`, public 0.943, all-public inputs; vendored at `outputs/kernels/_base_d4/`) + our CoAtNet members, rank-blended per finding with one global weight `w` (`scripts/build_ensemble_kernel.py`; any failure in our leg restores the public output). (2) Submission weights come from a **member track** (`src/rsna_knee/agent/members.py`): full-data retrains (no fold hook), several arms per pod, auto-launched by the loop tick when no pod runs; the loop does not plan while a member job is queued/active. (3) Members may **warm-start** from public `raptor_ft_coatnet_v5_full_swa.pt` (`dreaddevelopment/raptor-knee-maxspan`, CC0-1.0, 486/486 tensors match, gold-58 0.921) via new trainer flag `--init_model`. (4) All LB submits go through `scripts/submit_gate.py` (needs `--i-approve` + `--why`, ≤5/day UTC, refuses duplicate code/members/w fingerprints, writes `agent/runs/submits.json`).
+- **Why:** LB 0.920 for our best single model sits below a public single CoAtNet (0.924, full corpus) and far below the public stack (0.943); the top-20 band is 0.955–0.960. Four one-field optimizer diffs landed within ±0.003 proxy. A public team fine-tuned v5 for 4 epochs to a standalone 0.932. Multi-arm pods pay the 40 GB dense80 pull once; `run_job.sh` now uploads a dataset version after every arm so a dying host loses at most one arm.
+- **Caveats:** v5 saw every train study, so fold-0 proxy of a v5-init model is leaky → warm starts are member-only, judged on gold_dev / holdout / LB. Adding a leg to a saturated stack may not show at 3 decimals (public example: 0.932 member swapped in → still 0.943); expect gains from several strong, diverse members, not one.
+- **Rejected:** More lr/wd/epoch sweeps; submitting single own models; per-label blend weights tuned in-sample (29-58 experts cannot support 12 weights).
+
+## 2026-09-29 — DeepSeek strategist runs while the GPU is busy (user: DeepSeek under-utilised)
+- **Decision (user):** New `src/rsna_knee/agent/strategist.py`, called from `loop.tick` every 45 min while any pod (fold-0 or member job) runs, on **deepseek-v4-pro**. Tools: `analyze_results` (per-finding AUCs of top nodes, members, public v5, registry audits, LB ledger), `request_relabel` (runs immediately; new rule `all` re-reads every report; model flash|pro; still audited on expert-dev), `queue_member_job`, `queue_next_train` (pending node, launched when the slot frees), `build_ensemble_kernel` (build only), plus the allowlisted coder tools. The idle-tick planner also moves to pro.
+- **Closed axis enforced in code:** lr / wd / head_lr / epochs-only diffs are refused by `planner.check`, the strategist, `work_remaining` and the host fallback (labels/corpus only).
+- **Caps:** relabels ≤ $15/day and thinking turns (strategist + planner, ~$0.03 each) ≤ $3/day as SEPARATE budgets (2026-09-29: relabels took 97% of a shared cap and silenced the strategist); V4.1-Flash; pro only for explicit relabels (planner + strategist + relabels), relabel job ≤ $12, 12 registered label sets (was 4), ≤ 2 member jobs queued, one pending fold-0 train. Unchanged: one pod, $300, >$10 needs the user, no LB push/submit by the agent.
+- **Why:** DeepSeek was called once per pod (idle >90% of wall time), steered toward the closed lr axis, capped at 4 relabels with flash-only uncertain-cell reads, and had no tools for the ensemble track. Measured: a pro read ≈ $0.002/study; full pro re-read of 4 findings ≈ $7–10.
+
+## 2026-09-29 — Weak-finding label work: judge by trained members; per-finding best-of label sets
+- **Evidence (10 full-data v5 members, AUC on 58 experts = mean of gold-dev and holdout):** DeepSeek relabel `c7ab23d1` lifted **Synovitis 0.80 → 0.87 in 4/4 models**, left Lateral OA flat (0.88–0.89), and **dropped PF OA 0.86 → 0.80–0.84** even though its label audit improved (0.888 → 0.922 on 29 dev). Macro stayed ~0.924.
+- **Decision:** Relabels are accepted per finding only when trained members improve on that finding; label sets are composed per finding (`bestof_v1` = `relabel_8c56cdf0` + Synovitis column from `c7ab23d1`), not stacked relabel-on-relabel. Strategist now sees `members_per_finding_by_label_set`. Queued `m-235f86f1af` (bestof_v1, seeds 42/1337, v5, 6 ep).
+- **External image data (MRNet, OAI, fastMRI+, KneeMRI): not now.** Registration/DUA-gated (host ruling open; winners must open-source), different protocols/geometry, and a new pipeline with 23 days left. Macro arithmetic: +0.03 on each of 5 weak findings = +0.0125 macro, reachable through labels + geometry first.
+
+## 2026-09-29 — Retire fold-0 ImageNet trains; idle ticks go to the strategist
+- **Evidence:** best-of label set `bestof_v1` (8c56 + c7ab Synovitis) → both members macro-58 **0.932** (every other set 0.923–0.928); Synovitis 0.863, Contusion 0.952, Lat Men 0.876. Member per-finding AUCs now answer label questions directly.
+- **Decision:** `loop.FOLD0_TRAINS = False`. When the GPU is idle the tick calls `strategist.research` (queues member jobs) instead of the fold-0 planner. Trigger: with the strategist capped, the planner launched `n-6e0c83b59036` (fold-0, ImageNet, c7ab labels — already measured on members) at $0.74/h with $8.36 left. Terminating it from the assistant session was blocked by the permission system; the user decides.
+
+## 2026-09-30 — Core bet: expert-anchored self-training (labels are the ceiling)
+- **Evidence:** on the 58 experts the report-derived label (pilk) scores macro **0.870**; our bestof image members score **0.932**. Image > report on 9/12 findings (Synovitis 0.69→0.86, Contusion 0.77→0.95, Lat OA 0.79→0.89, Effusion 0.83→0.97). Experts label from images; every team trains on report labels. Smoke test (`scripts/fuse_labels.py`, fit dev-28 → score holdout-29): fused(report, image) label = 0.932 with weak 5bc0 image preds (report 0.883), 0.943 with m0b16.
+- **Decision:** (1) 5-fold OOF of the best recipe (`members folds`, job `f-7cdb6e8357`: bestof_v1, v5 init, 6 ep); (2) fuse per finding with an L2 logistic fit on expert-dev only (holdout stays clean); (3) retrain members on fused labels; iterate once if holdout improves. PF OA is the exception (report > image) → view/ROI specialist later. 48 GB A6000/A40 added as launch fallbacks.
+- **Internal lock date 2026-10-16** for finals (official deadline 2026-10-22 23:59 UTC; Oct 15 = entry/merger only, we are entered).
+
+## 2026-09-30 — Self-training step is a gated host action; DeepSeek drives later rounds
+- **Decision:** when a 5-fold OOF member job completes, `members.auto_self_train` runs `fuse_labels.run_fusion` (fit on expert-dev, score on expert-holdout), and only if fused macro ≥ report + 0.02 writes/registers `fused_<job>` (merged onto the job's base labels) and queues 2 v5 members on it at the front of the queue. Deterministic; no LLM judgement in the loop's critical step. Strategist gains `queue_fold_job` to start round 2+ when fused members beat bestof_v1 per finding. Unchanged: LB push/submit and final blend weights are user-approved.
+- **Why:** user asked whether the pipeline pauses for analysis or hands decisions to DeepSeek; overnight idle between OOF landing and retraining would cost ~8–12 h of a 16-day window.
+
+## 2026-09-30 — Close self-training; next lever = input density (k=16 on 48 GB)
+- **Evidence (macro AUC on 58 experts):** bestof_v1 members 0.9330 (n=4); fused_7cdb6e83 (60% fused) 0.9315; fused_83969a7f (round 2) 0.9327; **fused_7cdb6e83_full 0.9330**; 5-fold bestof vs fused 0.9303 vs 0.9309. Fused labels agree with experts far better (0.946–0.949 vs report 0.883) but add little new information to the model (self-distillation). Soups: bestof4 0.9365, mix8 0.9358; public v5 0.9256.
+- **Decision:** self-training closed; held rounds dropped. Next: `members queue --k 16` (bestof_v1, v5 init, 6 ep, seeds 42/1337) pinned to 48 GB A6000/A40 (`launcher gpu_class="48"`), compared 1:1 with bestof_v1 at k=8.
+
+## 2026-10-01 — Focus the 5 weak findings, then soup (user); k=16 = PF OA specialist
+- **Evidence:** k=16 bestof members macro-58 0.9266 (k=8: 0.9330) but PF OA 0.882 vs 0.855; Contusion −0.028. Public v5 (our protocol) is weak on the same five findings (Syn 0.80, LatMen 0.855, PF 0.857, LatOA 0.896, Cont 0.927), so the public CoAt branch shares our weak spots — the expert bench is deferred (optional, end-stage blend tuning only).
+- **Decision:** next = per-finding loss weights (2–3× on the weak five), per-finding tail weights in the submit kernel (0 on strong findings), soup per-finding winners, dual finals by 2026-10-16. Seeds per recipe capped at 2. ROI crops skipped (`roi_localize`/`roi_boxes.npz` never vendored; v5 slot cannot reproduce crops).
+
+## 2026-10-01 — Per-finding loss weights + per-finding tails; daily LB cadence (user)
+- **Built:** trainer `--label_weights` (12 multipliers, rescaled to mean 1, BCE `weight`); genome key
+  `label_weights` (presets `weak5x2.5`, `weak5x4`) = its own recipe under the 2-seed cap; `members queue --label_weights`.
+  Kernel builder `--tail "FINDINGS|members|w"` (repeatable; `weak5` shorthand): each finding blends its own member
+  subset at its own weight; untouched findings keep the public stack's raw values. `make_soup` registers soups via
+  `members.request_op({"op": "add_done"})`.
+- **Lesson:** the loop is a long-running process; code changes reach it only after
+  `launchctl kickstart -k gui/$(id -u)/com.rsna.agentloop`. The first weak5 launch ran stale code (no flag) and the
+  first add_done op was silently dropped.
+- **Cadence (user):** ≥1 LB submission per day, each user-approved, from the calendar in STATUS; one leg checkpoint
+  per kernel until a 2-checkpoint leg is shown to fit 9 h. Expect single-finding tails to move macro by ≤0.001.
+
+## 2026-10-01 (evening) — Results: tails invisible on LB; loss weights → Synovitis specialist; seed cap fixed
+- **LB:** tail-pf-k16 0.944, tail-pfsyn-k16 0.944 (= base 0.944). A tail on 1–2 findings moves macro by ≤0.001.
+- **weak5x2.5** (2 seeds): Synovitis 0.888 (bestof 0.863), PF OA 0.862, Lat Men 0.876, Lat OA 0.887, Contusion 0.921
+  (−0.022); macro 0.932 vs 0.933. The weights reshuffle per-finding AUC rather than add signal → use as Synovitis soup.
+- **Seed cap bug:** done-only counting let the strategist train 6 seeds of relabel_d19bf15e (~$3). The cap now counts
+  queued + running arms and truncates multi-seed requests.
+
+## 2026-10-01 (night) — Architecture: label transplant across the public stack; strategist propose-only (user: Claude decides)
+- **Stack anatomy (base_d4 cell 27):** final = (1−w_f)·transformer branch (20 DINO + 5 A5 folds + RadImageNet main/E13
+  heads) + w_f·CoAt branch, w_f = 0.60 (ACL/LatOA/Fracture 0.75, MedMen 0.80, LatMen 1.00). CoAt branch = 0.6 public Raptor
+  (v5 0.7 / v8 0.2 / v10 0.1) + 0.4 private CoAt family (resgated, D4 SWA3, global96, repairv1 at 0.25 each).
+  Effective weight of the v5 slot ≈ 0.25; our +0.011 expert gain there showed as +0.001 LB (damping ≈ 0.35).
+- **Decision:** the lever is our label set, not more CoAt seeds. Every public component trains on public report-label
+  teachers; ours lifted v5 0.926 → 0.937 on experts. Re-train public components on bestof_v1 (gold still wins) with their
+  own public trainers on free Kaggle GPU (`scripts/fork_public_trainer.py`), judge each by its trainer's honest gold OOF
+  AUC vs the upstream audit, then swap the winners into the stack. Order: RadImageNet E13 heads (upstream gold OOF 0.8576),
+  main V52 heads (0.8543); then A5/DINO; CoAt readers last (trainers depend on authors' local caches).
+  The DINO base is weakest on our weak five (gold OOF LatMen 0.64, LatOA 0.71, Syn 0.74, PF 0.80).
+- **No LB submits expected to read 0.944** (user). Learning probes allowed: raptor-all-b4 (our soup in v5+v8+v10),
+  coat-up15-b4 (CoAt weight +0.15).
+- **Harness:** strategist GPU jobs are proposals (`policy.json strategist_gpu=propose`); `members.queue` seed cap counts
+  queued/running arms; `submit_gate` records the Kaggle ref at submit time.
+
+## 2026-10-02 (night) — Label transplants are invisible on LB at their effective weight; public d4-blend = 0.946
+- **Evidence:** three transplants all 0.944 vs base 0.945: fused RadImageNet heads (inside calibrator), CoAt +0.30,
+  fine-tuned DINO β0.3 after the calibrator (holdout-29 pooled 0.806 → 0.823). After CoAt +0.15 the transformer branch
+  holds only ~0.10–0.25 of the final per-finding weight, so a β0.3 component inside it is ~0.03–0.08 effective —
+  below what a 3-decimal LB resolves. Public `pjmathematician/rsna-knee-d4-blend` = **0.946**: our exact D4 base +
+  `_RAD_EXCLUDE=("Baker's",)` + a private "student fleet" leg (S_dist/S_coat/S_cnxl) rank-blended at **w=0.45 on the
+  final submission** (assets are private → unusable in a fork). Other public: s75-w50 0.945, versia-5 0.943,
+  dinosaur-v5 0.942/0.943.
+- **Decision:** stop inner-branch transplants (no A5 transplant). LB moves come from a *diverse* family blended at
+  the final level with real weight. Next probes on top of coat-up15-b4: (1) `_RAD_EXCLUDE` Fracture tweak (free);
+  (2) final-level blend of our strongest independent family at w≈0.3–0.45 (needs a family whose rank-corr vs the
+  stack is low and whose LB alone is not far below — our own CoAt alone was 0.920, too weak at 0.45).

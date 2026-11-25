@@ -1,0 +1,2681 @@
+[
+ {
+  "date": "2026-09-28T14:16:22+00:00",
+  "kernel": "girishbose/submit-dense80-5bc0",
+  "version": 2,
+  "fingerprint": "2f5d26e408680188",
+  "why": "dense80 5bc0 epochs20 proxy0.9366",
+  "ref": 56643440,
+  "public_lb": 0.92,
+  "ensemble": null
+ },
+ {
+  "date": "2026-09-28T16:33:20+00:00",
+  "kernel": "girishbose/submit-dense80-5bc0 (duplicate)",
+  "version": 2,
+  "fingerprint": "2f5d26e408680188",
+  "why": "duplicate resubmit (no description)",
+  "ref": 56646862,
+  "public_lb": 0.92,
+  "ensemble": null
+ },
+ {
+  "date": "2026-09-28T20:03:21.143010+00:00",
+  "kernel": "girishbose/ens-d4-5bc0-w20",
+  "version": 1,
+  "fingerprint": "b312c38d829c94e8",
+  "why": "D4 stack + 5bc0 w=0.2 first ensemble probe",
+  "ref": 56651119,
+  "public_lb": 0.941,
+  "ensemble": {
+   "base": "rsna-knee-fast-2xt4-inference.ipynb",
+   "members": [
+    "5bc0a0f45d75"
+   ],
+   "weights": [
+    "raptor_ft_5bc0a0f45d75.pt"
+   ],
+   "w": 0.2
+  },
+  "ts": 1790625801.14378
+ },
+ {
+  "date": "2026-09-29T06:35:43.893936+00:00",
+  "kernel": "girishbose/swap-d4-m6ed",
+  "version": 1,
+  "fingerprint": "0a18539b0906f827",
+  "why": "swap: member m6edbb53fbab (v5 fine-tuned full data) replaces v5 in D4 maxspan arms",
+  "ref": 56665556,
+  "public_lb": 0.943,
+  "ensemble": {
+   "base": "rsna-knee-fast-2xt4-inference.ipynb",
+   "members": [],
+   "weights": [],
+   "w": 0.0,
+   "swap_v5": "m6edbb53fbab"
+  },
+  "ts": 1790663743.894454
+ },
+ {
+  "date": "2026-09-29T15:42:16.675870+00:00",
+  "kernel": "girishbose/swap-d4-m0b16",
+  "version": 1,
+  "fingerprint": "6a9e86096f7a6254",
+  "why": "swap: bestof_v1 member m0b16e9a09f1 (macro-58 0.932, holdout 0.942) replaces v5 in maxspan arms",
+  "ref": 56680743,
+  "public_lb": null,
+  "ensemble": {
+   "base": "rsna-knee-fast-2xt4-inference.ipynb",
+   "members": [],
+   "weights": [],
+   "w": 0.0,
+   "swap_v5": "m0b16e9a09f1"
+  },
+  "ts": 1790696536.6764228
+ },
+ {
+  "date": "2026-09-30T10:27:19.293684+00:00",
+  "kernel": "girishbose/swap-d4-soup4",
+  "version": 1,
+  "fingerprint": "96fd0ade1fa725e0",
+  "why": "swap: 4-seed bestof soup (macro-58 0.9365 vs v5 0.9256 on our protocol) replaces v5",
+  "ref": 56704765,
+  "public_lb": 0.944,
+  "ensemble": {
+   "base": "rsna-knee-fast-2xt4-inference.ipynb",
+   "members": [],
+   "weights": [],
+   "w": 0.0,
+   "swap_v5": "soupbestof4"
+  },
+  "ts": 1790764039.2942138
+ },
+ {
+  "date": "2026-10-01T05:28:56.989544+00:00",
+  "kernel": "girishbose/tail-pf-k16",
+  "version": 1,
+  "fingerprint": "069845b1d9e0cc00",
+  "why": "per-finding tail: swap soupbestof4 + PF OA <- soupk16 (k16 PF OA 0.882 vs 0.857) w0.4",
+  "ref": 56744344,
+  "public_lb": 0.944,
+  "ensemble": {
+   "base": "rsna-knee-fast-2xt4-inference.ipynb",
+   "members": [
+    "soupk16"
+   ],
+   "weights": [
+    "raptor_ft_soupk16.pt"
+   ],
+   "w": 0.4,
+   "swap_v5": "soupbestof4",
+   "tails": {
+    "PF OA": [
+     [
+      "soupk16"
+     ],
+     0.4
+    ]
+   }
+  },
+  "ts": 1790832536.9900732
+ },
+ {
+  "date": "2026-10-01T05:29:03.806853+00:00",
+  "kernel": "girishbose/tail-pfsyn-k16",
+  "version": 1,
+  "fingerprint": "b16af7ab62cccbb4",
+  "why": "A/B: swap soupbestof4 + PF OA,Synovitis <- soupk16 w0.35",
+  "ref": 56744346,
+  "public_lb": 0.944,
+  "ensemble": {
+   "base": "rsna-knee-fast-2xt4-inference.ipynb",
+   "members": [
+    "soupk16"
+   ],
+   "weights": [
+    "raptor_ft_soupk16.pt"
+   ],
+   "w": 0.35,
+   "swap_v5": "soupbestof4",
+   "tails": {
+    "PF OA": [
+     [
+      "soupk16"
+     ],
+     0.35
+    ],
+    "Synovitis": [
+     [
+      "soupk16"
+     ],
+     0.35
+    ]
+   }
+  },
+  "ts": 1790832543.807629
+ },
+ {
+  "date": "2026-10-01T16:06:20.380350+00:00",
+  "kernel": "girishbose/raptor-all-b4",
+  "version": 1,
+  "fingerprint": "137ce2124829361e",
+  "why": "LEARNING: soupbestof4 in all Raptor arms (v5,v8,v10) - does more of our CoAt pay?",
+  "ref": 56754652,
+  "public_lb": 0.944,
+  "ensemble": {
+   "base": "rsna-knee-fast-2xt4-inference.ipynb",
+   "members": [],
+   "weights": [],
+   "w": 0.0,
+   "swap_v5": "soupbestof4",
+   "swap_arms": {
+    "v8": "soupbestof4",
+    "v10": "soupbestof4"
+   },
+   "coat_shift": 0.0,
+   "tails": {}
+  },
+  "ts": 1790870780.3808582
+ },
+ {
+  "date": "2026-10-01T16:06:27.939741+00:00",
+  "kernel": "girishbose/coat-up15-b4",
+  "version": 1,
+  "fingerprint": "d6c1cdc62c6797bf",
+  "why": "LEARNING: soup4 swap + CoAt branch weight +0.15 all findings",
+  "ref": 56754655,
+  "public_lb": 0.945,
+  "ensemble": {
+   "base": "rsna-knee-fast-2xt4-inference.ipynb",
+   "members": [],
+   "weights": [],
+   "w": 0.0,
+   "swap_v5": "soupbestof4",
+   "swap_arms": {},
+   "coat_shift": 0.15,
+   "tails": {}
+  },
+  "ts": 1790870787.940258
+ },
+ {
+  "date": "2026-10-01T22:57:13.557834+00:00",
+  "kernel": "girishbose/coat15-radfused",
+  "version": 1,
+  "fingerprint": "632d526ba55250ba",
+  "why": "best 0.945 (coat +0.15) + fused-label RadImageNet heads (E13 gold OOF 0.8745 vs 0.8576, main 0.8594 vs 0.8543)",
+  "ref": 56760305,
+  "public_lb": 0.944,
+  "ensemble": {
+   "base": "rsna-knee-fast-2xt4-inference.ipynb",
+   "members": [],
+   "weights": [],
+   "w": 0.0,
+   "swap_v5": "soupbestof4",
+   "swap_arms": {},
+   "coat_shift": 0.15,
+   "rad_heads": {
+    "e13": [
+     "girishbose/rsna-knee-rad-heads-fused",
+     "d87c6e590853f1301d50d85894f3f2f7d8b7c33d779808ceae85a600f8198046"
+    ],
+    "ref": [
+     "girishbose/rsna-knee-rad-heads-fused",
+     "829bc30a423eeb850470c6ee5cd48ab87078e1d262af121131e25c900a13b8cc"
+    ]
+   },
+   "tails": {}
+  },
+  "ts": 1790895436.283479
+ },
+ {
+  "date": "2026-10-02T00:03:32.307493+00:00",
+  "kernel": "girishbose/coat30-radfused",
+  "version": 1,
+  "fingerprint": "3f1e56170b471e79",
+  "why": "LEARNING direction: coat +0.30 + fused RadImageNet heads (vs coat15-radfused)",
+  "ref": 56761295,
+  "public_lb": 0.944,
+  "ensemble": {
+   "base": "rsna-knee-fast-2xt4-inference.ipynb",
+   "members": [],
+   "weights": [],
+   "w": 0.0,
+   "swap_v5": "soupbestof4",
+   "swap_arms": {},
+   "coat_shift": 0.3,
+   "rad_heads": {
+    "e13": [
+     "girishbose/rsna-knee-rad-heads-fused",
+     "d87c6e590853f1301d50d85894f3f2f7d8b7c33d779808ceae85a600f8198046"
+    ],
+    "ref": [
+     "girishbose/rsna-knee-rad-heads-fused",
+     "829bc30a423eeb850470c6ee5cd48ab87078e1d262af121131e25c900a13b8cc"
+    ]
+   },
+   "tails": {}
+  },
+  "ts": 1790899415.107061
+ },
+ {
+  "date": "2026-10-02T09:48:50.814382+00:00",
+  "kernel": "girishbose/coat15-dinox30",
+  "version": 2,
+  "fingerprint": "6adc80942a1bf7f1",
+  "why": "best 0.945 (coat-up15-b4) + fine-tuned DINO (fused labels; holdout-29 pooled 0.806->0.823) blended beta=0.3 AFTER the calibrator",
+  "ref": 56771185,
+  "public_lb": 0.944,
+  "ensemble": {
+   "base": "rsna-knee-fast-2xt4-inference.ipynb",
+   "members": [],
+   "weights": [],
+   "w": 0.0,
+   "swap_v5": "soupbestof4",
+   "swap_arms": {},
+   "coat_shift": 0.15,
+   "rad_heads": {},
+   "dino": null,
+   "dino_extra": [
+    "girishbose/rsna-knee-dino-ft-fused",
+    0.3
+   ],
+   "tails": {}
+  },
+  "ts": 1790934531.974018
+ },
+ {
+  "date": "2026-10-02T17:37:04.319566+00:00",
+  "kernel": "girishbose/coat15-radexfx",
+  "version": 1,
+  "fingerprint": "f6d0f18e4ff6f586",
+  "why": "LEARNING: best 0.945 + Fracture into the cell-25 Rad blend (_RAD_EXCLUDE=Baker's only, as public d4-blend 0.946)",
+  "ref": 56779149,
+  "public_lb": 0.945,
+  "ensemble": {
+   "base": "rsna-knee-fast-2xt4-inference.ipynb",
+   "members": [],
+   "weights": [],
+   "w": 0.0,
+   "swap_v5": "soupbestof4",
+   "swap_arms": {},
+   "coat_shift": 0.15,
+   "rad_heads": {},
+   "dino": null,
+   "dino_extra": null,
+   "rad_exclude": [
+    "Baker's"
+   ],
+   "tails": {}
+  },
+  "ts": 1790962626.302499
+ },
+ {
+  "date": "2026-10-03T20:15:46.032691+00:00",
+  "kernel": "girishbose/probe-r1-coat-f0",
+  "version": 1,
+  "fingerprint": "db3d41c43385ecf5",
+  "why": "OWN-ALONE PROBE: round-1 CoAt student fold 0 alone (labels_r1) vs 5bc0 fold-0 teacher 0.920",
+  "ref": 56806013,
+  "public_lb": 0.928,
+  "ensemble": null,
+  "ts": 1791058547.977485
+ },
+ {
+  "date": "2026-10-03T20:15:53.830451+00:00",
+  "kernel": "girishbose/probe-r1-coat5",
+  "version": 1,
+  "fingerprint": "c39f2dd27e567edf",
+  "why": "OWN-ALONE PROBE: 5-fold round-1 CoAt students mean (labels_r1); single-model baseline 0.920",
+  "ref": 56806016,
+  "public_lb": 0.932,
+  "ensemble": null,
+  "ts": 1791058554.914251
+ },
+ {
+  "date": "2026-10-03T20:48:49.142875+00:00",
+  "kernel": "girishbose/probe-r0-coat5",
+  "version": 1,
+  "fingerprint": "993b018be023c110",
+  "why": "OWN-ALONE CONTROL: 5-fold round-0 CoAt teachers mean (report labels) - isolates ensembling from the label effect of probe-r1-coat5",
+  "ref": 56806452,
+  "public_lb": 0.929,
+  "ensemble": null,
+  "ts": 1791060531.165396
+ },
+ {
+  "date": "2026-10-04T01:03:22.148082+00:00",
+  "kernel": "girishbose/probe-r1-c224x5",
+  "version": 1,
+  "fingerprint": "3048ec9e18ba8de7",
+  "why": "OWN-ALONE PROBE: 5-fold CoAtNet@224 k16 students (labels_r1); CoAt-384 students 0.932, holdout-29 0.941 vs 0.934",
+  "ref": 56810671,
+  "public_lb": 0.933,
+  "ensemble": null,
+  "ts": 1791075803.244642
+ },
+ {
+  "date": "2026-10-04T05:08:09.040135+00:00",
+  "kernel": "girishbose/coat-up15-c224-w20",
+  "version": 1,
+  "fingerprint": "448e486ee10f3ae9",
+  "why": "FINAL-LEVEL BLEND: best 0.945 stack (coat-up15-b4) + own c224x5 leg (alone 0.933, never saw v5) rank w=0.2",
+  "ref": 56814815,
+  "public_lb": 0.943,
+  "ensemble": {
+   "base": "rsna-knee-fast-2xt4-inference.ipynb",
+   "members": [
+    "r1-c224-f0:r1c2240",
+    "r1-c224-f1:r1c2241",
+    "r1-c224-f2:r1c2242",
+    "r1-c224-f3:r1c2243",
+    "r1-c224-f4:r1c2244"
+   ],
+   "weights": [
+    "raptor_ft_r1c2240.pt",
+    "raptor_ft_r1c2241.pt",
+    "raptor_ft_r1c2242.pt",
+    "raptor_ft_r1c2243.pt",
+    "raptor_ft_r1c2244.pt"
+   ],
+   "w": 0.2,
+   "swap_v5": "soupbestof4",
+   "swap_arms": {},
+   "coat_shift": 0.15,
+   "rad_heads": {},
+   "dino": null,
+   "dino_extra": null,
+   "rad_exclude": null,
+   "tails": {
+    "ACL": [
+     [
+      "r1-c224-f0:r1c2240",
+      "r1-c224-f1:r1c2241",
+      "r1-c224-f2:r1c2242",
+      "r1-c224-f3:r1c2243",
+      "r1-c224-f4:r1c2244"
+     ],
+     0.2
+    ],
+    "MCL": [
+     [
+      "r1-c224-f0:r1c2240",
+      "r1-c224-f1:r1c2241",
+      "r1-c224-f2:r1c2242",
+      "r1-c224-f3:r1c2243",
+      "r1-c224-f4:r1c2244"
+     ],
+     0.2
+    ],
+    "Medial Meniscus": [
+     [
+      "r1-c224-f0:r1c2240",
+      "r1-c224-f1:r1c2241",
+      "r1-c224-f2:r1c2242",
+      "r1-c224-f3:r1c2243",
+      "r1-c224-f4:r1c2244"
+     ],
+     0.2
+    ],
+    "Lateral Meniscus": [
+     [
+      "r1-c224-f0:r1c2240",
+      "r1-c224-f1:r1c2241",
+      "r1-c224-f2:r1c2242",
+      "r1-c224-f3:r1c2243",
+      "r1-c224-f4:r1c2244"
+     ],
+     0.2
+    ],
+    "Medial OA": [
+     [
+      "r1-c224-f0:r1c2240",
+      "r1-c224-f1:r1c2241",
+      "r1-c224-f2:r1c2242",
+      "r1-c224-f3:r1c2243",
+      "r1-c224-f4:r1c2244"
+     ],
+     0.2
+    ],
+    "Lateral OA": [
+     [
+      "r1-c224-f0:r1c2240",
+      "r1-c224-f1:r1c2241",
+      "r1-c224-f2:r1c2242",
+      "r1-c224-f3:r1c2243",
+      "r1-c224-f4:r1c2244"
+     ],
+     0.2
+    ],
+    "PF OA": [
+     [
+      "r1-c224-f0:r1c2240",
+      "r1-c224-f1:r1c2241",
+      "r1-c224-f2:r1c2242",
+      "r1-c224-f3:r1c2243",
+      "r1-c224-f4:r1c2244"
+     ],
+     0.2
+    ],
+    "Effusion": [
+     [
+      "r1-c224-f0:r1c2240",
+      "r1-c224-f1:r1c2241",
+      "r1-c224-f2:r1c2242",
+      "r1-c224-f3:r1c2243",
+      "r1-c224-f4:r1c2244"
+     ],
+     0.2
+    ],
+    "Synovitis": [
+     [
+      "r1-c224-f0:r1c2240",
+      "r1-c224-f1:r1c2241",
+      "r1-c224-f2:r1c2242",
+      "r1-c224-f3:r1c2243",
+      "r1-c224-f4:r1c2244"
+     ],
+     0.2
+    ],
+    "Baker's": [
+     [
+      "r1-c224-f0:r1c2240",
+      "r1-c224-f1:r1c2241",
+      "r1-c224-f2:r1c2242",
+      "r1-c224-f3:r1c2243",
+      "r1-c224-f4:r1c2244"
+     ],
+     0.2
+    ],
+    "Contusion": [
+     [
+      "r1-c224-f0:r1c2240",
+      "r1-c224-f1:r1c2241",
+      "r1-c224-f2:r1c2242",
+      "r1-c224-f3:r1c2243",
+      "r1-c224-f4:r1c2244"
+     ],
+     0.2
+    ],
+    "Fracture": [
+     [
+      "r1-c224-f0:r1c2240",
+      "r1-c224-f1:r1c2241",
+      "r1-c224-f2:r1c2242",
+      "r1-c224-f3:r1c2243",
+      "r1-c224-f4:r1c2244"
+     ],
+     0.2
+    ]
+   }
+  },
+  "ts": 1791090491.935979
+ },
+ {
+  "date": "2026-10-04T05:08:41.509394+00:00",
+  "kernel": "girishbose/coat-up15-c224-w30",
+  "version": 1,
+  "fingerprint": "1b50acc1a2922823",
+  "why": "FINAL-LEVEL BLEND: best 0.945 stack (coat-up15-b4) + own c224x5 leg (alone 0.933, never saw v5) rank w=0.3",
+  "ref": 56814822,
+  "public_lb": 0.944,
+  "ensemble": {
+   "base": "rsna-knee-fast-2xt4-inference.ipynb",
+   "members": [
+    "r1-c224-f0:r1c2240",
+    "r1-c224-f1:r1c2241",
+    "r1-c224-f2:r1c2242",
+    "r1-c224-f3:r1c2243",
+    "r1-c224-f4:r1c2244"
+   ],
+   "weights": [
+    "raptor_ft_r1c2240.pt",
+    "raptor_ft_r1c2241.pt",
+    "raptor_ft_r1c2242.pt",
+    "raptor_ft_r1c2243.pt",
+    "raptor_ft_r1c2244.pt"
+   ],
+   "w": 0.3,
+   "swap_v5": "soupbestof4",
+   "swap_arms": {},
+   "coat_shift": 0.15,
+   "rad_heads": {},
+   "dino": null,
+   "dino_extra": null,
+   "rad_exclude": null,
+   "tails": {
+    "ACL": [
+     [
+      "r1-c224-f0:r1c2240",
+      "r1-c224-f1:r1c2241",
+      "r1-c224-f2:r1c2242",
+      "r1-c224-f3:r1c2243",
+      "r1-c224-f4:r1c2244"
+     ],
+     0.3
+    ],
+    "MCL": [
+     [
+      "r1-c224-f0:r1c2240",
+      "r1-c224-f1:r1c2241",
+      "r1-c224-f2:r1c2242",
+      "r1-c224-f3:r1c2243",
+      "r1-c224-f4:r1c2244"
+     ],
+     0.3
+    ],
+    "Medial Meniscus": [
+     [
+      "r1-c224-f0:r1c2240",
+      "r1-c224-f1:r1c2241",
+      "r1-c224-f2:r1c2242",
+      "r1-c224-f3:r1c2243",
+      "r1-c224-f4:r1c2244"
+     ],
+     0.3
+    ],
+    "Lateral Meniscus": [
+     [
+      "r1-c224-f0:r1c2240",
+      "r1-c224-f1:r1c2241",
+      "r1-c224-f2:r1c2242",
+      "r1-c224-f3:r1c2243",
+      "r1-c224-f4:r1c2244"
+     ],
+     0.3
+    ],
+    "Medial OA": [
+     [
+      "r1-c224-f0:r1c2240",
+      "r1-c224-f1:r1c2241",
+      "r1-c224-f2:r1c2242",
+      "r1-c224-f3:r1c2243",
+      "r1-c224-f4:r1c2244"
+     ],
+     0.3
+    ],
+    "Lateral OA": [
+     [
+      "r1-c224-f0:r1c2240",
+      "r1-c224-f1:r1c2241",
+      "r1-c224-f2:r1c2242",
+      "r1-c224-f3:r1c2243",
+      "r1-c224-f4:r1c2244"
+     ],
+     0.3
+    ],
+    "PF OA": [
+     [
+      "r1-c224-f0:r1c2240",
+      "r1-c224-f1:r1c2241",
+      "r1-c224-f2:r1c2242",
+      "r1-c224-f3:r1c2243",
+      "r1-c224-f4:r1c2244"
+     ],
+     0.3
+    ],
+    "Effusion": [
+     [
+      "r1-c224-f0:r1c2240",
+      "r1-c224-f1:r1c2241",
+      "r1-c224-f2:r1c2242",
+      "r1-c224-f3:r1c2243",
+      "r1-c224-f4:r1c2244"
+     ],
+     0.3
+    ],
+    "Synovitis": [
+     [
+      "r1-c224-f0:r1c2240",
+      "r1-c224-f1:r1c2241",
+      "r1-c224-f2:r1c2242",
+      "r1-c224-f3:r1c2243",
+      "r1-c224-f4:r1c2244"
+     ],
+     0.3
+    ],
+    "Baker's": [
+     [
+      "r1-c224-f0:r1c2240",
+      "r1-c224-f1:r1c2241",
+      "r1-c224-f2:r1c2242",
+      "r1-c224-f3:r1c2243",
+      "r1-c224-f4:r1c2244"
+     ],
+     0.3
+    ],
+    "Contusion": [
+     [
+      "r1-c224-f0:r1c2240",
+      "r1-c224-f1:r1c2241",
+      "r1-c224-f2:r1c2242",
+      "r1-c224-f3:r1c2243",
+      "r1-c224-f4:r1c2244"
+     ],
+     0.3
+    ],
+    "Fracture": [
+     [
+      "r1-c224-f0:r1c2240",
+      "r1-c224-f1:r1c2241",
+      "r1-c224-f2:r1c2242",
+      "r1-c224-f3:r1c2243",
+      "r1-c224-f4:r1c2244"
+     ],
+     0.3
+    ]
+   }
+  },
+  "ts": 1791090522.669299
+ },
+ {
+  "date": "2026-10-04T05:41:25.342327+00:00",
+  "kernel": "girishbose/probe-neg-synov",
+  "version": 1,
+  "fingerprint": "33e73ad3ea5824ef",
+  "why": "LEARNING per-finding probe: best stack coat-up15-b4 (0.945) with the Synovitis column reversed; AUC_f = (1 + 12*(0.945 - LB))/2",
+  "ref": 56815408,
+  "public_lb": 0.876,
+  "ensemble": {
+   "base": "rsna-knee-fast-2xt4-inference.ipynb",
+   "members": [],
+   "weights": [],
+   "w": 0.0,
+   "swap_v5": "soupbestof4",
+   "swap_arms": {},
+   "coat_shift": 0.15,
+   "rad_heads": {},
+   "dino": null,
+   "dino_extra": null,
+   "rad_exclude": null,
+   "negate": [
+    "Synovitis"
+   ],
+   "tails": {}
+  },
+  "ts": 1791092486.481687
+ },
+ {
+  "date": "2026-10-04T05:41:32.404162+00:00",
+  "kernel": "girishbose/probe-neg-latmen",
+  "version": 1,
+  "fingerprint": "7914a1a77855dbed",
+  "why": "LEARNING per-finding probe: best stack coat-up15-b4 (0.945) with the Lateral Meniscus column reversed; AUC_f = (1 + 12*(0.945 - LB))/2",
+  "ref": 56815410,
+  "public_lb": 0.87,
+  "ensemble": {
+   "base": "rsna-knee-fast-2xt4-inference.ipynb",
+   "members": [],
+   "weights": [],
+   "w": 0.0,
+   "swap_v5": "soupbestof4",
+   "swap_arms": {},
+   "coat_shift": 0.15,
+   "rad_heads": {},
+   "dino": null,
+   "dino_extra": null,
+   "rad_exclude": null,
+   "negate": [
+    "Lateral Meniscus"
+   ],
+   "tails": {}
+  },
+  "ts": 1791092493.535285
+ },
+ {
+  "date": "2026-10-05T05:07:30.214836+00:00",
+  "kernel": "girishbose/coat-up15-own5-w25",
+  "version": 1,
+  "fingerprint": "0d3fef4113f8460b",
+  "why": "CANDIDATE 5 Oct: best stack coat-up15-b4 (0.945) + own leg rank w0.25 = c224hvy40 f0,f1 + EffNetV2-S f0,f1 + ConvNeXt-S f0 (heavy-aug 40-epoch recipe); stated odds of >0.945 ~1 in 3",
+  "ref": 56843036,
+  "public_lb": 0.944,
+  "ensemble": {
+   "base": "rsna-knee-fast-2xt4-inference.ipynb",
+   "members": [
+    "r2-c224hvy40-f0b:r2c224hvy400",
+    "r2-c224hvy40-f1:r2c224hvy401",
+    "r2-effv2s336-f0:r2effv2s3360",
+    "r2-effv2s336-f1:r2effv2s3361",
+    "r2-cnxs336-f0:r2cnxs3360"
+   ],
+   "weights": [
+    "raptor_ft_r2c224hvy400.pt",
+    "raptor_ft_r2c224hvy401.pt",
+    "raptor_ft_r2effv2s3360.pt",
+    "raptor_ft_r2effv2s3361.pt",
+    "raptor_ft_r2cnxs3360.pt"
+   ],
+   "w": 0.25,
+   "swap_v5": "soupbestof4",
+   "swap_arms": {},
+   "coat_shift": 0.15,
+   "rad_heads": {},
+   "dino": null,
+   "dino_extra": null,
+   "rad_exclude": null,
+   "negate": null,
+   "tails": {
+    "ACL": [
+     [
+      "r2-c224hvy40-f0b:r2c224hvy400",
+      "r2-c224hvy40-f1:r2c224hvy401",
+      "r2-effv2s336-f0:r2effv2s3360",
+      "r2-effv2s336-f1:r2effv2s3361",
+      "r2-cnxs336-f0:r2cnxs3360"
+     ],
+     0.25
+    ],
+    "MCL": [
+     [
+      "r2-c224hvy40-f0b:r2c224hvy400",
+      "r2-c224hvy40-f1:r2c224hvy401",
+      "r2-effv2s336-f0:r2effv2s3360",
+      "r2-effv2s336-f1:r2effv2s3361",
+      "r2-cnxs336-f0:r2cnxs3360"
+     ],
+     0.25
+    ],
+    "Medial Meniscus": [
+     [
+      "r2-c224hvy40-f0b:r2c224hvy400",
+      "r2-c224hvy40-f1:r2c224hvy401",
+      "r2-effv2s336-f0:r2effv2s3360",
+      "r2-effv2s336-f1:r2effv2s3361",
+      "r2-cnxs336-f0:r2cnxs3360"
+     ],
+     0.25
+    ],
+    "Lateral Meniscus": [
+     [
+      "r2-c224hvy40-f0b:r2c224hvy400",
+      "r2-c224hvy40-f1:r2c224hvy401",
+      "r2-effv2s336-f0:r2effv2s3360",
+      "r2-effv2s336-f1:r2effv2s3361",
+      "r2-cnxs336-f0:r2cnxs3360"
+     ],
+     0.25
+    ],
+    "Medial OA": [
+     [
+      "r2-c224hvy40-f0b:r2c224hvy400",
+      "r2-c224hvy40-f1:r2c224hvy401",
+      "r2-effv2s336-f0:r2effv2s3360",
+      "r2-effv2s336-f1:r2effv2s3361",
+      "r2-cnxs336-f0:r2cnxs3360"
+     ],
+     0.25
+    ],
+    "Lateral OA": [
+     [
+      "r2-c224hvy40-f0b:r2c224hvy400",
+      "r2-c224hvy40-f1:r2c224hvy401",
+      "r2-effv2s336-f0:r2effv2s3360",
+      "r2-effv2s336-f1:r2effv2s3361",
+      "r2-cnxs336-f0:r2cnxs3360"
+     ],
+     0.25
+    ],
+    "PF OA": [
+     [
+      "r2-c224hvy40-f0b:r2c224hvy400",
+      "r2-c224hvy40-f1:r2c224hvy401",
+      "r2-effv2s336-f0:r2effv2s3360",
+      "r2-effv2s336-f1:r2effv2s3361",
+      "r2-cnxs336-f0:r2cnxs3360"
+     ],
+     0.25
+    ],
+    "Effusion": [
+     [
+      "r2-c224hvy40-f0b:r2c224hvy400",
+      "r2-c224hvy40-f1:r2c224hvy401",
+      "r2-effv2s336-f0:r2effv2s3360",
+      "r2-effv2s336-f1:r2effv2s3361",
+      "r2-cnxs336-f0:r2cnxs3360"
+     ],
+     0.25
+    ],
+    "Synovitis": [
+     [
+      "r2-c224hvy40-f0b:r2c224hvy400",
+      "r2-c224hvy40-f1:r2c224hvy401",
+      "r2-effv2s336-f0:r2effv2s3360",
+      "r2-effv2s336-f1:r2effv2s3361",
+      "r2-cnxs336-f0:r2cnxs3360"
+     ],
+     0.25
+    ],
+    "Baker's": [
+     [
+      "r2-c224hvy40-f0b:r2c224hvy400",
+      "r2-c224hvy40-f1:r2c224hvy401",
+      "r2-effv2s336-f0:r2effv2s3360",
+      "r2-effv2s336-f1:r2effv2s3361",
+      "r2-cnxs336-f0:r2cnxs3360"
+     ],
+     0.25
+    ],
+    "Contusion": [
+     [
+      "r2-c224hvy40-f0b:r2c224hvy400",
+      "r2-c224hvy40-f1:r2c224hvy401",
+      "r2-effv2s336-f0:r2effv2s3360",
+      "r2-effv2s336-f1:r2effv2s3361",
+      "r2-cnxs336-f0:r2cnxs3360"
+     ],
+     0.25
+    ],
+    "Fracture": [
+     [
+      "r2-c224hvy40-f0b:r2c224hvy400",
+      "r2-c224hvy40-f1:r2c224hvy401",
+      "r2-effv2s336-f0:r2effv2s3360",
+      "r2-effv2s336-f1:r2effv2s3361",
+      "r2-cnxs336-f0:r2cnxs3360"
+     ],
+     0.25
+    ]
+   }
+  },
+  "ts": 1791176851.384394
+ },
+ {
+  "date": "2026-10-05T14:37:10.556434+00:00",
+  "kernel": "girishbose/coat-up15-own15-w30",
+  "version": 1,
+  "fingerprint": "cc37d7ac6b959243",
+  "why": "CANDIDATE 5 Oct (2/5): best stack coat-up15-b4 (0.945) + ALL fifteen own models (5 folds each c224hvy40, EffNetV2-S, ConvNeXt-S; heavy-aug 40-epoch recipe) at rank w0.30, leg v2 (both GPUs); stated odds of >0.945 ~1 in 4",
+  "ref": 56854663,
+  "public_lb": 0.944,
+  "ensemble": {
+   "base": "rsna-knee-fast-2xt4-inference.ipynb",
+   "members": [
+    "r2-c224hvy40-f0b:r2c224hvy400",
+    "r2-c224hvy40-f1:r2c224hvy401",
+    "r2-c224hvy40-f2:r2c224hvy402",
+    "r2-c224hvy40-f3:r2c224hvy403",
+    "r2-c224hvy40-f4:r2c224hvy404",
+    "r2-effv2s336-f0:r2effv2s3360",
+    "r2-effv2s336-f1:r2effv2s3361",
+    "r2-effv2s336-f2:r2effv2s3362",
+    "r2-effv2s336-f3:r2effv2s3363",
+    "r2-effv2s336-f4:r2effv2s3364",
+    "r2-cnxs336-f0:r2cnxs3360",
+    "r2-cnxs336-f1:r2cnxs3361",
+    "r2-cnxs336-f2:r2cnxs3362",
+    "r2-cnxs336-f3:r2cnxs3363",
+    "r2-cnxs336-f4:r2cnxs3364"
+   ],
+   "weights": [
+    "raptor_ft_r2c224hvy400.pt",
+    "raptor_ft_r2c224hvy401.pt",
+    "raptor_ft_r2c224hvy402.pt",
+    "raptor_ft_r2c224hvy403.pt",
+    "raptor_ft_r2c224hvy404.pt",
+    "raptor_ft_r2effv2s3360.pt",
+    "raptor_ft_r2effv2s3361.pt",
+    "raptor_ft_r2effv2s3362.pt",
+    "raptor_ft_r2effv2s3363.pt",
+    "raptor_ft_r2effv2s3364.pt",
+    "raptor_ft_r2cnxs3360.pt",
+    "raptor_ft_r2cnxs3361.pt",
+    "raptor_ft_r2cnxs3362.pt",
+    "raptor_ft_r2cnxs3363.pt",
+    "raptor_ft_r2cnxs3364.pt"
+   ],
+   "w": 0.3,
+   "leg": "v2",
+   "leg_env": {},
+   "swap_v5": "soupbestof4",
+   "swap_arms": {},
+   "coat_shift": 0.15,
+   "rad_heads": {},
+   "dino": null,
+   "dino_extra": null,
+   "rad_exclude": null,
+   "negate": null,
+   "tails": {
+    "ACL": [
+     [
+      "r2-c224hvy40-f0b:r2c224hvy400",
+      "r2-c224hvy40-f1:r2c224hvy401",
+      "r2-c224hvy40-f2:r2c224hvy402",
+      "r2-c224hvy40-f3:r2c224hvy403",
+      "r2-c224hvy40-f4:r2c224hvy404",
+      "r2-effv2s336-f0:r2effv2s3360",
+      "r2-effv2s336-f1:r2effv2s3361",
+      "r2-effv2s336-f2:r2effv2s3362",
+      "r2-effv2s336-f3:r2effv2s3363",
+      "r2-effv2s336-f4:r2effv2s3364",
+      "r2-cnxs336-f0:r2cnxs3360",
+      "r2-cnxs336-f1:r2cnxs3361",
+      "r2-cnxs336-f2:r2cnxs3362",
+      "r2-cnxs336-f3:r2cnxs3363",
+      "r2-cnxs336-f4:r2cnxs3364"
+     ],
+     0.3
+    ],
+    "MCL": [
+     [
+      "r2-c224hvy40-f0b:r2c224hvy400",
+      "r2-c224hvy40-f1:r2c224hvy401",
+      "r2-c224hvy40-f2:r2c224hvy402",
+      "r2-c224hvy40-f3:r2c224hvy403",
+      "r2-c224hvy40-f4:r2c224hvy404",
+      "r2-effv2s336-f0:r2effv2s3360",
+      "r2-effv2s336-f1:r2effv2s3361",
+      "r2-effv2s336-f2:r2effv2s3362",
+      "r2-effv2s336-f3:r2effv2s3363",
+      "r2-effv2s336-f4:r2effv2s3364",
+      "r2-cnxs336-f0:r2cnxs3360",
+      "r2-cnxs336-f1:r2cnxs3361",
+      "r2-cnxs336-f2:r2cnxs3362",
+      "r2-cnxs336-f3:r2cnxs3363",
+      "r2-cnxs336-f4:r2cnxs3364"
+     ],
+     0.3
+    ],
+    "Medial Meniscus": [
+     [
+      "r2-c224hvy40-f0b:r2c224hvy400",
+      "r2-c224hvy40-f1:r2c224hvy401",
+      "r2-c224hvy40-f2:r2c224hvy402",
+      "r2-c224hvy40-f3:r2c224hvy403",
+      "r2-c224hvy40-f4:r2c224hvy404",
+      "r2-effv2s336-f0:r2effv2s3360",
+      "r2-effv2s336-f1:r2effv2s3361",
+      "r2-effv2s336-f2:r2effv2s3362",
+      "r2-effv2s336-f3:r2effv2s3363",
+      "r2-effv2s336-f4:r2effv2s3364",
+      "r2-cnxs336-f0:r2cnxs3360",
+      "r2-cnxs336-f1:r2cnxs3361",
+      "r2-cnxs336-f2:r2cnxs3362",
+      "r2-cnxs336-f3:r2cnxs3363",
+      "r2-cnxs336-f4:r2cnxs3364"
+     ],
+     0.3
+    ],
+    "Lateral Meniscus": [
+     [
+      "r2-c224hvy40-f0b:r2c224hvy400",
+      "r2-c224hvy40-f1:r2c224hvy401",
+      "r2-c224hvy40-f2:r2c224hvy402",
+      "r2-c224hvy40-f3:r2c224hvy403",
+      "r2-c224hvy40-f4:r2c224hvy404",
+      "r2-effv2s336-f0:r2effv2s3360",
+      "r2-effv2s336-f1:r2effv2s3361",
+      "r2-effv2s336-f2:r2effv2s3362",
+      "r2-effv2s336-f3:r2effv2s3363",
+      "r2-effv2s336-f4:r2effv2s3364",
+      "r2-cnxs336-f0:r2cnxs3360",
+      "r2-cnxs336-f1:r2cnxs3361",
+      "r2-cnxs336-f2:r2cnxs3362",
+      "r2-cnxs336-f3:r2cnxs3363",
+      "r2-cnxs336-f4:r2cnxs3364"
+     ],
+     0.3
+    ],
+    "Medial OA": [
+     [
+      "r2-c224hvy40-f0b:r2c224hvy400",
+      "r2-c224hvy40-f1:r2c224hvy401",
+      "r2-c224hvy40-f2:r2c224hvy402",
+      "r2-c224hvy40-f3:r2c224hvy403",
+      "r2-c224hvy40-f4:r2c224hvy404",
+      "r2-effv2s336-f0:r2effv2s3360",
+      "r2-effv2s336-f1:r2effv2s3361",
+      "r2-effv2s336-f2:r2effv2s3362",
+      "r2-effv2s336-f3:r2effv2s3363",
+      "r2-effv2s336-f4:r2effv2s3364",
+      "r2-cnxs336-f0:r2cnxs3360",
+      "r2-cnxs336-f1:r2cnxs3361",
+      "r2-cnxs336-f2:r2cnxs3362",
+      "r2-cnxs336-f3:r2cnxs3363",
+      "r2-cnxs336-f4:r2cnxs3364"
+     ],
+     0.3
+    ],
+    "Lateral OA": [
+     [
+      "r2-c224hvy40-f0b:r2c224hvy400",
+      "r2-c224hvy40-f1:r2c224hvy401",
+      "r2-c224hvy40-f2:r2c224hvy402",
+      "r2-c224hvy40-f3:r2c224hvy403",
+      "r2-c224hvy40-f4:r2c224hvy404",
+      "r2-effv2s336-f0:r2effv2s3360",
+      "r2-effv2s336-f1:r2effv2s3361",
+      "r2-effv2s336-f2:r2effv2s3362",
+      "r2-effv2s336-f3:r2effv2s3363",
+      "r2-effv2s336-f4:r2effv2s3364",
+      "r2-cnxs336-f0:r2cnxs3360",
+      "r2-cnxs336-f1:r2cnxs3361",
+      "r2-cnxs336-f2:r2cnxs3362",
+      "r2-cnxs336-f3:r2cnxs3363",
+      "r2-cnxs336-f4:r2cnxs3364"
+     ],
+     0.3
+    ],
+    "PF OA": [
+     [
+      "r2-c224hvy40-f0b:r2c224hvy400",
+      "r2-c224hvy40-f1:r2c224hvy401",
+      "r2-c224hvy40-f2:r2c224hvy402",
+      "r2-c224hvy40-f3:r2c224hvy403",
+      "r2-c224hvy40-f4:r2c224hvy404",
+      "r2-effv2s336-f0:r2effv2s3360",
+      "r2-effv2s336-f1:r2effv2s3361",
+      "r2-effv2s336-f2:r2effv2s3362",
+      "r2-effv2s336-f3:r2effv2s3363",
+      "r2-effv2s336-f4:r2effv2s3364",
+      "r2-cnxs336-f0:r2cnxs3360",
+      "r2-cnxs336-f1:r2cnxs3361",
+      "r2-cnxs336-f2:r2cnxs3362",
+      "r2-cnxs336-f3:r2cnxs3363",
+      "r2-cnxs336-f4:r2cnxs3364"
+     ],
+     0.3
+    ],
+    "Effusion": [
+     [
+      "r2-c224hvy40-f0b:r2c224hvy400",
+      "r2-c224hvy40-f1:r2c224hvy401",
+      "r2-c224hvy40-f2:r2c224hvy402",
+      "r2-c224hvy40-f3:r2c224hvy403",
+      "r2-c224hvy40-f4:r2c224hvy404",
+      "r2-effv2s336-f0:r2effv2s3360",
+      "r2-effv2s336-f1:r2effv2s3361",
+      "r2-effv2s336-f2:r2effv2s3362",
+      "r2-effv2s336-f3:r2effv2s3363",
+      "r2-effv2s336-f4:r2effv2s3364",
+      "r2-cnxs336-f0:r2cnxs3360",
+      "r2-cnxs336-f1:r2cnxs3361",
+      "r2-cnxs336-f2:r2cnxs3362",
+      "r2-cnxs336-f3:r2cnxs3363",
+      "r2-cnxs336-f4:r2cnxs3364"
+     ],
+     0.3
+    ],
+    "Synovitis": [
+     [
+      "r2-c224hvy40-f0b:r2c224hvy400",
+      "r2-c224hvy40-f1:r2c224hvy401",
+      "r2-c224hvy40-f2:r2c224hvy402",
+      "r2-c224hvy40-f3:r2c224hvy403",
+      "r2-c224hvy40-f4:r2c224hvy404",
+      "r2-effv2s336-f0:r2effv2s3360",
+      "r2-effv2s336-f1:r2effv2s3361",
+      "r2-effv2s336-f2:r2effv2s3362",
+      "r2-effv2s336-f3:r2effv2s3363",
+      "r2-effv2s336-f4:r2effv2s3364",
+      "r2-cnxs336-f0:r2cnxs3360",
+      "r2-cnxs336-f1:r2cnxs3361",
+      "r2-cnxs336-f2:r2cnxs3362",
+      "r2-cnxs336-f3:r2cnxs3363",
+      "r2-cnxs336-f4:r2cnxs3364"
+     ],
+     0.3
+    ],
+    "Baker's": [
+     [
+      "r2-c224hvy40-f0b:r2c224hvy400",
+      "r2-c224hvy40-f1:r2c224hvy401",
+      "r2-c224hvy40-f2:r2c224hvy402",
+      "r2-c224hvy40-f3:r2c224hvy403",
+      "r2-c224hvy40-f4:r2c224hvy404",
+      "r2-effv2s336-f0:r2effv2s3360",
+      "r2-effv2s336-f1:r2effv2s3361",
+      "r2-effv2s336-f2:r2effv2s3362",
+      "r2-effv2s336-f3:r2effv2s3363",
+      "r2-effv2s336-f4:r2effv2s3364",
+      "r2-cnxs336-f0:r2cnxs3360",
+      "r2-cnxs336-f1:r2cnxs3361",
+      "r2-cnxs336-f2:r2cnxs3362",
+      "r2-cnxs336-f3:r2cnxs3363",
+      "r2-cnxs336-f4:r2cnxs3364"
+     ],
+     0.3
+    ],
+    "Contusion": [
+     [
+      "r2-c224hvy40-f0b:r2c224hvy400",
+      "r2-c224hvy40-f1:r2c224hvy401",
+      "r2-c224hvy40-f2:r2c224hvy402",
+      "r2-c224hvy40-f3:r2c224hvy403",
+      "r2-c224hvy40-f4:r2c224hvy404",
+      "r2-effv2s336-f0:r2effv2s3360",
+      "r2-effv2s336-f1:r2effv2s3361",
+      "r2-effv2s336-f2:r2effv2s3362",
+      "r2-effv2s336-f3:r2effv2s3363",
+      "r2-effv2s336-f4:r2effv2s3364",
+      "r2-cnxs336-f0:r2cnxs3360",
+      "r2-cnxs336-f1:r2cnxs3361",
+      "r2-cnxs336-f2:r2cnxs3362",
+      "r2-cnxs336-f3:r2cnxs3363",
+      "r2-cnxs336-f4:r2cnxs3364"
+     ],
+     0.3
+    ],
+    "Fracture": [
+     [
+      "r2-c224hvy40-f0b:r2c224hvy400",
+      "r2-c224hvy40-f1:r2c224hvy401",
+      "r2-c224hvy40-f2:r2c224hvy402",
+      "r2-c224hvy40-f3:r2c224hvy403",
+      "r2-c224hvy40-f4:r2c224hvy404",
+      "r2-effv2s336-f0:r2effv2s3360",
+      "r2-effv2s336-f1:r2effv2s3361",
+      "r2-effv2s336-f2:r2effv2s3362",
+      "r2-effv2s336-f3:r2effv2s3363",
+      "r2-effv2s336-f4:r2effv2s3364",
+      "r2-cnxs336-f0:r2cnxs3360",
+      "r2-cnxs336-f1:r2cnxs3361",
+      "r2-cnxs336-f2:r2cnxs3362",
+      "r2-cnxs336-f3:r2cnxs3363",
+      "r2-cnxs336-f4:r2cnxs3364"
+     ],
+     0.3
+    ]
+   }
+  },
+  "ts": 1791211032.786638
+ },
+ {
+  "date": "2026-10-05T14:47:14.632954+00:00",
+  "kernel": "girishbose/coat-up15-own15-w60",
+  "version": 1,
+  "fingerprint": "c1f0bccf567b0063",
+  "why": "CANDIDATE 5 Oct (3/5): best stack coat-up15-b4 (0.945) + all fifteen own models (c224hvy40, EffNetV2-S, ConvNeXt-S x 5 folds) at rank w0.60, leg v2; with w0.30 (56854663) it reads how strong the own system is; stated odds of >0.945 ~1 in 5",
+  "ref": 56854916,
+  "public_lb": 0.944,
+  "ensemble": {
+   "base": "rsna-knee-fast-2xt4-inference.ipynb",
+   "members": [
+    "r2-c224hvy40-f0b:r2c224hvy400",
+    "r2-c224hvy40-f1:r2c224hvy401",
+    "r2-c224hvy40-f2:r2c224hvy402",
+    "r2-c224hvy40-f3:r2c224hvy403",
+    "r2-c224hvy40-f4:r2c224hvy404",
+    "r2-effv2s336-f0:r2effv2s3360",
+    "r2-effv2s336-f1:r2effv2s3361",
+    "r2-effv2s336-f2:r2effv2s3362",
+    "r2-effv2s336-f3:r2effv2s3363",
+    "r2-effv2s336-f4:r2effv2s3364",
+    "r2-cnxs336-f0:r2cnxs3360",
+    "r2-cnxs336-f1:r2cnxs3361",
+    "r2-cnxs336-f2:r2cnxs3362",
+    "r2-cnxs336-f3:r2cnxs3363",
+    "r2-cnxs336-f4:r2cnxs3364"
+   ],
+   "weights": [
+    "raptor_ft_r2c224hvy400.pt",
+    "raptor_ft_r2c224hvy401.pt",
+    "raptor_ft_r2c224hvy402.pt",
+    "raptor_ft_r2c224hvy403.pt",
+    "raptor_ft_r2c224hvy404.pt",
+    "raptor_ft_r2effv2s3360.pt",
+    "raptor_ft_r2effv2s3361.pt",
+    "raptor_ft_r2effv2s3362.pt",
+    "raptor_ft_r2effv2s3363.pt",
+    "raptor_ft_r2effv2s3364.pt",
+    "raptor_ft_r2cnxs3360.pt",
+    "raptor_ft_r2cnxs3361.pt",
+    "raptor_ft_r2cnxs3362.pt",
+    "raptor_ft_r2cnxs3363.pt",
+    "raptor_ft_r2cnxs3364.pt"
+   ],
+   "w": 0.6,
+   "leg": "v2",
+   "leg_env": {},
+   "swap_v5": "soupbestof4",
+   "swap_arms": {},
+   "coat_shift": 0.15,
+   "rad_heads": {},
+   "dino": null,
+   "dino_extra": null,
+   "rad_exclude": null,
+   "negate": null,
+   "tails": {
+    "ACL": [
+     [
+      "r2-c224hvy40-f0b:r2c224hvy400",
+      "r2-c224hvy40-f1:r2c224hvy401",
+      "r2-c224hvy40-f2:r2c224hvy402",
+      "r2-c224hvy40-f3:r2c224hvy403",
+      "r2-c224hvy40-f4:r2c224hvy404",
+      "r2-effv2s336-f0:r2effv2s3360",
+      "r2-effv2s336-f1:r2effv2s3361",
+      "r2-effv2s336-f2:r2effv2s3362",
+      "r2-effv2s336-f3:r2effv2s3363",
+      "r2-effv2s336-f4:r2effv2s3364",
+      "r2-cnxs336-f0:r2cnxs3360",
+      "r2-cnxs336-f1:r2cnxs3361",
+      "r2-cnxs336-f2:r2cnxs3362",
+      "r2-cnxs336-f3:r2cnxs3363",
+      "r2-cnxs336-f4:r2cnxs3364"
+     ],
+     0.6
+    ],
+    "MCL": [
+     [
+      "r2-c224hvy40-f0b:r2c224hvy400",
+      "r2-c224hvy40-f1:r2c224hvy401",
+      "r2-c224hvy40-f2:r2c224hvy402",
+      "r2-c224hvy40-f3:r2c224hvy403",
+      "r2-c224hvy40-f4:r2c224hvy404",
+      "r2-effv2s336-f0:r2effv2s3360",
+      "r2-effv2s336-f1:r2effv2s3361",
+      "r2-effv2s336-f2:r2effv2s3362",
+      "r2-effv2s336-f3:r2effv2s3363",
+      "r2-effv2s336-f4:r2effv2s3364",
+      "r2-cnxs336-f0:r2cnxs3360",
+      "r2-cnxs336-f1:r2cnxs3361",
+      "r2-cnxs336-f2:r2cnxs3362",
+      "r2-cnxs336-f3:r2cnxs3363",
+      "r2-cnxs336-f4:r2cnxs3364"
+     ],
+     0.6
+    ],
+    "Medial Meniscus": [
+     [
+      "r2-c224hvy40-f0b:r2c224hvy400",
+      "r2-c224hvy40-f1:r2c224hvy401",
+      "r2-c224hvy40-f2:r2c224hvy402",
+      "r2-c224hvy40-f3:r2c224hvy403",
+      "r2-c224hvy40-f4:r2c224hvy404",
+      "r2-effv2s336-f0:r2effv2s3360",
+      "r2-effv2s336-f1:r2effv2s3361",
+      "r2-effv2s336-f2:r2effv2s3362",
+      "r2-effv2s336-f3:r2effv2s3363",
+      "r2-effv2s336-f4:r2effv2s3364",
+      "r2-cnxs336-f0:r2cnxs3360",
+      "r2-cnxs336-f1:r2cnxs3361",
+      "r2-cnxs336-f2:r2cnxs3362",
+      "r2-cnxs336-f3:r2cnxs3363",
+      "r2-cnxs336-f4:r2cnxs3364"
+     ],
+     0.6
+    ],
+    "Lateral Meniscus": [
+     [
+      "r2-c224hvy40-f0b:r2c224hvy400",
+      "r2-c224hvy40-f1:r2c224hvy401",
+      "r2-c224hvy40-f2:r2c224hvy402",
+      "r2-c224hvy40-f3:r2c224hvy403",
+      "r2-c224hvy40-f4:r2c224hvy404",
+      "r2-effv2s336-f0:r2effv2s3360",
+      "r2-effv2s336-f1:r2effv2s3361",
+      "r2-effv2s336-f2:r2effv2s3362",
+      "r2-effv2s336-f3:r2effv2s3363",
+      "r2-effv2s336-f4:r2effv2s3364",
+      "r2-cnxs336-f0:r2cnxs3360",
+      "r2-cnxs336-f1:r2cnxs3361",
+      "r2-cnxs336-f2:r2cnxs3362",
+      "r2-cnxs336-f3:r2cnxs3363",
+      "r2-cnxs336-f4:r2cnxs3364"
+     ],
+     0.6
+    ],
+    "Medial OA": [
+     [
+      "r2-c224hvy40-f0b:r2c224hvy400",
+      "r2-c224hvy40-f1:r2c224hvy401",
+      "r2-c224hvy40-f2:r2c224hvy402",
+      "r2-c224hvy40-f3:r2c224hvy403",
+      "r2-c224hvy40-f4:r2c224hvy404",
+      "r2-effv2s336-f0:r2effv2s3360",
+      "r2-effv2s336-f1:r2effv2s3361",
+      "r2-effv2s336-f2:r2effv2s3362",
+      "r2-effv2s336-f3:r2effv2s3363",
+      "r2-effv2s336-f4:r2effv2s3364",
+      "r2-cnxs336-f0:r2cnxs3360",
+      "r2-cnxs336-f1:r2cnxs3361",
+      "r2-cnxs336-f2:r2cnxs3362",
+      "r2-cnxs336-f3:r2cnxs3363",
+      "r2-cnxs336-f4:r2cnxs3364"
+     ],
+     0.6
+    ],
+    "Lateral OA": [
+     [
+      "r2-c224hvy40-f0b:r2c224hvy400",
+      "r2-c224hvy40-f1:r2c224hvy401",
+      "r2-c224hvy40-f2:r2c224hvy402",
+      "r2-c224hvy40-f3:r2c224hvy403",
+      "r2-c224hvy40-f4:r2c224hvy404",
+      "r2-effv2s336-f0:r2effv2s3360",
+      "r2-effv2s336-f1:r2effv2s3361",
+      "r2-effv2s336-f2:r2effv2s3362",
+      "r2-effv2s336-f3:r2effv2s3363",
+      "r2-effv2s336-f4:r2effv2s3364",
+      "r2-cnxs336-f0:r2cnxs3360",
+      "r2-cnxs336-f1:r2cnxs3361",
+      "r2-cnxs336-f2:r2cnxs3362",
+      "r2-cnxs336-f3:r2cnxs3363",
+      "r2-cnxs336-f4:r2cnxs3364"
+     ],
+     0.6
+    ],
+    "PF OA": [
+     [
+      "r2-c224hvy40-f0b:r2c224hvy400",
+      "r2-c224hvy40-f1:r2c224hvy401",
+      "r2-c224hvy40-f2:r2c224hvy402",
+      "r2-c224hvy40-f3:r2c224hvy403",
+      "r2-c224hvy40-f4:r2c224hvy404",
+      "r2-effv2s336-f0:r2effv2s3360",
+      "r2-effv2s336-f1:r2effv2s3361",
+      "r2-effv2s336-f2:r2effv2s3362",
+      "r2-effv2s336-f3:r2effv2s3363",
+      "r2-effv2s336-f4:r2effv2s3364",
+      "r2-cnxs336-f0:r2cnxs3360",
+      "r2-cnxs336-f1:r2cnxs3361",
+      "r2-cnxs336-f2:r2cnxs3362",
+      "r2-cnxs336-f3:r2cnxs3363",
+      "r2-cnxs336-f4:r2cnxs3364"
+     ],
+     0.6
+    ],
+    "Effusion": [
+     [
+      "r2-c224hvy40-f0b:r2c224hvy400",
+      "r2-c224hvy40-f1:r2c224hvy401",
+      "r2-c224hvy40-f2:r2c224hvy402",
+      "r2-c224hvy40-f3:r2c224hvy403",
+      "r2-c224hvy40-f4:r2c224hvy404",
+      "r2-effv2s336-f0:r2effv2s3360",
+      "r2-effv2s336-f1:r2effv2s3361",
+      "r2-effv2s336-f2:r2effv2s3362",
+      "r2-effv2s336-f3:r2effv2s3363",
+      "r2-effv2s336-f4:r2effv2s3364",
+      "r2-cnxs336-f0:r2cnxs3360",
+      "r2-cnxs336-f1:r2cnxs3361",
+      "r2-cnxs336-f2:r2cnxs3362",
+      "r2-cnxs336-f3:r2cnxs3363",
+      "r2-cnxs336-f4:r2cnxs3364"
+     ],
+     0.6
+    ],
+    "Synovitis": [
+     [
+      "r2-c224hvy40-f0b:r2c224hvy400",
+      "r2-c224hvy40-f1:r2c224hvy401",
+      "r2-c224hvy40-f2:r2c224hvy402",
+      "r2-c224hvy40-f3:r2c224hvy403",
+      "r2-c224hvy40-f4:r2c224hvy404",
+      "r2-effv2s336-f0:r2effv2s3360",
+      "r2-effv2s336-f1:r2effv2s3361",
+      "r2-effv2s336-f2:r2effv2s3362",
+      "r2-effv2s336-f3:r2effv2s3363",
+      "r2-effv2s336-f4:r2effv2s3364",
+      "r2-cnxs336-f0:r2cnxs3360",
+      "r2-cnxs336-f1:r2cnxs3361",
+      "r2-cnxs336-f2:r2cnxs3362",
+      "r2-cnxs336-f3:r2cnxs3363",
+      "r2-cnxs336-f4:r2cnxs3364"
+     ],
+     0.6
+    ],
+    "Baker's": [
+     [
+      "r2-c224hvy40-f0b:r2c224hvy400",
+      "r2-c224hvy40-f1:r2c224hvy401",
+      "r2-c224hvy40-f2:r2c224hvy402",
+      "r2-c224hvy40-f3:r2c224hvy403",
+      "r2-c224hvy40-f4:r2c224hvy404",
+      "r2-effv2s336-f0:r2effv2s3360",
+      "r2-effv2s336-f1:r2effv2s3361",
+      "r2-effv2s336-f2:r2effv2s3362",
+      "r2-effv2s336-f3:r2effv2s3363",
+      "r2-effv2s336-f4:r2effv2s3364",
+      "r2-cnxs336-f0:r2cnxs3360",
+      "r2-cnxs336-f1:r2cnxs3361",
+      "r2-cnxs336-f2:r2cnxs3362",
+      "r2-cnxs336-f3:r2cnxs3363",
+      "r2-cnxs336-f4:r2cnxs3364"
+     ],
+     0.6
+    ],
+    "Contusion": [
+     [
+      "r2-c224hvy40-f0b:r2c224hvy400",
+      "r2-c224hvy40-f1:r2c224hvy401",
+      "r2-c224hvy40-f2:r2c224hvy402",
+      "r2-c224hvy40-f3:r2c224hvy403",
+      "r2-c224hvy40-f4:r2c224hvy404",
+      "r2-effv2s336-f0:r2effv2s3360",
+      "r2-effv2s336-f1:r2effv2s3361",
+      "r2-effv2s336-f2:r2effv2s3362",
+      "r2-effv2s336-f3:r2effv2s3363",
+      "r2-effv2s336-f4:r2effv2s3364",
+      "r2-cnxs336-f0:r2cnxs3360",
+      "r2-cnxs336-f1:r2cnxs3361",
+      "r2-cnxs336-f2:r2cnxs3362",
+      "r2-cnxs336-f3:r2cnxs3363",
+      "r2-cnxs336-f4:r2cnxs3364"
+     ],
+     0.6
+    ],
+    "Fracture": [
+     [
+      "r2-c224hvy40-f0b:r2c224hvy400",
+      "r2-c224hvy40-f1:r2c224hvy401",
+      "r2-c224hvy40-f2:r2c224hvy402",
+      "r2-c224hvy40-f3:r2c224hvy403",
+      "r2-c224hvy40-f4:r2c224hvy404",
+      "r2-effv2s336-f0:r2effv2s3360",
+      "r2-effv2s336-f1:r2effv2s3361",
+      "r2-effv2s336-f2:r2effv2s3362",
+      "r2-effv2s336-f3:r2effv2s3363",
+      "r2-effv2s336-f4:r2effv2s3364",
+      "r2-cnxs336-f0:r2cnxs3360",
+      "r2-cnxs336-f1:r2cnxs3361",
+      "r2-cnxs336-f2:r2cnxs3362",
+      "r2-cnxs336-f3:r2cnxs3363",
+      "r2-cnxs336-f4:r2cnxs3364"
+     ],
+     0.6
+    ]
+   }
+  },
+  "ts": 1791211636.0209
+ },
+ {
+  "date": "2026-10-06T06:28:09.143140+00:00",
+  "kernel": "girishbose/coat-up15-own20-w50",
+  "version": 1,
+  "fingerprint": "7768417873fe4f7d",
+  "why": "CANDIDATE 6 Oct (1/5): best stack coat-up15-b4 (0.945) + twenty own models = the fifteen heavy-aug models + ConvNeXt-S second-round students x5 (labels_r4; five-fold said 0.8979 alone, leg 0.8991 vs 0.8979) at rank w0.50, leg v2; stated odds of >0.945 ~1 in 5",
+  "ref": 56872599,
+  "public_lb": 0.944,
+  "ensemble": {
+   "base": "rsna-knee-fast-2xt4-inference.ipynb",
+   "members": [
+    "r2-c224hvy40-f0b:r2c224hvy400",
+    "r2-c224hvy40-f1:r2c224hvy401",
+    "r2-c224hvy40-f2:r2c224hvy402",
+    "r2-c224hvy40-f3:r2c224hvy403",
+    "r2-c224hvy40-f4:r2c224hvy404",
+    "r2-effv2s336-f0:r2effv2s3360",
+    "r2-effv2s336-f1:r2effv2s3361",
+    "r2-effv2s336-f2:r2effv2s3362",
+    "r2-effv2s336-f3:r2effv2s3363",
+    "r2-effv2s336-f4:r2effv2s3364",
+    "r2-cnxs336-f0:r2cnxs3360",
+    "r2-cnxs336-f1:r2cnxs3361",
+    "r2-cnxs336-f2:r2cnxs3362",
+    "r2-cnxs336-f3:r2cnxs3363",
+    "r2-cnxs336-f4:r2cnxs3364",
+    "r4-cnxs336-f0:r4cnxs3360",
+    "r4-cnxs336-f1:r4cnxs3361",
+    "r4-cnxs336-f2:r4cnxs3362",
+    "r4-cnxs336-f3:r4cnxs3363",
+    "r4-cnxs336-f4:r4cnxs3364"
+   ],
+   "weights": [
+    "raptor_ft_r2c224hvy400.pt",
+    "raptor_ft_r2c224hvy401.pt",
+    "raptor_ft_r2c224hvy402.pt",
+    "raptor_ft_r2c224hvy403.pt",
+    "raptor_ft_r2c224hvy404.pt",
+    "raptor_ft_r2effv2s3360.pt",
+    "raptor_ft_r2effv2s3361.pt",
+    "raptor_ft_r2effv2s3362.pt",
+    "raptor_ft_r2effv2s3363.pt",
+    "raptor_ft_r2effv2s3364.pt",
+    "raptor_ft_r2cnxs3360.pt",
+    "raptor_ft_r2cnxs3361.pt",
+    "raptor_ft_r2cnxs3362.pt",
+    "raptor_ft_r2cnxs3363.pt",
+    "raptor_ft_r2cnxs3364.pt",
+    "raptor_ft_r4cnxs3360.pt",
+    "raptor_ft_r4cnxs3361.pt",
+    "raptor_ft_r4cnxs3362.pt",
+    "raptor_ft_r4cnxs3363.pt",
+    "raptor_ft_r4cnxs3364.pt"
+   ],
+   "w": 0.5,
+   "leg": "v2",
+   "leg_env": {},
+   "swap_v5": "soupbestof4",
+   "swap_arms": {},
+   "coat_shift": 0.15,
+   "rad_heads": {},
+   "dino": null,
+   "dino_extra": null,
+   "rad_exclude": null,
+   "negate": null,
+   "tails": {
+    "ACL": [
+     [
+      "r2-c224hvy40-f0b:r2c224hvy400",
+      "r2-c224hvy40-f1:r2c224hvy401",
+      "r2-c224hvy40-f2:r2c224hvy402",
+      "r2-c224hvy40-f3:r2c224hvy403",
+      "r2-c224hvy40-f4:r2c224hvy404",
+      "r2-effv2s336-f0:r2effv2s3360",
+      "r2-effv2s336-f1:r2effv2s3361",
+      "r2-effv2s336-f2:r2effv2s3362",
+      "r2-effv2s336-f3:r2effv2s3363",
+      "r2-effv2s336-f4:r2effv2s3364",
+      "r2-cnxs336-f0:r2cnxs3360",
+      "r2-cnxs336-f1:r2cnxs3361",
+      "r2-cnxs336-f2:r2cnxs3362",
+      "r2-cnxs336-f3:r2cnxs3363",
+      "r2-cnxs336-f4:r2cnxs3364",
+      "r4-cnxs336-f0:r4cnxs3360",
+      "r4-cnxs336-f1:r4cnxs3361",
+      "r4-cnxs336-f2:r4cnxs3362",
+      "r4-cnxs336-f3:r4cnxs3363",
+      "r4-cnxs336-f4:r4cnxs3364"
+     ],
+     0.5
+    ],
+    "MCL": [
+     [
+      "r2-c224hvy40-f0b:r2c224hvy400",
+      "r2-c224hvy40-f1:r2c224hvy401",
+      "r2-c224hvy40-f2:r2c224hvy402",
+      "r2-c224hvy40-f3:r2c224hvy403",
+      "r2-c224hvy40-f4:r2c224hvy404",
+      "r2-effv2s336-f0:r2effv2s3360",
+      "r2-effv2s336-f1:r2effv2s3361",
+      "r2-effv2s336-f2:r2effv2s3362",
+      "r2-effv2s336-f3:r2effv2s3363",
+      "r2-effv2s336-f4:r2effv2s3364",
+      "r2-cnxs336-f0:r2cnxs3360",
+      "r2-cnxs336-f1:r2cnxs3361",
+      "r2-cnxs336-f2:r2cnxs3362",
+      "r2-cnxs336-f3:r2cnxs3363",
+      "r2-cnxs336-f4:r2cnxs3364",
+      "r4-cnxs336-f0:r4cnxs3360",
+      "r4-cnxs336-f1:r4cnxs3361",
+      "r4-cnxs336-f2:r4cnxs3362",
+      "r4-cnxs336-f3:r4cnxs3363",
+      "r4-cnxs336-f4:r4cnxs3364"
+     ],
+     0.5
+    ],
+    "Medial Meniscus": [
+     [
+      "r2-c224hvy40-f0b:r2c224hvy400",
+      "r2-c224hvy40-f1:r2c224hvy401",
+      "r2-c224hvy40-f2:r2c224hvy402",
+      "r2-c224hvy40-f3:r2c224hvy403",
+      "r2-c224hvy40-f4:r2c224hvy404",
+      "r2-effv2s336-f0:r2effv2s3360",
+      "r2-effv2s336-f1:r2effv2s3361",
+      "r2-effv2s336-f2:r2effv2s3362",
+      "r2-effv2s336-f3:r2effv2s3363",
+      "r2-effv2s336-f4:r2effv2s3364",
+      "r2-cnxs336-f0:r2cnxs3360",
+      "r2-cnxs336-f1:r2cnxs3361",
+      "r2-cnxs336-f2:r2cnxs3362",
+      "r2-cnxs336-f3:r2cnxs3363",
+      "r2-cnxs336-f4:r2cnxs3364",
+      "r4-cnxs336-f0:r4cnxs3360",
+      "r4-cnxs336-f1:r4cnxs3361",
+      "r4-cnxs336-f2:r4cnxs3362",
+      "r4-cnxs336-f3:r4cnxs3363",
+      "r4-cnxs336-f4:r4cnxs3364"
+     ],
+     0.5
+    ],
+    "Lateral Meniscus": [
+     [
+      "r2-c224hvy40-f0b:r2c224hvy400",
+      "r2-c224hvy40-f1:r2c224hvy401",
+      "r2-c224hvy40-f2:r2c224hvy402",
+      "r2-c224hvy40-f3:r2c224hvy403",
+      "r2-c224hvy40-f4:r2c224hvy404",
+      "r2-effv2s336-f0:r2effv2s3360",
+      "r2-effv2s336-f1:r2effv2s3361",
+      "r2-effv2s336-f2:r2effv2s3362",
+      "r2-effv2s336-f3:r2effv2s3363",
+      "r2-effv2s336-f4:r2effv2s3364",
+      "r2-cnxs336-f0:r2cnxs3360",
+      "r2-cnxs336-f1:r2cnxs3361",
+      "r2-cnxs336-f2:r2cnxs3362",
+      "r2-cnxs336-f3:r2cnxs3363",
+      "r2-cnxs336-f4:r2cnxs3364",
+      "r4-cnxs336-f0:r4cnxs3360",
+      "r4-cnxs336-f1:r4cnxs3361",
+      "r4-cnxs336-f2:r4cnxs3362",
+      "r4-cnxs336-f3:r4cnxs3363",
+      "r4-cnxs336-f4:r4cnxs3364"
+     ],
+     0.5
+    ],
+    "Medial OA": [
+     [
+      "r2-c224hvy40-f0b:r2c224hvy400",
+      "r2-c224hvy40-f1:r2c224hvy401",
+      "r2-c224hvy40-f2:r2c224hvy402",
+      "r2-c224hvy40-f3:r2c224hvy403",
+      "r2-c224hvy40-f4:r2c224hvy404",
+      "r2-effv2s336-f0:r2effv2s3360",
+      "r2-effv2s336-f1:r2effv2s3361",
+      "r2-effv2s336-f2:r2effv2s3362",
+      "r2-effv2s336-f3:r2effv2s3363",
+      "r2-effv2s336-f4:r2effv2s3364",
+      "r2-cnxs336-f0:r2cnxs3360",
+      "r2-cnxs336-f1:r2cnxs3361",
+      "r2-cnxs336-f2:r2cnxs3362",
+      "r2-cnxs336-f3:r2cnxs3363",
+      "r2-cnxs336-f4:r2cnxs3364",
+      "r4-cnxs336-f0:r4cnxs3360",
+      "r4-cnxs336-f1:r4cnxs3361",
+      "r4-cnxs336-f2:r4cnxs3362",
+      "r4-cnxs336-f3:r4cnxs3363",
+      "r4-cnxs336-f4:r4cnxs3364"
+     ],
+     0.5
+    ],
+    "Lateral OA": [
+     [
+      "r2-c224hvy40-f0b:r2c224hvy400",
+      "r2-c224hvy40-f1:r2c224hvy401",
+      "r2-c224hvy40-f2:r2c224hvy402",
+      "r2-c224hvy40-f3:r2c224hvy403",
+      "r2-c224hvy40-f4:r2c224hvy404",
+      "r2-effv2s336-f0:r2effv2s3360",
+      "r2-effv2s336-f1:r2effv2s3361",
+      "r2-effv2s336-f2:r2effv2s3362",
+      "r2-effv2s336-f3:r2effv2s3363",
+      "r2-effv2s336-f4:r2effv2s3364",
+      "r2-cnxs336-f0:r2cnxs3360",
+      "r2-cnxs336-f1:r2cnxs3361",
+      "r2-cnxs336-f2:r2cnxs3362",
+      "r2-cnxs336-f3:r2cnxs3363",
+      "r2-cnxs336-f4:r2cnxs3364",
+      "r4-cnxs336-f0:r4cnxs3360",
+      "r4-cnxs336-f1:r4cnxs3361",
+      "r4-cnxs336-f2:r4cnxs3362",
+      "r4-cnxs336-f3:r4cnxs3363",
+      "r4-cnxs336-f4:r4cnxs3364"
+     ],
+     0.5
+    ],
+    "PF OA": [
+     [
+      "r2-c224hvy40-f0b:r2c224hvy400",
+      "r2-c224hvy40-f1:r2c224hvy401",
+      "r2-c224hvy40-f2:r2c224hvy402",
+      "r2-c224hvy40-f3:r2c224hvy403",
+      "r2-c224hvy40-f4:r2c224hvy404",
+      "r2-effv2s336-f0:r2effv2s3360",
+      "r2-effv2s336-f1:r2effv2s3361",
+      "r2-effv2s336-f2:r2effv2s3362",
+      "r2-effv2s336-f3:r2effv2s3363",
+      "r2-effv2s336-f4:r2effv2s3364",
+      "r2-cnxs336-f0:r2cnxs3360",
+      "r2-cnxs336-f1:r2cnxs3361",
+      "r2-cnxs336-f2:r2cnxs3362",
+      "r2-cnxs336-f3:r2cnxs3363",
+      "r2-cnxs336-f4:r2cnxs3364",
+      "r4-cnxs336-f0:r4cnxs3360",
+      "r4-cnxs336-f1:r4cnxs3361",
+      "r4-cnxs336-f2:r4cnxs3362",
+      "r4-cnxs336-f3:r4cnxs3363",
+      "r4-cnxs336-f4:r4cnxs3364"
+     ],
+     0.5
+    ],
+    "Effusion": [
+     [
+      "r2-c224hvy40-f0b:r2c224hvy400",
+      "r2-c224hvy40-f1:r2c224hvy401",
+      "r2-c224hvy40-f2:r2c224hvy402",
+      "r2-c224hvy40-f3:r2c224hvy403",
+      "r2-c224hvy40-f4:r2c224hvy404",
+      "r2-effv2s336-f0:r2effv2s3360",
+      "r2-effv2s336-f1:r2effv2s3361",
+      "r2-effv2s336-f2:r2effv2s3362",
+      "r2-effv2s336-f3:r2effv2s3363",
+      "r2-effv2s336-f4:r2effv2s3364",
+      "r2-cnxs336-f0:r2cnxs3360",
+      "r2-cnxs336-f1:r2cnxs3361",
+      "r2-cnxs336-f2:r2cnxs3362",
+      "r2-cnxs336-f3:r2cnxs3363",
+      "r2-cnxs336-f4:r2cnxs3364",
+      "r4-cnxs336-f0:r4cnxs3360",
+      "r4-cnxs336-f1:r4cnxs3361",
+      "r4-cnxs336-f2:r4cnxs3362",
+      "r4-cnxs336-f3:r4cnxs3363",
+      "r4-cnxs336-f4:r4cnxs3364"
+     ],
+     0.5
+    ],
+    "Synovitis": [
+     [
+      "r2-c224hvy40-f0b:r2c224hvy400",
+      "r2-c224hvy40-f1:r2c224hvy401",
+      "r2-c224hvy40-f2:r2c224hvy402",
+      "r2-c224hvy40-f3:r2c224hvy403",
+      "r2-c224hvy40-f4:r2c224hvy404",
+      "r2-effv2s336-f0:r2effv2s3360",
+      "r2-effv2s336-f1:r2effv2s3361",
+      "r2-effv2s336-f2:r2effv2s3362",
+      "r2-effv2s336-f3:r2effv2s3363",
+      "r2-effv2s336-f4:r2effv2s3364",
+      "r2-cnxs336-f0:r2cnxs3360",
+      "r2-cnxs336-f1:r2cnxs3361",
+      "r2-cnxs336-f2:r2cnxs3362",
+      "r2-cnxs336-f3:r2cnxs3363",
+      "r2-cnxs336-f4:r2cnxs3364",
+      "r4-cnxs336-f0:r4cnxs3360",
+      "r4-cnxs336-f1:r4cnxs3361",
+      "r4-cnxs336-f2:r4cnxs3362",
+      "r4-cnxs336-f3:r4cnxs3363",
+      "r4-cnxs336-f4:r4cnxs3364"
+     ],
+     0.5
+    ],
+    "Baker's": [
+     [
+      "r2-c224hvy40-f0b:r2c224hvy400",
+      "r2-c224hvy40-f1:r2c224hvy401",
+      "r2-c224hvy40-f2:r2c224hvy402",
+      "r2-c224hvy40-f3:r2c224hvy403",
+      "r2-c224hvy40-f4:r2c224hvy404",
+      "r2-effv2s336-f0:r2effv2s3360",
+      "r2-effv2s336-f1:r2effv2s3361",
+      "r2-effv2s336-f2:r2effv2s3362",
+      "r2-effv2s336-f3:r2effv2s3363",
+      "r2-effv2s336-f4:r2effv2s3364",
+      "r2-cnxs336-f0:r2cnxs3360",
+      "r2-cnxs336-f1:r2cnxs3361",
+      "r2-cnxs336-f2:r2cnxs3362",
+      "r2-cnxs336-f3:r2cnxs3363",
+      "r2-cnxs336-f4:r2cnxs3364",
+      "r4-cnxs336-f0:r4cnxs3360",
+      "r4-cnxs336-f1:r4cnxs3361",
+      "r4-cnxs336-f2:r4cnxs3362",
+      "r4-cnxs336-f3:r4cnxs3363",
+      "r4-cnxs336-f4:r4cnxs3364"
+     ],
+     0.5
+    ],
+    "Contusion": [
+     [
+      "r2-c224hvy40-f0b:r2c224hvy400",
+      "r2-c224hvy40-f1:r2c224hvy401",
+      "r2-c224hvy40-f2:r2c224hvy402",
+      "r2-c224hvy40-f3:r2c224hvy403",
+      "r2-c224hvy40-f4:r2c224hvy404",
+      "r2-effv2s336-f0:r2effv2s3360",
+      "r2-effv2s336-f1:r2effv2s3361",
+      "r2-effv2s336-f2:r2effv2s3362",
+      "r2-effv2s336-f3:r2effv2s3363",
+      "r2-effv2s336-f4:r2effv2s3364",
+      "r2-cnxs336-f0:r2cnxs3360",
+      "r2-cnxs336-f1:r2cnxs3361",
+      "r2-cnxs336-f2:r2cnxs3362",
+      "r2-cnxs336-f3:r2cnxs3363",
+      "r2-cnxs336-f4:r2cnxs3364",
+      "r4-cnxs336-f0:r4cnxs3360",
+      "r4-cnxs336-f1:r4cnxs3361",
+      "r4-cnxs336-f2:r4cnxs3362",
+      "r4-cnxs336-f3:r4cnxs3363",
+      "r4-cnxs336-f4:r4cnxs3364"
+     ],
+     0.5
+    ],
+    "Fracture": [
+     [
+      "r2-c224hvy40-f0b:r2c224hvy400",
+      "r2-c224hvy40-f1:r2c224hvy401",
+      "r2-c224hvy40-f2:r2c224hvy402",
+      "r2-c224hvy40-f3:r2c224hvy403",
+      "r2-c224hvy40-f4:r2c224hvy404",
+      "r2-effv2s336-f0:r2effv2s3360",
+      "r2-effv2s336-f1:r2effv2s3361",
+      "r2-effv2s336-f2:r2effv2s3362",
+      "r2-effv2s336-f3:r2effv2s3363",
+      "r2-effv2s336-f4:r2effv2s3364",
+      "r2-cnxs336-f0:r2cnxs3360",
+      "r2-cnxs336-f1:r2cnxs3361",
+      "r2-cnxs336-f2:r2cnxs3362",
+      "r2-cnxs336-f3:r2cnxs3363",
+      "r2-cnxs336-f4:r2cnxs3364",
+      "r4-cnxs336-f0:r4cnxs3360",
+      "r4-cnxs336-f1:r4cnxs3361",
+      "r4-cnxs336-f2:r4cnxs3362",
+      "r4-cnxs336-f3:r4cnxs3363",
+      "r4-cnxs336-f4:r4cnxs3364"
+     ],
+     0.5
+    ]
+   }
+  },
+  "ts": 1791268090.374499
+ },
+ {
+  "date": "2026-10-06T10:47:38.670944+00:00",
+  "kernel": "girishbose/coat-up15-b4-dc1",
+  "version": 1,
+  "fingerprint": "4aadcac51d133c1d",
+  "why": "CANDIDATE 6 Oct (2/5): best stack coat-up15-b4 (0.945) + finding-specificity post-processing: Lateral OA - 0.3 x Medial OA, PF OA - 0.3 x mean(Medial OA, Lateral OA), Synovitis - 0.3 x Effusion, Lateral Meniscus - 0.2 x Medial Meniscus (normal scores of ranks). Our columns for paired findings correlate 0.83-0.94, the experts' labels 0.32-0.40; on the 58 experts (own 20-model ensemble) this reads +0.0060 +-0.0033, both halves positive. Stated odds of > 0.945: ~55 %",
+  "ref": 56878527,
+  "public_lb": 0.944,
+  "ensemble": {
+   "base": "rsna-knee-fast-2xt4-inference.ipynb",
+   "members": [],
+   "weights": [],
+   "w": 0.0,
+   "leg": "v1",
+   "leg_env": {},
+   "swap_v5": "soupbestof4",
+   "swap_arms": {},
+   "coat_shift": 0.15,
+   "rad_heads": {},
+   "dino": null,
+   "dino_extra": null,
+   "rad_exclude": null,
+   "negate": null,
+   "decor": [
+    [
+     "Lateral OA",
+     [
+      "Medial OA"
+     ],
+     0.3
+    ],
+    [
+     "PF OA",
+     [
+      "Medial OA",
+      "Lateral OA"
+     ],
+     0.3
+    ],
+    [
+     "Synovitis",
+     [
+      "Effusion"
+     ],
+     0.3
+    ],
+    [
+     "Lateral Meniscus",
+     [
+      "Medial Meniscus"
+     ],
+     0.2
+    ]
+   ],
+   "tails": {}
+  },
+  "ts": 1791283660.824515
+ },
+ {
+  "date": "2026-10-06T10:55:26.735697+00:00",
+  "kernel": "girishbose/coat-up15-b4-dc2",
+  "version": 1,
+  "fingerprint": "2b007b30b44b115a",
+  "why": "CANDIDATE 6 Oct (3/5): best stack coat-up15-b4 (0.945) + finding-specificity post-processing at the larger dose: Lateral OA - 0.5 x Medial OA, PF OA - 0.5 x mean(Medial OA, Lateral OA), Synovitis - 0.5 x Effusion, Lateral Meniscus - 0.3 x Medial Meniscus. With dc1 (0.3 / 0.2) it reads the dose on the leaderboard; 58 experts (own ensemble): +0.0046 +-0.0063. Stated odds of > 0.945: ~45 %",
+  "ref": 56878688,
+  "public_lb": 0.939,
+  "ensemble": {
+   "base": "rsna-knee-fast-2xt4-inference.ipynb",
+   "members": [],
+   "weights": [],
+   "w": 0.0,
+   "leg": "v1",
+   "leg_env": {},
+   "swap_v5": "soupbestof4",
+   "swap_arms": {},
+   "coat_shift": 0.15,
+   "rad_heads": {},
+   "dino": null,
+   "dino_extra": null,
+   "rad_exclude": null,
+   "negate": null,
+   "decor": [
+    [
+     "Lateral OA",
+     [
+      "Medial OA"
+     ],
+     0.5
+    ],
+    [
+     "PF OA",
+     [
+      "Medial OA",
+      "Lateral OA"
+     ],
+     0.5
+    ],
+    [
+     "Synovitis",
+     [
+      "Effusion"
+     ],
+     0.5
+    ],
+    [
+     "Lateral Meniscus",
+     [
+      "Medial Meniscus"
+     ],
+     0.3
+    ]
+   ],
+   "tails": {}
+  },
+  "ts": 1791284127.969363
+ },
+ {
+  "date": "2026-10-06T19:55:43.659445+00:00",
+  "kernel": "girishbose/own20-alone",
+  "version": 1,
+  "fingerprint": "27889fef80fd2470",
+  "why": "LEARNING PROBE (user-approved 6 Oct): our own twenty-model ensemble ALONE, no public stack (5 folds each of c224hvy, EffNetV2-S, ConvNeXt-S, ConvNeXt-S second-round; rank mean, leg v2). Reads the own system's leaderboard score (blends with the stack are flat 0.944 from w 0.3 to 0.6, so ~0.94-0.944 expected). Cannot beat 0.945; reference for every later own-model change",
+  "ref": 56889797,
+  "public_lb": 0.936,
+  "ensemble": null,
+  "ts": 1791316546.4999151
+ },
+ {
+  "date": "2026-10-06T19:59:07.507522+00:00",
+  "kernel": "girishbose/own20-alone-dc1",
+  "version": 1,
+  "fingerprint": "475361e8bfc3ff48",
+  "why": "LEARNING PROBE (user-approved 6 Oct): own twenty-model ensemble alone + the D1 decorrelation (Lateral OA - 0.3 x Medial OA, PF OA - 0.3 x mean(Medial, Lateral OA), Synovitis - 0.3 x Effusion, Lateral Meniscus - 0.2 x Medial Meniscus). On the stack D1 read 0.944 and D2 0.939 vs 0.945; the 58 experts read +0.006 on these own models. vs own20-alone: is the stack different from our models, or are the 58 experts unlike the test?",
+  "ref": 56889858,
+  "public_lb": 0.935,
+  "ensemble": null,
+  "ts": 1791316748.719276
+ },
+ {
+  "date": "2026-10-07T00:04:02.625869+00:00",
+  "kernel": "girishbose/cnxs-r1-f03",
+  "version": 1,
+  "fingerprint": "646450e192146645",
+  "why": "LEARNING PROBE label A/B 1/4: own ConvNeXt-S folds 0-3 ALONE (no stack), first-round labels. Reference arm for the graded labels; odds of > 0.945 under 1 in 20",
+  "ref": 56894139,
+  "public_lb": 0.937,
+  "ensemble": null,
+  "ts": 1791331445.539083
+ },
+ {
+  "date": "2026-10-07T00:04:11.736384+00:00",
+  "kernel": "girishbose/cnxs-r4-f03",
+  "version": 1,
+  "fingerprint": "75af04b34e4b6932",
+  "why": "LEARNING PROBE label A/B 2/4: own ConvNeXt-S folds 0-3 ALONE (no stack), second-round labels. Twin of the graded arm 3/4; odds of > 0.945 under 1 in 20",
+  "ref": 56894153,
+  "public_lb": 0.934,
+  "ensemble": null,
+  "ts": 1791331453.885758
+ },
+ {
+  "date": "2026-10-07T00:09:15.671230+00:00",
+  "kernel": "girishbose/cnxs-g1-f03",
+  "version": 1,
+  "fingerprint": "3cbee96f8a724577",
+  "why": "LEARNING PROBE label A/B 3/4: own ConvNeXt-S folds 0-3 ALONE (no stack), severity-graded report labels. vs 2/4 = the label change on the leaderboard; odds of > 0.945 under 1 in 20",
+  "ref": 56894539,
+  "public_lb": 0.935,
+  "ensemble": null,
+  "ts": 1791331757.811678
+ },
+ {
+  "date": "2026-10-07T00:09:24.981769+00:00",
+  "kernel": "girishbose/cnxs-g1r4-f03",
+  "version": 1,
+  "fingerprint": "4c3bd011304a0c38",
+  "why": "LEARNING PROBE label A/B 4/4: graded-label + second-round ConvNeXt-S, folds 0-3 each (8 models), ALONE. Do the two label families add; odds of > 0.945 under 1 in 20",
+  "ref": 56894543,
+  "public_lb": 0.935,
+  "ensemble": null,
+  "ts": 1791331766.954792
+ },
+ {
+  "date": "2026-10-07T01:00:11.698280+00:00",
+  "kernel": "girishbose/own15-r1-alone",
+  "version": 1,
+  "fingerprint": "e944ac9057c79220",
+  "why": "LEARNING PROBE: our fifteen first-round-label models ALONE (ConvNeXt-S, EffNetV2-S, CoAtNet-224 x 5 folds), no stack. Four ConvNeXt-S of these read 0.937: does backbone variety add? Odds of > 0.945: 1 in 20",
+  "ref": 56895989,
+  "public_lb": 0.935,
+  "ensemble": null,
+  "ts": 1791334813.645001
+ },
+ {
+  "date": "2026-10-08T12:25:27.224072+00:00",
+  "kernel": "girishbose/cnxs-r1-neg-latmen",
+  "version": 1,
+  "fingerprint": "568a55302b2aafba",
+  "why": "LEARNING PROBE: own ConvNeXt-S folds 0-3 alone (0.937) with Lateral Meniscus reversed -> our AUC on that finding (stack 0.950). AUC = (1 + 12 x (0.937 - LB)) / 2. Scores ~0.86",
+  "ref": 56953641,
+  "public_lb": 0.864,
+  "ensemble": null,
+  "ts": 1791462329.274601
+ },
+ {
+  "date": "2026-10-08T12:25:33.463302+00:00",
+  "kernel": "girishbose/cnxs-r1-neg-synov",
+  "version": 1,
+  "fingerprint": "7e1fdbfc55a26f54",
+  "why": "LEARNING PROBE: own ConvNeXt-S folds 0-3 alone (0.937) with Synovitis reversed -> our AUC on that finding (stack 0.914). AUC = (1 + 12 x (0.937 - LB)) / 2. Scores ~0.87",
+  "ref": 56953651,
+  "public_lb": 0.871,
+  "ensemble": null,
+  "ts": 1791462335.441986
+ },
+ {
+  "date": "2026-10-08T12:25:41.808983+00:00",
+  "kernel": "girishbose/pf-g1-w50",
+  "version": 1,
+  "fingerprint": "16b4d9b4f234cc22",
+  "why": "CANDIDATE: best stack (0.945) + own ConvNeXt-S (0.937 alone) at rank w 0.5 on six findings only: ACL, MCL, Medial Meniscus, Medial OA, Effusion, Baker's. Odds of > 0.945: ~40 %",
+  "ref": 56953656,
+  "public_lb": 0.944,
+  "ensemble": {
+   "base": "rsna-knee-fast-2xt4-inference.ipynb",
+   "members": [
+    "r2-cnxs336-f0:r2cnxs3360",
+    "r2-cnxs336-f1:r2cnxs3361",
+    "r2-cnxs336-f2:r2cnxs3362",
+    "r2-cnxs336-f3:r2cnxs3363"
+   ],
+   "weights": [
+    "raptor_ft_r2cnxs3360.pt",
+    "raptor_ft_r2cnxs3361.pt",
+    "raptor_ft_r2cnxs3362.pt",
+    "raptor_ft_r2cnxs3363.pt"
+   ],
+   "w": 0.5,
+   "leg": "v2",
+   "leg_env": {},
+   "swap_v5": "soupbestof4",
+   "swap_arms": {},
+   "coat_shift": 0.15,
+   "rad_heads": {},
+   "dino": null,
+   "dino_extra": null,
+   "rad_exclude": null,
+   "negate": null,
+   "decor": null,
+   "tails": {
+    "ACL": [
+     [
+      "r2-cnxs336-f0:r2cnxs3360",
+      "r2-cnxs336-f1:r2cnxs3361",
+      "r2-cnxs336-f2:r2cnxs3362",
+      "r2-cnxs336-f3:r2cnxs3363"
+     ],
+     0.5
+    ],
+    "MCL": [
+     [
+      "r2-cnxs336-f0:r2cnxs3360",
+      "r2-cnxs336-f1:r2cnxs3361",
+      "r2-cnxs336-f2:r2cnxs3362",
+      "r2-cnxs336-f3:r2cnxs3363"
+     ],
+     0.5
+    ],
+    "Medial Meniscus": [
+     [
+      "r2-cnxs336-f0:r2cnxs3360",
+      "r2-cnxs336-f1:r2cnxs3361",
+      "r2-cnxs336-f2:r2cnxs3362",
+      "r2-cnxs336-f3:r2cnxs3363"
+     ],
+     0.5
+    ],
+    "Medial OA": [
+     [
+      "r2-cnxs336-f0:r2cnxs3360",
+      "r2-cnxs336-f1:r2cnxs3361",
+      "r2-cnxs336-f2:r2cnxs3362",
+      "r2-cnxs336-f3:r2cnxs3363"
+     ],
+     0.5
+    ],
+    "Effusion": [
+     [
+      "r2-cnxs336-f0:r2cnxs3360",
+      "r2-cnxs336-f1:r2cnxs3361",
+      "r2-cnxs336-f2:r2cnxs3362",
+      "r2-cnxs336-f3:r2cnxs3363"
+     ],
+     0.5
+    ],
+    "Baker's": [
+     [
+      "r2-cnxs336-f0:r2cnxs3360",
+      "r2-cnxs336-f1:r2cnxs3361",
+      "r2-cnxs336-f2:r2cnxs3362",
+      "r2-cnxs336-f3:r2cnxs3363"
+     ],
+     0.5
+    ]
+   }
+  },
+  "ts": 1791462343.8049989
+ },
+ {
+  "date": "2026-10-08T12:25:50.091606+00:00",
+  "kernel": "girishbose/pf-g1-swap",
+  "version": 1,
+  "fingerprint": "49186b83ecd89707",
+  "why": "LEARNING PROBE: best stack with six columns (ACL, MCL, Medial Meniscus, Medial OA, Effusion, Baker's) taken from own ConvNeXt-S: LB - 0.945 = sum of (own - stack) AUC / 12. Odds of > 0.945: ~25 %",
+  "ref": 56953659,
+  "public_lb": 0.942,
+  "ensemble": {
+   "base": "rsna-knee-fast-2xt4-inference.ipynb",
+   "members": [
+    "r2-cnxs336-f0:r2cnxs3360",
+    "r2-cnxs336-f1:r2cnxs3361",
+    "r2-cnxs336-f2:r2cnxs3362",
+    "r2-cnxs336-f3:r2cnxs3363"
+   ],
+   "weights": [
+    "raptor_ft_r2cnxs3360.pt",
+    "raptor_ft_r2cnxs3361.pt",
+    "raptor_ft_r2cnxs3362.pt",
+    "raptor_ft_r2cnxs3363.pt"
+   ],
+   "w": 0.99,
+   "leg": "v2",
+   "leg_env": {},
+   "swap_v5": "soupbestof4",
+   "swap_arms": {},
+   "coat_shift": 0.15,
+   "rad_heads": {},
+   "dino": null,
+   "dino_extra": null,
+   "rad_exclude": null,
+   "negate": null,
+   "decor": null,
+   "tails": {
+    "ACL": [
+     [
+      "r2-cnxs336-f0:r2cnxs3360",
+      "r2-cnxs336-f1:r2cnxs3361",
+      "r2-cnxs336-f2:r2cnxs3362",
+      "r2-cnxs336-f3:r2cnxs3363"
+     ],
+     0.99
+    ],
+    "MCL": [
+     [
+      "r2-cnxs336-f0:r2cnxs3360",
+      "r2-cnxs336-f1:r2cnxs3361",
+      "r2-cnxs336-f2:r2cnxs3362",
+      "r2-cnxs336-f3:r2cnxs3363"
+     ],
+     0.99
+    ],
+    "Medial Meniscus": [
+     [
+      "r2-cnxs336-f0:r2cnxs3360",
+      "r2-cnxs336-f1:r2cnxs3361",
+      "r2-cnxs336-f2:r2cnxs3362",
+      "r2-cnxs336-f3:r2cnxs3363"
+     ],
+     0.99
+    ],
+    "Medial OA": [
+     [
+      "r2-cnxs336-f0:r2cnxs3360",
+      "r2-cnxs336-f1:r2cnxs3361",
+      "r2-cnxs336-f2:r2cnxs3362",
+      "r2-cnxs336-f3:r2cnxs3363"
+     ],
+     0.99
+    ],
+    "Effusion": [
+     [
+      "r2-cnxs336-f0:r2cnxs3360",
+      "r2-cnxs336-f1:r2cnxs3361",
+      "r2-cnxs336-f2:r2cnxs3362",
+      "r2-cnxs336-f3:r2cnxs3363"
+     ],
+     0.99
+    ],
+    "Baker's": [
+     [
+      "r2-cnxs336-f0:r2cnxs3360",
+      "r2-cnxs336-f1:r2cnxs3361",
+      "r2-cnxs336-f2:r2cnxs3362",
+      "r2-cnxs336-f3:r2cnxs3363"
+     ],
+     0.99
+    ]
+   }
+  },
+  "ts": 1791462352.032586
+ },
+ {
+  "date": "2026-10-08T12:26:00.348396+00:00",
+  "kernel": "girishbose/pf-g2-w50",
+  "version": 1,
+  "fingerprint": "dd6c3cb797f3545e",
+  "why": "CANDIDATE: best stack (0.945) + own ConvNeXt-S at rank w 0.5 on Contusion, Fracture, Lateral OA, PF OA only. With pf-g1-w50 it splits the flat 0.944 of the all-finding blends. Odds of > 0.945: ~25 %",
+  "ref": 56953667,
+  "public_lb": 0.944,
+  "ensemble": {
+   "base": "rsna-knee-fast-2xt4-inference.ipynb",
+   "members": [
+    "r2-cnxs336-f0:r2cnxs3360",
+    "r2-cnxs336-f1:r2cnxs3361",
+    "r2-cnxs336-f2:r2cnxs3362",
+    "r2-cnxs336-f3:r2cnxs3363"
+   ],
+   "weights": [
+    "raptor_ft_r2cnxs3360.pt",
+    "raptor_ft_r2cnxs3361.pt",
+    "raptor_ft_r2cnxs3362.pt",
+    "raptor_ft_r2cnxs3363.pt"
+   ],
+   "w": 0.5,
+   "leg": "v2",
+   "leg_env": {},
+   "swap_v5": "soupbestof4",
+   "swap_arms": {},
+   "coat_shift": 0.15,
+   "rad_heads": {},
+   "dino": null,
+   "dino_extra": null,
+   "rad_exclude": null,
+   "negate": null,
+   "decor": null,
+   "tails": {
+    "Contusion": [
+     [
+      "r2-cnxs336-f0:r2cnxs3360",
+      "r2-cnxs336-f1:r2cnxs3361",
+      "r2-cnxs336-f2:r2cnxs3362",
+      "r2-cnxs336-f3:r2cnxs3363"
+     ],
+     0.5
+    ],
+    "Fracture": [
+     [
+      "r2-cnxs336-f0:r2cnxs3360",
+      "r2-cnxs336-f1:r2cnxs3361",
+      "r2-cnxs336-f2:r2cnxs3362",
+      "r2-cnxs336-f3:r2cnxs3363"
+     ],
+     0.5
+    ],
+    "Lateral OA": [
+     [
+      "r2-cnxs336-f0:r2cnxs3360",
+      "r2-cnxs336-f1:r2cnxs3361",
+      "r2-cnxs336-f2:r2cnxs3362",
+      "r2-cnxs336-f3:r2cnxs3363"
+     ],
+     0.5
+    ],
+    "PF OA": [
+     [
+      "r2-cnxs336-f0:r2cnxs3360",
+      "r2-cnxs336-f1:r2cnxs3361",
+      "r2-cnxs336-f2:r2cnxs3362",
+      "r2-cnxs336-f3:r2cnxs3363"
+     ],
+     0.5
+    ]
+   }
+  },
+  "ts": 1791462361.6499991
+ },
+ {
+  "date": "2026-10-09T00:00:33.407415+00:00",
+  "kernel": "girishbose/cnxs-r1-allwin-mirror",
+  "version": 1,
+  "fingerprint": "c4f9d464ab8c3a43",
+  "why": "LEARNING PROBE: own ConvNeXt-S folds 0-3 alone (0.937) scored like the 0.950 public notebook: every window position (39 x 4 passes) + mirror on every second pass. Odds of > 0.945: 1 in 20",
+  "ref": 56979027,
+  "public_lb": 0.938,
+  "ensemble": null,
+  "ts": 1791504034.678307
+ },
+ {
+  "date": "2026-10-09T00:02:48.545937+00:00",
+  "kernel": "girishbose/pub-versia-5",
+  "version": 1,
+  "fingerprint": "918bee20b0e1471d",
+  "why": "FORK, unchanged, of the public notebook rsna-versia-5: reads the current public level on our account (our best 0.945 is an older public stack). Expected ~0.95",
+  "ref": 56979517,
+  "public_lb": 0.95,
+  "ensemble": null,
+  "ts": 1791504169.7501152
+ },
+ {
+  "date": "2026-10-09T00:02:58.346705+00:00",
+  "kernel": "girishbose/pub-v2-velciraptor-dinosaur-speed",
+  "version": 1,
+  "fingerprint": "bf5d6bcf58623412",
+  "why": "FORK, unchanged, of the public notebook rsna-knee-v2-velciraptor-dinosaur-speed: reads the current public level on our account (our best 0.945 is an older public stack). Expected ~0.95",
+  "ref": 56979537,
+  "public_lb": 0.95,
+  "ensemble": null,
+  "ts": 1791504181.1053739
+ },
+ {
+  "date": "2026-10-09T00:03:05.901584+00:00",
+  "kernel": "girishbose/pub-apex-grandmaster-stack",
+  "version": 1,
+  "fingerprint": "4417d0d5650e7f21",
+  "why": "FORK, unchanged, of the public notebook rsna-knee-apex-grandmaster-stack: reads the current public level on our account (our best 0.945 is an older public stack). Expected ~0.95",
+  "ref": 56979558,
+  "public_lb": 0.95,
+  "ensemble": null,
+  "ts": 1791504187.798141
+ },
+ {
+  "date": "2026-10-09T00:03:18.311868+00:00",
+  "kernel": "girishbose/pub-dinosaur-v5",
+  "version": 1,
+  "fingerprint": "71316a14414c308a",
+  "why": "FORK, unchanged, of the public notebook rsna-knee-dinosaur-v5: reads the current public level on our account (our best 0.945 is an older public stack). Expected ~0.95",
+  "ref": 56979590,
+  "public_lb": 0.95,
+  "ensemble": null,
+  "ts": 1791504200.3635478
+ },
+ {
+  "date": "2026-10-10T00:00:37.373447+00:00",
+  "kernel": "girishbose/v5-own-w10",
+  "version": 1,
+  "fingerprint": "381847cb5870a73a",
+  "why": "CANDIDATE: the 0.950 public notebook + our four ConvNeXt-S (0.938 alone) as one more reader at rank weight 0.10 on all findings. Odds of > 0.950: ~1 in 4",
+  "ref": 57024045,
+  "public_lb": 0.95,
+  "ensemble": {
+   "base": "rsna-versia-5.ipynb",
+   "members": [
+    "r2-cnxs336-f0:r2cnxs3360",
+    "r2-cnxs336-f1:r2cnxs3361",
+    "r2-cnxs336-f2:r2cnxs3362",
+    "r2-cnxs336-f3:r2cnxs3363"
+   ],
+   "weights": [
+    "raptor_ft_r2cnxs3360.pt",
+    "raptor_ft_r2cnxs3361.pt",
+    "raptor_ft_r2cnxs3362.pt",
+    "raptor_ft_r2cnxs3363.pt"
+   ],
+   "w": 0.1,
+   "leg": "v2",
+   "leg_env": {
+    "OURS_FLIP": "1"
+   },
+   "swap_v5": null,
+   "swap_arms": {},
+   "coat_shift": 0.0,
+   "rad_heads": {},
+   "dino": null,
+   "dino_extra": null,
+   "rad_exclude": null,
+   "negate": null,
+   "decor": null,
+   "tails": {
+    "ACL": [
+     [
+      "r2-cnxs336-f0:r2cnxs3360",
+      "r2-cnxs336-f1:r2cnxs3361",
+      "r2-cnxs336-f2:r2cnxs3362",
+      "r2-cnxs336-f3:r2cnxs3363"
+     ],
+     0.1
+    ],
+    "MCL": [
+     [
+      "r2-cnxs336-f0:r2cnxs3360",
+      "r2-cnxs336-f1:r2cnxs3361",
+      "r2-cnxs336-f2:r2cnxs3362",
+      "r2-cnxs336-f3:r2cnxs3363"
+     ],
+     0.1
+    ],
+    "Medial Meniscus": [
+     [
+      "r2-cnxs336-f0:r2cnxs3360",
+      "r2-cnxs336-f1:r2cnxs3361",
+      "r2-cnxs336-f2:r2cnxs3362",
+      "r2-cnxs336-f3:r2cnxs3363"
+     ],
+     0.1
+    ],
+    "Lateral Meniscus": [
+     [
+      "r2-cnxs336-f0:r2cnxs3360",
+      "r2-cnxs336-f1:r2cnxs3361",
+      "r2-cnxs336-f2:r2cnxs3362",
+      "r2-cnxs336-f3:r2cnxs3363"
+     ],
+     0.1
+    ],
+    "Medial OA": [
+     [
+      "r2-cnxs336-f0:r2cnxs3360",
+      "r2-cnxs336-f1:r2cnxs3361",
+      "r2-cnxs336-f2:r2cnxs3362",
+      "r2-cnxs336-f3:r2cnxs3363"
+     ],
+     0.1
+    ],
+    "Lateral OA": [
+     [
+      "r2-cnxs336-f0:r2cnxs3360",
+      "r2-cnxs336-f1:r2cnxs3361",
+      "r2-cnxs336-f2:r2cnxs3362",
+      "r2-cnxs336-f3:r2cnxs3363"
+     ],
+     0.1
+    ],
+    "PF OA": [
+     [
+      "r2-cnxs336-f0:r2cnxs3360",
+      "r2-cnxs336-f1:r2cnxs3361",
+      "r2-cnxs336-f2:r2cnxs3362",
+      "r2-cnxs336-f3:r2cnxs3363"
+     ],
+     0.1
+    ],
+    "Effusion": [
+     [
+      "r2-cnxs336-f0:r2cnxs3360",
+      "r2-cnxs336-f1:r2cnxs3361",
+      "r2-cnxs336-f2:r2cnxs3362",
+      "r2-cnxs336-f3:r2cnxs3363"
+     ],
+     0.1
+    ],
+    "Synovitis": [
+     [
+      "r2-cnxs336-f0:r2cnxs3360",
+      "r2-cnxs336-f1:r2cnxs3361",
+      "r2-cnxs336-f2:r2cnxs3362",
+      "r2-cnxs336-f3:r2cnxs3363"
+     ],
+     0.1
+    ],
+    "Baker's": [
+     [
+      "r2-cnxs336-f0:r2cnxs3360",
+      "r2-cnxs336-f1:r2cnxs3361",
+      "r2-cnxs336-f2:r2cnxs3362",
+      "r2-cnxs336-f3:r2cnxs3363"
+     ],
+     0.1
+    ],
+    "Contusion": [
+     [
+      "r2-cnxs336-f0:r2cnxs3360",
+      "r2-cnxs336-f1:r2cnxs3361",
+      "r2-cnxs336-f2:r2cnxs3362",
+      "r2-cnxs336-f3:r2cnxs3363"
+     ],
+     0.1
+    ],
+    "Fracture": [
+     [
+      "r2-cnxs336-f0:r2cnxs3360",
+      "r2-cnxs336-f1:r2cnxs3361",
+      "r2-cnxs336-f2:r2cnxs3362",
+      "r2-cnxs336-f3:r2cnxs3363"
+     ],
+     0.1
+    ]
+   }
+  },
+  "ts": 1791590439.42189
+ },
+ {
+  "date": "2026-10-10T00:00:50.378411+00:00",
+  "kernel": "girishbose/v5-own-w20",
+  "version": 1,
+  "fingerprint": "87a809b01fc33f03",
+  "why": "CANDIDATE: the 0.950 public notebook + our four ConvNeXt-S (0.938 alone) as one more reader at rank weight 0.20 on all findings. Odds of > 0.950: ~1 in 4",
+  "ref": 57024072,
+  "public_lb": 0.95,
+  "ensemble": {
+   "base": "rsna-versia-5.ipynb",
+   "members": [
+    "r2-cnxs336-f0:r2cnxs3360",
+    "r2-cnxs336-f1:r2cnxs3361",
+    "r2-cnxs336-f2:r2cnxs3362",
+    "r2-cnxs336-f3:r2cnxs3363"
+   ],
+   "weights": [
+    "raptor_ft_r2cnxs3360.pt",
+    "raptor_ft_r2cnxs3361.pt",
+    "raptor_ft_r2cnxs3362.pt",
+    "raptor_ft_r2cnxs3363.pt"
+   ],
+   "w": 0.2,
+   "leg": "v2",
+   "leg_env": {
+    "OURS_FLIP": "1"
+   },
+   "swap_v5": null,
+   "swap_arms": {},
+   "coat_shift": 0.0,
+   "rad_heads": {},
+   "dino": null,
+   "dino_extra": null,
+   "rad_exclude": null,
+   "negate": null,
+   "decor": null,
+   "tails": {
+    "ACL": [
+     [
+      "r2-cnxs336-f0:r2cnxs3360",
+      "r2-cnxs336-f1:r2cnxs3361",
+      "r2-cnxs336-f2:r2cnxs3362",
+      "r2-cnxs336-f3:r2cnxs3363"
+     ],
+     0.2
+    ],
+    "MCL": [
+     [
+      "r2-cnxs336-f0:r2cnxs3360",
+      "r2-cnxs336-f1:r2cnxs3361",
+      "r2-cnxs336-f2:r2cnxs3362",
+      "r2-cnxs336-f3:r2cnxs3363"
+     ],
+     0.2
+    ],
+    "Medial Meniscus": [
+     [
+      "r2-cnxs336-f0:r2cnxs3360",
+      "r2-cnxs336-f1:r2cnxs3361",
+      "r2-cnxs336-f2:r2cnxs3362",
+      "r2-cnxs336-f3:r2cnxs3363"
+     ],
+     0.2
+    ],
+    "Lateral Meniscus": [
+     [
+      "r2-cnxs336-f0:r2cnxs3360",
+      "r2-cnxs336-f1:r2cnxs3361",
+      "r2-cnxs336-f2:r2cnxs3362",
+      "r2-cnxs336-f3:r2cnxs3363"
+     ],
+     0.2
+    ],
+    "Medial OA": [
+     [
+      "r2-cnxs336-f0:r2cnxs3360",
+      "r2-cnxs336-f1:r2cnxs3361",
+      "r2-cnxs336-f2:r2cnxs3362",
+      "r2-cnxs336-f3:r2cnxs3363"
+     ],
+     0.2
+    ],
+    "Lateral OA": [
+     [
+      "r2-cnxs336-f0:r2cnxs3360",
+      "r2-cnxs336-f1:r2cnxs3361",
+      "r2-cnxs336-f2:r2cnxs3362",
+      "r2-cnxs336-f3:r2cnxs3363"
+     ],
+     0.2
+    ],
+    "PF OA": [
+     [
+      "r2-cnxs336-f0:r2cnxs3360",
+      "r2-cnxs336-f1:r2cnxs3361",
+      "r2-cnxs336-f2:r2cnxs3362",
+      "r2-cnxs336-f3:r2cnxs3363"
+     ],
+     0.2
+    ],
+    "Effusion": [
+     [
+      "r2-cnxs336-f0:r2cnxs3360",
+      "r2-cnxs336-f1:r2cnxs3361",
+      "r2-cnxs336-f2:r2cnxs3362",
+      "r2-cnxs336-f3:r2cnxs3363"
+     ],
+     0.2
+    ],
+    "Synovitis": [
+     [
+      "r2-cnxs336-f0:r2cnxs3360",
+      "r2-cnxs336-f1:r2cnxs3361",
+      "r2-cnxs336-f2:r2cnxs3362",
+      "r2-cnxs336-f3:r2cnxs3363"
+     ],
+     0.2
+    ],
+    "Baker's": [
+     [
+      "r2-cnxs336-f0:r2cnxs3360",
+      "r2-cnxs336-f1:r2cnxs3361",
+      "r2-cnxs336-f2:r2cnxs3362",
+      "r2-cnxs336-f3:r2cnxs3363"
+     ],
+     0.2
+    ],
+    "Contusion": [
+     [
+      "r2-cnxs336-f0:r2cnxs3360",
+      "r2-cnxs336-f1:r2cnxs3361",
+      "r2-cnxs336-f2:r2cnxs3362",
+      "r2-cnxs336-f3:r2cnxs3363"
+     ],
+     0.2
+    ],
+    "Fracture": [
+     [
+      "r2-cnxs336-f0:r2cnxs3360",
+      "r2-cnxs336-f1:r2cnxs3361",
+      "r2-cnxs336-f2:r2cnxs3362",
+      "r2-cnxs336-f3:r2cnxs3363"
+     ],
+     0.2
+    ]
+   }
+  },
+  "ts": 1791590452.430779
+ }
+]

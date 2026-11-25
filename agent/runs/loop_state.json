@@ -1,0 +1,132 @@
+{
+ "paused": false,
+ "active": null,
+ "pending": null,
+ "next_plan_after": 0,
+ "relabels": [
+  {
+   "name": "relabel_8c56cdf0",
+   "registered": true,
+   "kept": [
+    "Lateral Meniscus",
+    "Fracture"
+   ]
+  },
+  {
+   "name": "relabel_acb644bf",
+   "registered": true,
+   "kept": [
+    "Fracture",
+    "Lateral Meniscus"
+   ]
+  },
+  {
+   "name": "relabel_0b24972f",
+   "registered": false,
+   "kept": []
+  },
+  {
+   "name": "relabel_acb644bf",
+   "registered": true,
+   "kept": [
+    "Fracture",
+    "Lateral Meniscus"
+   ]
+  },
+  {
+   "name": "relabel_c7ab23d1",
+   "registered": true,
+   "kept": [
+    "Synovitis",
+    "PF OA",
+    "Lateral OA"
+   ]
+  },
+  {
+   "name": "relabel_bd5c19da",
+   "registered": true,
+   "kept": [
+    "Synovitis"
+   ]
+  },
+  {
+   "name": "relabel_d19bf15e",
+   "registered": true,
+   "kept": [
+    "Lateral OA",
+    "PF OA"
+   ]
+  },
+  {
+   "name": "relabel_3f7c7c60",
+   "registered": false,
+   "kept": []
+  },
+  {
+   "name": "relabel_12187f79",
+   "registered": true,
+   "kept": [
+    "PF OA",
+    "Lateral Meniscus"
+   ]
+  },
+  {
+   "name": "relabel_0ed2240f",
+   "registered": true,
+   "kept": [
+    "Synovitis"
+   ]
+  },
+  {
+   "name": "relabel_daa71ab8",
+   "registered": true,
+   "kept": [
+    "PF OA",
+    "Lateral Meniscus"
+   ]
+  },
+  {
+   "name": "relabel_0ed2240f",
+   "registered": true,
+   "kept": [
+    "Synovitis"
+   ]
+  },
+  {
+   "name": "relabel_823fff2e",
+   "registered": true,
+   "kept": [
+    "Synovitis"
+   ]
+  },
+  {
+   "name": "relabel_bade30d3",
+   "registered": true,
+   "kept": [
+    "Synovitis",
+    "PF OA",
+    "Lateral OA",
+    "Lateral Meniscus"
+   ]
+  },
+  {
+   "name": "relabel_fd048059",
+   "registered": true,
+   "kept": [
+    "Synovitis",
+    "PF OA",
+    "Lateral OA"
+   ]
+  },
+  {
+   "name": "relabel_65ceaaf2",
+   "registered": true,
+   "kept": [
+    "Synovitis"
+   ]
+  }
+ ],
+ "heartbeat": 1791126870.4938838,
+ "_orphan_retries": 5,
+ "next_research_after": 1790927607.200115
+}

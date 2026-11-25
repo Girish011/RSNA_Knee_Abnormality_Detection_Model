@@ -1,0 +1,1248 @@
+{
+ "round": 8,
+ "budget": 250,
+ "spent_before": 84,
+ "lb": {
+  "best": 0.945,
+  "own": 0.933,
+  "top": 0.963
+ },
+ "families": [
+  {
+   "key": "coat",
+   "name": "CoAtNet 2.5D",
+   "note": "dense80, 384 px, labels_r1",
+   "globs": [
+    "r1-coat-f*/*"
+   ]
+  },
+  {
+   "key": "fa",
+   "name": "RegionMIL (ConvNeXt)",
+   "note": "dense80, region tiles, labels_r1",
+   "globs": [
+    "r1-fa-f*/*"
+   ]
+  },
+  {
+   "key": "r50",
+   "name": "ResNet50 2.5D @224",
+   "note": "dense80, 224 px, k16, labels_r1",
+   "globs": [
+    "r1-r50-f*/*"
+   ]
+  },
+  {
+   "key": "c224",
+   "name": "CoAtNet 2.5D @224",
+   "note": "dense80, 224 px, k16, labels_r2g",
+   "globs": [
+    "r2-c224-f*/*"
+   ]
+  },
+  {
+   "key": "c224k32",
+   "name": "CoAtNet 2.5D @224 k32",
+   "note": "dense80, 224 px, k32, labels_r1",
+   "globs": [
+    "r1-c224k32-f*/*"
+   ]
+  },
+  {
+   "key": "c224reg",
+   "name": "CoAtNet 2.5D @224 + aug",
+   "note": "dense80, 224 px, k16, affine aug + drop-path, labels_r1",
+   "globs": [
+    "r2-c224reg-f*/*"
+   ]
+  },
+  {
+   "key": "c224lr",
+   "name": "CoAtNet @224, backbone lr 1e-4",
+   "note": "dense80, 224 px, k16, bb_lr 1e-4, labels_r1",
+   "globs": [
+    "r2-c224lr-f*/*"
+   ]
+  },
+  {
+   "key": "c224e30",
+   "name": "CoAtNet @224, 30 epochs",
+   "note": "dense80, 224 px, k16, 30 epochs, labels_r1",
+   "globs": [
+    "r2-c224e30-f*/*"
+   ]
+  },
+  {
+   "key": "c224reg40",
+   "name": "CoAtNet @224 + aug, 40 epochs",
+   "note": "dense80, 224 px, k16, aug + drop-path, 40 epochs, labels_r1",
+   "globs": [
+    "r2-c224reg40-f*/*"
+   ]
+  },
+  {
+   "key": "cnx224",
+   "name": "ConvNeXt-T 2.5D @224",
+   "note": "dense80, 224 px, k16, convnext_tiny in22k, labels_r1",
+   "globs": [
+    "r2-cnx224-f*/*"
+   ]
+  },
+  {
+   "key": "c224pw1",
+   "name": "CoAtNet @224, plain BCE",
+   "note": "dense80, 224 px, k16, no pos_weight, labels_r1",
+   "globs": [
+    "r2-c224pw1-f*/*"
+   ]
+  },
+  {
+   "key": "c224hvy40",
+   "name": "CoAtNet @224 + heavy aug, 40 epochs",
+   "note": "dense80, 224 px, k16, affine + mirror + erase + drop-path 0.2, 40 epochs, labels_r1",
+   "globs": [
+    "r2-c224hvy40-f*/*"
+   ]
+  },
+  {
+   "key": "effv2s336",
+   "name": "EffNetV2-S 2.5D @336 + heavy aug",
+   "note": "dense80, 336 px, k16, EfficientNetV2-S in21k, heavy aug, 40 epochs, labels_r1",
+   "globs": [
+    "r2-effv2s336-f*/*"
+   ]
+  },
+  {
+   "key": "effb0336",
+   "name": "EffNet-B0 2.5D @336 + heavy aug",
+   "note": "dense80, 336 px, k16, EfficientNet-B0 noisy-student, heavy aug, 40 epochs, labels_r1",
+   "globs": [
+    "r2-effb0336-f*/*"
+   ]
+  },
+  {
+   "key": "dinos336",
+   "name": "DINOv2 ViT-S 2.5D @336 + heavy aug",
+   "note": "dense80, 336 px, k16, DINOv2 ViT-S/14 full fine-tune, heavy aug, 40 epochs, labels_r1",
+   "globs": [
+    "r2-dinos336-f*/*"
+   ]
+  },
+  {
+   "key": "sex50336",
+   "name": "SE-ResNeXt50 2.5D @336 + heavy aug",
+   "note": "dense80, 336 px, k16, SE-ResNeXt50, heavy aug, 40 epochs, labels_r1",
+   "globs": [
+    "r2-sex50336-f*/*"
+   ]
+  },
+  {
+   "key": "swint224",
+   "name": "Swin-T 2.5D @224 + heavy aug",
+   "note": "dense80, 224 px, k16, Swin-T in22k, heavy aug, 40 epochs, labels_r1",
+   "globs": [
+    "r2-swint224-f*/*"
+   ]
+  },
+  {
+   "key": "cnxs336",
+   "name": "ConvNeXt-S 2.5D @336 + heavy aug",
+   "note": "dense80, 336 px, k16, ConvNeXt-S in12k, heavy aug, 40 epochs, labels_g1",
+   "globs": [
+    "r8-cnxs336-f*/*"
+   ]
+  },
+  {
+   "key": "cnxv2t336",
+   "name": "ConvNeXtV2-T (fcmae) 2.5D @336 + heavy aug",
+   "note": "dense80, 336 px, k16, ConvNeXtV2-T fcmae in22k, heavy aug, 40 epochs, labels_r1",
+   "globs": [
+    "r2-cnxv2t336-f*/*"
+   ]
+  },
+  {
+   "key": "cnxb336",
+   "name": "ConvNeXt-B 2.5D @336 + heavy aug",
+   "note": "dense80, 336 px, k16, ConvNeXt-B in22k, heavy aug, 40 epochs, labels_r1",
+   "globs": [
+    "r2-cnxb336-f*/*"
+   ]
+  },
+  {
+   "key": "cnxv2b336",
+   "name": "ConvNeXtV2-B (fcmae) 2.5D @336 + heavy aug",
+   "note": "dense80, 336 px, k16, ConvNeXtV2-B fcmae in22k, heavy aug, 40 epochs, labels_r1",
+   "globs": [
+    "r2-cnxv2b336-f*/*"
+   ]
+  }
+ ],
+ "jobs": [
+  {
+   "job": "n-5bc0a0f45d75",
+   "pod": "",
+   "tag": "5bc0a0f45d75",
+   "family": "coat",
+   "fold": 0,
+   "round": 0,
+   "epochs": 20,
+   "price": 0,
+   "launched": "2026-09-27T00:00:00",
+   "done_local": true
+  },
+  {
+   "job": "fa-f0-rep",
+   "pod": "",
+   "tag": "fa-f0-rep",
+   "family": "fa",
+   "fold": 0,
+   "round": 0,
+   "epochs": 16,
+   "price": 0,
+   "launched": "2026-10-03T10:41:22",
+   "done_local": true
+  },
+  {
+   "job": "r0-coat-f1",
+   "pod": "6ok5c5p2dciobs",
+   "tag": "r0coat1",
+   "family": "coat",
+   "fold": 1,
+   "round": 0,
+   "epochs": 20,
+   "price": 0.74,
+   "launched": "2026-10-03T14:44:37"
+  },
+  {
+   "job": "r0-fa-f1",
+   "pod": "lmsp6qlfyiw1oj",
+   "tag": "r0fa1",
+   "family": "fa",
+   "fold": 1,
+   "round": 0,
+   "epochs": 16,
+   "price": 0.49,
+   "launched": "2026-10-03T14:46:08"
+  },
+  {
+   "job": "r0-coat-f2b",
+   "pod": "7a4c97ja2hutxq",
+   "tag": "r0coat2",
+   "family": "coat",
+   "fold": 2,
+   "round": 0,
+   "epochs": 20,
+   "price": 0.49,
+   "launched": "2026-10-03T16:14:28"
+  },
+  {
+   "job": "r0-fa-f2",
+   "pod": "rlv2sh7s7b79ad",
+   "tag": "r0fa2",
+   "family": "fa",
+   "fold": 2,
+   "round": 0,
+   "epochs": 16,
+   "price": 0.49,
+   "launched": "2026-10-03T14:48:57"
+  },
+  {
+   "job": "r0-coat-f3",
+   "pod": "puqfmz6i3mff0z",
+   "tag": "r0coat3",
+   "family": "coat",
+   "fold": 3,
+   "round": 0,
+   "epochs": 20,
+   "price": 0.74,
+   "launched": "2026-10-03T14:50:21"
+  },
+  {
+   "job": "r0-fa-f3",
+   "pod": "p35sedp8huoa2m",
+   "tag": "r0fa3",
+   "family": "fa",
+   "fold": 3,
+   "round": 0,
+   "epochs": 16,
+   "price": 0.49,
+   "launched": "2026-10-03T14:51:45"
+  },
+  {
+   "job": "r0-coat-f4b",
+   "pod": "mnv3cfz8bprivf",
+   "tag": "r0coat4",
+   "family": "coat",
+   "fold": 4,
+   "round": 0,
+   "epochs": 20,
+   "price": 0.49,
+   "launched": "2026-10-03T16:15:53"
+  },
+  {
+   "job": "r0-fa-f4",
+   "pod": "s0qp9aj0i5lqhz",
+   "tag": "r0fa4",
+   "family": "fa",
+   "fold": 4,
+   "round": 0,
+   "epochs": 16,
+   "price": 0.49,
+   "launched": "2026-10-03T14:54:30"
+  },
+  {
+   "job": "r1-coat-f0",
+   "pod": "ldqjtm2fm99zqi",
+   "tag": "r1coat0",
+   "family": "coat",
+   "fold": 0,
+   "round": 1,
+   "epochs": 20,
+   "price": 0.49,
+   "launched": "2026-10-03T21:30:13"
+  },
+  {
+   "job": "r1-coat-f1",
+   "pod": "9b3r9iqct0b6i3",
+   "tag": "r1coat1",
+   "family": "coat",
+   "fold": 1,
+   "round": 1,
+   "epochs": 20,
+   "price": 0.49,
+   "launched": "2026-10-03T21:31:43"
+  },
+  {
+   "job": "r1-coat-f2",
+   "pod": "kwnvfx01my4udg",
+   "tag": "r1coat2",
+   "family": "coat",
+   "fold": 2,
+   "round": 1,
+   "epochs": 20,
+   "price": 0.49,
+   "launched": "2026-10-03T21:33:09"
+  },
+  {
+   "job": "r1-coat-f3",
+   "pod": "ibwkt4v5snanag",
+   "tag": "r1coat3",
+   "family": "coat",
+   "fold": 3,
+   "round": 1,
+   "epochs": 20,
+   "price": 0.49,
+   "launched": "2026-10-03T21:34:36"
+  },
+  {
+   "job": "r1-coat-f4",
+   "pod": "qyyiq1kq54ukws",
+   "tag": "r1coat4",
+   "family": "coat",
+   "fold": 4,
+   "round": 1,
+   "epochs": 20,
+   "price": 0.49,
+   "launched": "2026-10-03T21:36:02"
+  },
+  {
+   "job": "r1-fa-f0",
+   "pod": "9ujoghfutqoia4",
+   "tag": "r1fa0",
+   "family": "fa",
+   "fold": 0,
+   "round": 1,
+   "epochs": 16,
+   "price": 0.49,
+   "launched": "2026-10-03T21:37:29"
+  },
+  {
+   "job": "r1-fa-f1",
+   "pod": "32qb5hwh87rzjf",
+   "tag": "r1fa1",
+   "family": "fa",
+   "fold": 1,
+   "round": 1,
+   "epochs": 16,
+   "price": 0.49,
+   "launched": "2026-10-03T21:38:54"
+  },
+  {
+   "job": "r1-fa-f2",
+   "pod": "dwzafxfyjnbgl1",
+   "tag": "r1fa2",
+   "family": "fa",
+   "fold": 2,
+   "round": 1,
+   "epochs": 16,
+   "price": 0.49,
+   "launched": "2026-10-03T21:40:22"
+  },
+  {
+   "job": "r1-fa-f3",
+   "pod": "94fbj9xg672am8",
+   "tag": "r1fa3",
+   "family": "fa",
+   "fold": 3,
+   "round": 1,
+   "epochs": 16,
+   "price": 0.49,
+   "launched": "2026-10-03T21:41:49"
+  },
+  {
+   "job": "r1-fa-f4",
+   "pod": "l9887baaxqxiuh",
+   "tag": "r1fa4",
+   "family": "fa",
+   "fold": 4,
+   "round": 1,
+   "epochs": 16,
+   "price": 0.49,
+   "launched": "2026-10-03T21:43:22"
+  },
+  {
+   "job": "r1-r50-f0",
+   "pod": "awiydtwlysqohf",
+   "tag": "r1r500",
+   "family": "r50",
+   "fold": 0,
+   "round": 1,
+   "epochs": 20,
+   "price": 0.49,
+   "launched": "2026-10-04T02:45:25"
+  },
+  {
+   "job": "r1-r50-f1",
+   "pod": "janozly4dvfmul",
+   "tag": "r1r501",
+   "family": "r50",
+   "fold": 1,
+   "round": 1,
+   "epochs": 20,
+   "price": 0.49,
+   "launched": "2026-10-04T02:46:57"
+  },
+  {
+   "job": "r1-r50-f2",
+   "pod": "w0bkalaxbiczif",
+   "tag": "r1r502",
+   "family": "r50",
+   "fold": 2,
+   "round": 1,
+   "epochs": 20,
+   "price": 0.49,
+   "launched": "2026-10-04T02:48:29"
+  },
+  {
+   "job": "r1-r50-f3",
+   "pod": "qgyr6ur6veh0wq",
+   "tag": "r1r503",
+   "family": "r50",
+   "fold": 3,
+   "round": 1,
+   "epochs": 20,
+   "price": 0.49,
+   "launched": "2026-10-04T02:50:00"
+  },
+  {
+   "job": "r1-r50-f4",
+   "pod": "u9e6jguseid1wt",
+   "tag": "r1r504",
+   "family": "r50",
+   "fold": 4,
+   "round": 1,
+   "epochs": 20,
+   "price": 0.49,
+   "launched": "2026-10-04T02:51:29"
+  },
+  {
+   "job": "r1-c224-f0",
+   "pod": "32tphcafadlc65",
+   "tag": "r1c2240",
+   "family": "c224",
+   "fold": 0,
+   "round": 1,
+   "epochs": 20,
+   "price": 0.49,
+   "launched": "2026-10-04T02:52:59"
+  },
+  {
+   "job": "r1-c224-f1",
+   "pod": "lbm30kv7wrjvfq",
+   "tag": "r1c2241",
+   "family": "c224",
+   "fold": 1,
+   "round": 1,
+   "epochs": 20,
+   "price": 0.49,
+   "launched": "2026-10-04T02:54:29"
+  },
+  {
+   "job": "r1-c224-f2",
+   "pod": "u7ipy3h92nr5ww",
+   "tag": "r1c2242",
+   "family": "c224",
+   "fold": 2,
+   "round": 1,
+   "epochs": 20,
+   "price": 0.49,
+   "launched": "2026-10-04T02:56:04"
+  },
+  {
+   "job": "r1-c224-f3",
+   "pod": "3aqg54ettoq9ji",
+   "tag": "r1c2243",
+   "family": "c224",
+   "fold": 3,
+   "round": 1,
+   "epochs": 20,
+   "price": 0.49,
+   "launched": "2026-10-04T02:57:33"
+  },
+  {
+   "job": "r1-c224-f4",
+   "pod": "017e72c2z7nbpx",
+   "tag": "r1c2244",
+   "family": "c224",
+   "fold": 4,
+   "round": 1,
+   "epochs": 20,
+   "price": 0.49,
+   "launched": "2026-10-04T02:59:01"
+  },
+  {
+   "job": "r1-c224k32-f0",
+   "pod": "kd9u2w1tuvrkfp",
+   "tag": "r1c224k320",
+   "family": "c224k32",
+   "fold": 0,
+   "round": 1,
+   "epochs": 20,
+   "price": 0.49,
+   "launched": "2026-10-04T06:35:02"
+  },
+  {
+   "job": "r2-c224-f0",
+   "pod": "rlr58su7ftclj3",
+   "tag": "r2c2240",
+   "family": "c224",
+   "fold": 0,
+   "round": 2,
+   "epochs": 20,
+   "price": 0.49,
+   "launched": "2026-10-04T10:33:16"
+  },
+  {
+   "job": "r2-c224-f1",
+   "pod": "uzr8mo9m6cow5x",
+   "tag": "r2c2241",
+   "family": "c224",
+   "fold": 1,
+   "round": 2,
+   "epochs": 20,
+   "price": 0.49,
+   "launched": "2026-10-04T10:34:43"
+  },
+  {
+   "job": "r2-c224-f2",
+   "pod": "kql73ax3o3lzi9",
+   "tag": "r2c2242",
+   "family": "c224",
+   "fold": 2,
+   "round": 2,
+   "epochs": 20,
+   "price": 0.49,
+   "launched": "2026-10-04T10:36:13"
+  },
+  {
+   "job": "r2-c224-f3",
+   "pod": "x8qi4pxvagmu44",
+   "tag": "r2c2243",
+   "family": "c224",
+   "fold": 3,
+   "round": 2,
+   "epochs": 20,
+   "price": 0.49,
+   "launched": "2026-10-04T10:37:40"
+  },
+  {
+   "job": "r2-c224-f4",
+   "pod": "6e3b0by9zfbisr",
+   "tag": "r2c2244",
+   "family": "c224",
+   "fold": 4,
+   "round": 2,
+   "epochs": 20,
+   "price": 0.49,
+   "launched": "2026-10-04T10:39:06"
+  },
+  {
+   "job": "r2-c224reg-f0",
+   "pod": "qwczh1wndejuic",
+   "tag": "r2c224reg0",
+   "family": "c224reg",
+   "fold": 0,
+   "round": 2,
+   "epochs": 20,
+   "price": 0.49,
+   "launched": "2026-10-04T11:05:19"
+  },
+  {
+   "job": "r2-c224lr-f0",
+   "pod": "w3a4k400ggnllo",
+   "tag": "r2c224lr0",
+   "family": "c224lr",
+   "fold": 0,
+   "round": 2,
+   "epochs": 20,
+   "price": 0.49,
+   "launched": "2026-10-04T17:59:06"
+  },
+  {
+   "job": "r2-c224e30-f0",
+   "pod": "womtxgj8mzi219",
+   "tag": "r2c224e300",
+   "family": "c224e30",
+   "fold": 0,
+   "round": 2,
+   "epochs": 30,
+   "price": 0.49,
+   "launched": "2026-10-04T18:00:32",
+   "terminated": "user, 2026-10-04 20:45 IST (own-model track stopped)",
+   "ep_at_stop": 20
+  },
+  {
+   "job": "r2-cnx224-f0",
+   "pod": "5hcnjrmzrd4ywb",
+   "tag": "r2cnx2240",
+   "family": "cnx224",
+   "fold": 0,
+   "round": 2,
+   "epochs": 20,
+   "price": 0.49,
+   "launched": "2026-10-04T18:03:27"
+  },
+  {
+   "job": "r2-c224reg40-f0b",
+   "pod": "thxdjf3lq5cqgr",
+   "tag": "r2c224reg400",
+   "family": "c224reg40",
+   "fold": 0,
+   "round": 2,
+   "epochs": 40,
+   "price": 0.49,
+   "launched": "2026-10-04T21:19:20"
+  },
+  {
+   "job": "r2-c224hvy40-f0b",
+   "pod": "c9kbul8kr0blxv",
+   "tag": "r2c224hvy400",
+   "family": "c224hvy40",
+   "fold": 0,
+   "round": 2,
+   "epochs": 40,
+   "price": 0.49,
+   "launched": "2026-10-04T21:20:46"
+  },
+  {
+   "job": "r2-c224pw1-f0b",
+   "pod": "uokjbrsxxcnnjy",
+   "tag": "r2c224pw10",
+   "family": "c224pw1",
+   "fold": 0,
+   "round": 2,
+   "epochs": 20,
+   "price": 0.49,
+   "launched": "2026-10-04T21:22:13"
+  },
+  {
+   "job": "r2-effv2s336-f0",
+   "pod": "mr673wl5pkoqg8",
+   "tag": "r2effv2s3360",
+   "family": "effv2s336",
+   "fold": 0,
+   "round": 2,
+   "epochs": 40,
+   "price": 0.49,
+   "launched": "2026-10-04T21:23:52"
+  },
+  {
+   "job": "r2-effb0336-f0",
+   "pod": "mo4hc0imwkxh8f",
+   "tag": "r2effb03360",
+   "family": "effb0336",
+   "fold": 0,
+   "round": 2,
+   "epochs": 40,
+   "price": 0.49,
+   "launched": "2026-10-04T21:25:17"
+  },
+  {
+   "job": "r2-dinos336-f0",
+   "pod": "5dklaxmsfkhtxw",
+   "tag": "r2dinos3360",
+   "family": "dinos336",
+   "fold": 0,
+   "round": 2,
+   "epochs": 40,
+   "price": 0.49,
+   "launched": "2026-10-05T03:00:42"
+  },
+  {
+   "job": "r2-effv2s336-f1",
+   "pod": "nh56jgw6v2q152",
+   "tag": "r2effv2s3361",
+   "family": "effv2s336",
+   "fold": 1,
+   "round": 2,
+   "epochs": 40,
+   "price": 0.49,
+   "launched": "2026-10-05T03:16:57"
+  },
+  {
+   "job": "r2-effv2s336-f2",
+   "pod": "5a37i2oc9b3m8q",
+   "tag": "r2effv2s3362",
+   "family": "effv2s336",
+   "fold": 2,
+   "round": 2,
+   "epochs": 40,
+   "price": 0.49,
+   "launched": "2026-10-05T03:18:28"
+  },
+  {
+   "job": "r2-effv2s336-f3",
+   "pod": "icsdjy2oilo6az",
+   "tag": "r2effv2s3363",
+   "family": "effv2s336",
+   "fold": 3,
+   "round": 2,
+   "epochs": 40,
+   "price": 0.49,
+   "launched": "2026-10-05T03:19:57"
+  },
+  {
+   "job": "r2-effv2s336-f4",
+   "pod": "niwxnxp9k6k8t8",
+   "tag": "r2effv2s3364",
+   "family": "effv2s336",
+   "fold": 4,
+   "round": 2,
+   "epochs": 40,
+   "price": 0.49,
+   "launched": "2026-10-05T03:21:27"
+  },
+  {
+   "job": "r2-sex50336-f0",
+   "pod": "ewoqu7kbqgzmaw",
+   "tag": "r2sex503360",
+   "family": "sex50336",
+   "fold": 0,
+   "round": 2,
+   "epochs": 40,
+   "price": 0.49,
+   "launched": "2026-10-05T03:31:35"
+  },
+  {
+   "job": "r2-swint224-f0",
+   "pod": "837ww68tjbjapv",
+   "tag": "r2swint2240",
+   "family": "swint224",
+   "fold": 0,
+   "round": 2,
+   "epochs": 40,
+   "price": 0.49,
+   "launched": "2026-10-05T03:33:06"
+  },
+  {
+   "job": "r2-cnxs336-f0",
+   "pod": "4ewzrhkw9civir",
+   "tag": "r2cnxs3360",
+   "family": "cnxs336",
+   "fold": 0,
+   "round": 2,
+   "epochs": 40,
+   "price": 0.49,
+   "launched": "2026-10-05T03:34:35"
+  },
+  {
+   "job": "r2-c224hvy40-f1",
+   "pod": "bdpbqymg28wtz9",
+   "tag": "r2c224hvy401",
+   "family": "c224hvy40",
+   "fold": 1,
+   "round": 2,
+   "epochs": 40,
+   "price": 0.49,
+   "launched": "2026-10-05T03:55:19"
+  },
+  {
+   "job": "r2-c224hvy40-f2",
+   "pod": "wv2abe2kd4wu6p",
+   "tag": "r2c224hvy402",
+   "family": "c224hvy40",
+   "fold": 2,
+   "round": 2,
+   "epochs": 40,
+   "price": 0.49,
+   "launched": "2026-10-05T03:56:52"
+  },
+  {
+   "job": "r2-c224hvy40-f3",
+   "pod": "brlefchj06ht0t",
+   "tag": "r2c224hvy403",
+   "family": "c224hvy40",
+   "fold": 3,
+   "round": 2,
+   "epochs": 40,
+   "price": 0.49,
+   "launched": "2026-10-05T03:58:23"
+  },
+  {
+   "job": "r2-c224hvy40-f4",
+   "pod": "2k4a2l694n4jko",
+   "tag": "r2c224hvy404",
+   "family": "c224hvy40",
+   "fold": 4,
+   "round": 2,
+   "epochs": 40,
+   "price": 0.49,
+   "launched": "2026-10-05T03:59:55"
+  },
+  {
+   "job": "r2-swint224-f1",
+   "pod": "",
+   "tag": "r2swint2241",
+   "family": "swint224",
+   "fold": 1,
+   "round": 2,
+   "epochs": 40,
+   "price": 0.49,
+   "launched": "2026-10-05T04:26:23",
+   "mega": true
+  },
+  {
+   "job": "r2-swint224-f2",
+   "pod": "",
+   "tag": "r2swint2242",
+   "family": "swint224",
+   "fold": 2,
+   "round": 2,
+   "epochs": 40,
+   "price": 0.49,
+   "launched": "2026-10-05T04:26:23",
+   "mega": true
+  },
+  {
+   "job": "r2-swint224-f3",
+   "pod": "",
+   "tag": "r2swint2243",
+   "family": "swint224",
+   "fold": 3,
+   "round": 2,
+   "epochs": 40,
+   "price": 0.49,
+   "launched": "2026-10-05T04:26:23",
+   "mega": true
+  },
+  {
+   "job": "r2-swint224-f4",
+   "pod": "",
+   "tag": "r2swint2244",
+   "family": "swint224",
+   "fold": 4,
+   "round": 2,
+   "epochs": 40,
+   "price": 0.49,
+   "launched": "2026-10-05T04:26:23",
+   "mega": true
+  },
+  {
+   "job": "r2-dinos336-f1",
+   "pod": "",
+   "tag": "r2dinos3361",
+   "family": "dinos336",
+   "fold": 1,
+   "round": 2,
+   "epochs": 40,
+   "price": 0.49,
+   "launched": "2026-10-05T04:44:36",
+   "mega": true
+  },
+  {
+   "job": "r2-dinos336-f2",
+   "pod": "",
+   "tag": "r2dinos3362",
+   "family": "dinos336",
+   "fold": 2,
+   "round": 2,
+   "epochs": 40,
+   "price": 0.49,
+   "launched": "2026-10-05T04:44:36",
+   "mega": true
+  },
+  {
+   "job": "r2-dinos336-f3",
+   "pod": "",
+   "tag": "r2dinos3363",
+   "family": "dinos336",
+   "fold": 3,
+   "round": 2,
+   "epochs": 40,
+   "price": 0.49,
+   "launched": "2026-10-05T04:44:36",
+   "mega": true
+  },
+  {
+   "job": "r2-dinos336-f4",
+   "pod": "",
+   "tag": "r2dinos3364",
+   "family": "dinos336",
+   "fold": 4,
+   "round": 2,
+   "epochs": 40,
+   "price": 0.49,
+   "launched": "2026-10-05T04:44:36",
+   "mega": true
+  },
+  {
+   "job": "r2-cnxs336-f1",
+   "pod": "",
+   "tag": "r2cnxs3361",
+   "family": "cnxs336",
+   "fold": 1,
+   "round": 2,
+   "epochs": 40,
+   "price": 0.49,
+   "launched": "2026-10-05T10:11:12",
+   "mega": true
+  },
+  {
+   "job": "r2-cnxs336-f2",
+   "pod": "",
+   "tag": "r2cnxs3362",
+   "family": "cnxs336",
+   "fold": 2,
+   "round": 2,
+   "epochs": 40,
+   "price": 0.49,
+   "launched": "2026-10-05T10:11:12",
+   "mega": true
+  },
+  {
+   "job": "r2-cnxs336-f3",
+   "pod": "",
+   "tag": "r2cnxs3363",
+   "family": "cnxs336",
+   "fold": 3,
+   "round": 2,
+   "epochs": 40,
+   "price": 0.49,
+   "launched": "2026-10-05T10:11:12",
+   "mega": true
+  },
+  {
+   "job": "r2-cnxs336-f4",
+   "pod": "",
+   "tag": "r2cnxs3364",
+   "family": "cnxs336",
+   "fold": 4,
+   "round": 2,
+   "epochs": 40,
+   "price": 0.49,
+   "launched": "2026-10-05T10:11:12",
+   "mega": true
+  },
+  {
+   "job": "r2-cnxv2t336-f0",
+   "pod": "h5fsw90n3n7swd",
+   "tag": "r2cnxv2t3360",
+   "family": "cnxv2t336",
+   "fold": 0,
+   "round": 2,
+   "epochs": 40,
+   "price": 0.49,
+   "launched": "2026-10-05T12:59:17"
+  },
+  {
+   "job": "r2-cnxb336-f0",
+   "pod": "jyrcyzshb35am1",
+   "tag": "r2cnxb3360",
+   "family": "cnxb336",
+   "fold": 0,
+   "round": 2,
+   "epochs": 40,
+   "price": 0.49,
+   "launched": "2026-10-05T13:00:42"
+  },
+  {
+   "job": "r2-cnxv2b336-f0",
+   "pod": "zbgvrdoj7epe2z",
+   "tag": "r2cnxv2b3360",
+   "family": "cnxv2b336",
+   "fold": 0,
+   "round": 2,
+   "epochs": 40,
+   "price": 0.49,
+   "launched": "2026-10-05T13:02:07"
+  },
+  {
+   "job": "r3-c224hvyx-f0",
+   "pod": "",
+   "tag": "r3c224hvyx0",
+   "family": "c224hvyx",
+   "fold": 0,
+   "round": 3,
+   "epochs": 12,
+   "price": 0.49,
+   "launched": "2026-10-05T16:33:32",
+   "mega": true
+  },
+  {
+   "job": "r3-effv2sx-f0",
+   "pod": "",
+   "tag": "r3effv2sx0",
+   "family": "effv2sx",
+   "fold": 0,
+   "round": 3,
+   "epochs": 14,
+   "price": 0.49,
+   "launched": "2026-10-05T16:33:32",
+   "mega": true
+  },
+  {
+   "job": "r3-cnxsx-f0",
+   "pod": "",
+   "tag": "r3cnxsx0",
+   "family": "cnxsx",
+   "fold": 0,
+   "round": 3,
+   "epochs": 12,
+   "price": 0.49,
+   "launched": "2026-10-05T16:33:32",
+   "mega": true
+  },
+  {
+   "job": "r3-cnxsx1-f0",
+   "pod": "",
+   "tag": "r3cnxsx10",
+   "family": "cnxsx1",
+   "fold": 0,
+   "round": 3,
+   "epochs": 12,
+   "price": 0.49,
+   "launched": "2026-10-05T16:33:32",
+   "mega": true
+  },
+  {
+   "job": "r5-cnxs336-f0",
+   "pod": "",
+   "tag": "r5cnxs3360",
+   "family": "cnxs336",
+   "fold": 0,
+   "round": 5,
+   "epochs": 40,
+   "price": 0.49,
+   "launched": "2026-10-05T21:10:36",
+   "mega": true
+  },
+  {
+   "job": "r4-cnxs336-f0",
+   "pod": "",
+   "tag": "r4cnxs3360",
+   "family": "cnxs336",
+   "fold": 0,
+   "round": 4,
+   "epochs": 40,
+   "price": 0.49,
+   "launched": "2026-10-05T21:11:14",
+   "mega": true
+  },
+  {
+   "job": "r6-cnxs336-f0",
+   "pod": "",
+   "tag": "r6cnxs3360",
+   "family": "cnxs336",
+   "fold": 0,
+   "round": 6,
+   "epochs": 40,
+   "price": 0.49,
+   "launched": "2026-10-05T21:11:54",
+   "mega": true
+  },
+  {
+   "job": "r7-cnxs336-f0",
+   "pod": "",
+   "tag": "r7cnxs3360",
+   "family": "cnxs336",
+   "fold": 0,
+   "round": 7,
+   "epochs": 40,
+   "price": 0.49,
+   "launched": "2026-10-05T21:12:41",
+   "mega": true
+  },
+  {
+   "job": "r4-cnxs336-f1",
+   "pod": "",
+   "tag": "r4cnxs3361",
+   "family": "cnxs336",
+   "fold": 1,
+   "round": 4,
+   "epochs": 40,
+   "price": 0.49,
+   "launched": "2026-10-06T02:27:45",
+   "mega": true
+  },
+  {
+   "job": "r4-cnxs336-f2",
+   "pod": "",
+   "tag": "r4cnxs3362",
+   "family": "cnxs336",
+   "fold": 2,
+   "round": 4,
+   "epochs": 40,
+   "price": 0.49,
+   "launched": "2026-10-06T02:27:45",
+   "mega": true
+  },
+  {
+   "job": "r4-cnxs336-f3",
+   "pod": "",
+   "tag": "r4cnxs3363",
+   "family": "cnxs336",
+   "fold": 3,
+   "round": 4,
+   "epochs": 40,
+   "price": 0.49,
+   "launched": "2026-10-06T02:27:45",
+   "mega": true
+  },
+  {
+   "job": "r4-cnxs336-f4",
+   "pod": "",
+   "tag": "r4cnxs3364",
+   "family": "cnxs336",
+   "fold": 4,
+   "round": 4,
+   "epochs": 40,
+   "price": 0.49,
+   "launched": "2026-10-06T02:27:45",
+   "mega": true
+  },
+  {
+   "job": "r4-cnxsseq-f0",
+   "pod": "",
+   "tag": "r4cnxsseq0",
+   "family": "cnxsseq",
+   "fold": 0,
+   "round": 4,
+   "epochs": 40,
+   "price": 0.49,
+   "launched": "2026-10-06T15:10:43",
+   "mega": true
+  },
+  {
+   "job": "r4-cnxstok-f0",
+   "pod": "",
+   "tag": "r4cnxstok0",
+   "family": "cnxstok",
+   "fold": 0,
+   "round": 4,
+   "epochs": 40,
+   "price": 0.49,
+   "launched": "2026-10-06T15:10:43",
+   "mega": true
+  },
+  {
+   "job": "r4-cnxsst-f0",
+   "pod": "",
+   "tag": "r4cnxsst0",
+   "family": "cnxsst",
+   "fold": 0,
+   "round": 4,
+   "epochs": 40,
+   "price": 0.49,
+   "launched": "2026-10-06T15:10:43",
+   "mega": true
+  },
+  {
+   "job": "r4-cnxsseq224-f0",
+   "pod": "",
+   "tag": "r4cnxsseq2240",
+   "family": "cnxsseq224",
+   "fold": 0,
+   "round": 4,
+   "epochs": 40,
+   "price": 0.49,
+   "launched": "2026-10-06T15:10:43",
+   "mega": true
+  },
+  {
+   "job": "r8-cnxs336-f0",
+   "pod": "4w41j19oudl6i9",
+   "tag": "r8cnxs3360",
+   "family": "cnxs336",
+   "fold": 0,
+   "round": 8,
+   "epochs": 40,
+   "price": 0.49,
+   "launched": "2026-10-07T00:27:31"
+  },
+  {
+   "job": "r8-cnxs336-f1",
+   "pod": "90kpbuvinsfe6m",
+   "tag": "r8cnxs3361",
+   "family": "cnxs336",
+   "fold": 1,
+   "round": 8,
+   "epochs": 40,
+   "price": 0.49,
+   "launched": "2026-10-07T00:28:59"
+  },
+  {
+   "job": "r8-cnxs336-f2",
+   "pod": "c6v3exo99smtwr",
+   "tag": "r8cnxs3362",
+   "family": "cnxs336",
+   "fold": 2,
+   "round": 8,
+   "epochs": 40,
+   "price": 0.49,
+   "launched": "2026-10-07T00:30:26"
+  },
+  {
+   "job": "r8-cnxs336-f3",
+   "pod": "jrp3p3w0gi9xft",
+   "tag": "r8cnxs3363",
+   "family": "cnxs336",
+   "fold": 3,
+   "round": 8,
+   "epochs": 40,
+   "price": 0.49,
+   "launched": "2026-10-07T00:31:55"
+  }
+ ],
+ "label_source": {
+  "name": "labels_r2g: c224 + CoAt-384 + RegionMIL students, report weight 0.3, silent cells calibrated on the 29 training experts",
+  "families": [
+   [
+    "r1-c224-f*/*"
+   ],
+   [
+    "r1-coat-f*/*"
+   ],
+   [
+    "r1-fa-f*/*"
+   ]
+  ],
+  "args": [
+   "--a-said",
+   "0.3",
+   "--a-unk",
+   "0.2",
+   "--silent-gold",
+   "10"
+  ]
+ }
+}

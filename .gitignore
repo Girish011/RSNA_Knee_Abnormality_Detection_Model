@@ -59,3 +59,31 @@ wandb/
 mlruns/
 runs/
 tmp/
+
+# Agent audit trail is tracked; the rendered dashboard is not
+!agent/runs/
+agent/runs/dashboard.html
+
+outputs/runpod_bundle/
+agent/labels/cache/
+outputs/soups/
+
+# doctor labelling: competition images and the case-to-study key stay local
+outputs/doctor_label/
+outputs/kernels/doctor-export/
+outputs/kernels/doctor-reference/
+outputs/mega_queue/
+outputs/mega_pod.json
+outputs/ext/
+
+# local only: competition-derived data, third-party material, generated or downloaded output
+agent/labels/cache/
+agent/labels/cache_graded/
+outputs/kernels/pub/
+outputs/kernels/**/_out/
+outputs/paper_oa/
+outputs/side_check/
+outputs/meta_dump/
+outputs/label_ds/
+outputs/rad_heads/
+outputs/timm_pretrained/

@@ -1,0 +1,5 @@
+{
+ "upstream": "sofiaanjenje/rsna-knee-e13-train",
+ "labels": "labels_fused_full.csv",
+ "label_dataset": "girishbose/rsna-knee-labels-ours"
+}
